@@ -1,3 +1,4 @@
+// Integration: blueprint:javascript_log_in_with_replit
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -40,42 +42,56 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
   return (
     <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/login" component={Login} />
-      <Route path="/signup" component={Signup} />
-      <Route path="/dashboard">
-        <DashboardLayout>
-          <Dashboard />
-        </DashboardLayout>
-      </Route>
-      <Route path="/create">
-        <DashboardLayout>
-          <CreateProduct />
-        </DashboardLayout>
-      </Route>
-      <Route path="/products">
-        <DashboardLayout>
-          <Products />
-        </DashboardLayout>
-      </Route>
-      <Route path="/settings">
-        <DashboardLayout>
-          <div className="p-8">
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground mt-2">Configure your account preferences</p>
-          </div>
-        </DashboardLayout>
-      </Route>
-      <Route path="/help">
-        <DashboardLayout>
-          <div className="p-8">
-            <h1 className="text-3xl font-bold">Help Center</h1>
-            <p className="text-muted-foreground mt-2">Get help and support</p>
-          </div>
-        </DashboardLayout>
-      </Route>
+      {isLoading || !isAuthenticated ? (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/signup" component={Signup} />
+        </>
+      ) : (
+        <>
+          <Route path="/">
+            <DashboardLayout>
+              <Dashboard />
+            </DashboardLayout>
+          </Route>
+          <Route path="/dashboard">
+            <DashboardLayout>
+              <Dashboard />
+            </DashboardLayout>
+          </Route>
+          <Route path="/create">
+            <DashboardLayout>
+              <CreateProduct />
+            </DashboardLayout>
+          </Route>
+          <Route path="/products">
+            <DashboardLayout>
+              <Products />
+            </DashboardLayout>
+          </Route>
+          <Route path="/settings">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Settings</h1>
+                <p className="text-muted-foreground mt-2">Configure your account preferences</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/help">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Help Center</h1>
+                <p className="text-muted-foreground mt-2">Get help and support</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+        </>
+      )}
       <Route component={NotFound} />
     </Switch>
   );

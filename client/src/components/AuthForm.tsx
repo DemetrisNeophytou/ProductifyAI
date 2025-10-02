@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "wouter";
-import { Mail, Lock, Github } from "lucide-react";
+import { Github } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
 interface AuthFormProps {
@@ -13,17 +10,8 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ mode }: AuthFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log(`${mode} submitted`, { email, password });
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    console.log(`${provider} login clicked`);
+  const handleLogin = () => {
+    window.location.href = "/api/login";
   };
 
   return (
@@ -40,24 +28,24 @@ export function AuthForm({ mode }: AuthFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
             <Button 
               variant="outline" 
-              onClick={() => handleSocialLogin("Google")}
+              onClick={handleLogin}
+              className="w-full hover-elevate active-elevate-2"
               data-testid="button-google-login"
-              className="hover-elevate active-elevate-2"
             >
               <SiGoogle className="h-4 w-4 mr-2" />
-              Google
+              Continue with Google
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => handleSocialLogin("GitHub")}
+              onClick={handleLogin}
+              className="w-full hover-elevate active-elevate-2"
               data-testid="button-github-login"
-              className="hover-elevate active-elevate-2"
             >
               <Github className="h-4 w-4 mr-2" />
-              GitHub
+              Continue with GitHub
             </Button>
           </div>
 
@@ -68,78 +56,13 @@ export function AuthForm({ mode }: AuthFormProps) {
             </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-email"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-password"
-                  required
-                />
-              </div>
-            </div>
-
-            {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-confirm-password"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {mode === "login" && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="rounded" />
-                  <span>Remember me</span>
-                </label>
-                <Link href="/forgot-password">
-                  <a className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </a>
-                </Link>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full" data-testid="button-submit">
-              {mode === "login" ? "Sign in" : "Create account"}
-            </Button>
-          </form>
+          <Button 
+            onClick={handleLogin} 
+            className="w-full" 
+            data-testid="button-email-login"
+          >
+            {mode === "login" ? "Sign in with Email" : "Sign up with Email"}
+          </Button>
 
           <div className="text-center text-sm">
             {mode === "login" ? (
