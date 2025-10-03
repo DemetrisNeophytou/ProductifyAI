@@ -6,17 +6,42 @@ interface ExportSection {
   order: number;
 }
 
+interface BrandKit {
+  primaryColor?: string;
+  secondaryColor?: string;
+  fonts?: {
+    heading?: string;
+    body?: string;
+  };
+}
+
 interface ExportProject {
   title: string;
   type: string;
   description?: string | null;
   sections: ExportSection[];
+  brandKit?: BrandKit;
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16) / 255,
+        g: parseInt(result[2], 16) / 255,
+        b: parseInt(result[3], 16) / 255,
+      }
+    : { r: 0.545, g: 0.361, b: 0.965 };
 }
 
 export async function generatePDF(project: ExportProject): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
   const timesRomanBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  
+  const primaryColor = project.brandKit?.primaryColor 
+    ? hexToRgb(project.brandKit.primaryColor)
+    : { r: 0.545, g: 0.361, b: 0.965 };
   
   const pageWidth = 595.28;
   const pageHeight = 841.89;
@@ -52,8 +77,14 @@ export async function generatePDF(project: ExportProject): Promise<Uint8Array> {
     }
   };
   
-  drawText(project.title, timesRomanBold, titleSize, true);
-  yPosition -= 10;
+  page.drawText(project.title, {
+    x: margin,
+    y: yPosition,
+    size: titleSize,
+    font: timesRomanBold,
+    color: rgb(primaryColor.r, primaryColor.g, primaryColor.b),
+  });
+  yPosition -= titleSize * lineHeight + 10;
   
   if (project.description) {
     drawText(project.description, timesRomanFont, bodySize);

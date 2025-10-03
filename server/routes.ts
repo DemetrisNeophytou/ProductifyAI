@@ -182,6 +182,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Content Generation Routes
+  const generateOutlineSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    type: z.string().min(1, "Type is required"),
+    description: z.string().optional(),
+    audience: z.string().optional(),
+    goal: z.string().optional(),
+  });
+
+  app.post("/api/generate-outline", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = generateOutlineSchema.parse(req.body);
+      const { generateOutline } = await import('./openai');
+      const result = await generateOutline(data);
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating outline:", error);
+      res.status(500).json({ message: "Failed to generate outline" });
+    }
+  });
+
   const writeChapterSchema = z.object({
     title: z.string().min(1, "Title is required"),
     type: z.string().min(1, "Type is required"),
@@ -428,6 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sections = await storage.getProjectSections(project.id);
+      const brandKit = await storage.getBrandKit(userId);
       const { generatePDF } = await import('./pdf-export');
       const { convertTipTapToPlainText } = await import('./content-converter');
       
@@ -439,7 +469,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: s.title,
           content: convertTipTapToPlainText(s.content),
           order: s.order
-        }))
+        })),
+        brandKit: brandKit ? {
+          primaryColor: brandKit.primaryColor || undefined,
+          secondaryColor: brandKit.secondaryColor || undefined,
+          fonts: brandKit.fonts as any
+        } : undefined
       });
 
       res.setHeader('Content-Type', 'application/pdf');
