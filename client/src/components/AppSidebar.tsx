@@ -1,4 +1,4 @@
-import { Home, Sparkles, FolderOpen, Palette, Image, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Home, Sparkles, FolderOpen, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,11 @@ const menuItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
+  },
+  {
+    title: "AI Coach",
+    url: "/ai-coach",
+    icon: MessageCircle,
   },
   {
     title: "Brand Kit",
