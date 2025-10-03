@@ -29,6 +29,13 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, starter, pro, studio
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("inactive"), // inactive, active, cancelled, past_due
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  projectsLimit: integer("projects_limit").default(1), // Free: 1, Starter: 5, Pro/Studio: unlimited (-1)
+  aiTokensUsed: integer("ai_tokens_used").default(0),
+  aiTokensLimit: integer("ai_tokens_limit").default(5000), // Free/Starter: 5000, Pro: 50000, Studio: unlimited (-1)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -71,9 +78,10 @@ export const brandKits = pgTable("brand_kits", {
 export const projects = pgTable("projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 50 }).notNull(), // ebook, course, checklist, template, leadmagnet
+  type: varchar("type", { length: 50 }).notNull(), // ebook, course, checklist, template, leadmagnet, workbook
   title: text("title").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, final
+  templateId: varchar("template_id"), // ID of template used to create this project
   metadata: jsonb("metadata").$type<{
     niche?: string;
     goal?: string;
