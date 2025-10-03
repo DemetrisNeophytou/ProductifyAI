@@ -14,6 +14,8 @@ import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
+import NewProject from "@/pages/NewProject";
+import ProjectEditor from "@/pages/ProjectEditor";
 import CreateProduct from "@/pages/CreateProduct";
 import Products from "@/pages/Products";
 
@@ -63,6 +65,16 @@ function Router() {
             <DashboardLayout>
               <Dashboard />
             </DashboardLayout>
+          </Route>
+          <Route path="/projects/new">
+            <DashboardLayout>
+              <NewProject />
+            </DashboardLayout>
+          </Route>
+          <Route path="/projects/:id">
+            {(params) => (
+              <ProjectEditor />
+            )}
           </Route>
           <Route path="/create">
             <DashboardLayout>
