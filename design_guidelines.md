@@ -1,13 +1,13 @@
-# Design Guidelines: AI Digital Product Creation Platform
+# Design Guidelines: Productify AI - Digital Product Creation Platform
 
-## Design Approach: Modern SaaS Productivity Tool
-**Selected Approach:** Design System hybrid drawing from Linear's precision, Notion's approachability, and Stripe's clarity
+## Design Approach: Modern Creative Productivity Tool
+**Selected Approach:** Hybrid drawing from Notion's approachability, Canva's creative confidence, and Linear's precision
 
-**Key Design Principles:**
-- Professional polish with creative confidence
-- Clear visual hierarchy guiding users through complex workflows
-- Trust-building through modern, polished interfaces
-- Efficiency-focused with delightful micro-moments
+**Key Principles:**
+- Professional polish with creative energy
+- Clear workflows guiding complex product creation
+- Trust through modern, polished interfaces
+- Productivity-focused with delightful creative moments
 
 ---
 
@@ -16,228 +16,259 @@
 ### A. Color Palette
 
 **Light Mode:**
-- Background: 0 0% 100% (pure white)
-- Surface: 240 5% 96% (soft gray)
-- Border: 240 6% 90%
-- Text Primary: 240 10% 10%
-- Text Secondary: 240 5% 45%
-- Primary Brand: 262 83% 58% (vibrant purple)
-- Primary Hover: 262 83% 52%
-- Accent: 142 76% 36% (success green)
+- Background: 0 0% 100%
+- Surface: 270 10% 98%
+- Border: 270 8% 90%
+- Text Primary: 270 15% 10%
+- Text Secondary: 270 8% 45%
+- Primary (Purple): 270 91% 65% (#8B5CF6)
+- Primary Hover: 270 91% 60%
+- Secondary (Pink): 330 81% 60% (#EC4899)
+- Secondary Hover: 330 81% 55%
+- Accent Success: 142 76% 36%
 - Destructive: 0 84% 60%
 
 **Dark Mode:**
-- Background: 240 10% 8%
-- Surface: 240 8% 12%
-- Border: 240 6% 18%
+- Background: 270 15% 8%
+- Surface: 270 12% 12%
+- Border: 270 10% 20%
 - Text Primary: 0 0% 98%
-- Text Secondary: 240 5% 65%
-- Primary Brand: 262 83% 65%
-- Primary Hover: 262 83% 70%
-- Accent: 142 76% 45%
+- Text Secondary: 270 8% 65%
+- Primary: 270 91% 70%
+- Primary Hover: 270 91% 75%
+- Secondary: 330 81% 65%
 
 ### B. Typography
 
 **Font Families:**
-- Primary: 'Inter', system-ui, sans-serif (via Google Fonts CDN)
-- Monospace: 'JetBrains Mono', monospace (for code/technical elements)
+- Primary: 'Inter', system-ui, sans-serif (Google Fonts CDN)
+- Display: 'Cal Sans' or 'Satoshi', sans-serif (for hero headlines)
+- Monospace: 'JetBrains Mono' (technical contexts)
 
 **Hierarchy:**
-- Hero: text-6xl font-bold (60px)
-- H1: text-4xl font-bold (36px)
+- Hero Display: text-7xl font-bold (72px)
+- H1: text-5xl font-bold (48px)
 - H2: text-3xl font-semibold (30px)
 - H3: text-xl font-semibold (20px)
 - Body: text-base (16px)
 - Small: text-sm (14px)
-- Tiny: text-xs (12px)
 
 ### C. Layout System
 
-**Spacing Primitives:** Use Tailwind units of 2, 4, 6, 8, 12, 16, 20, 24
+**Spacing Primitives:** Tailwind units of 2, 4, 6, 8, 12, 16, 20, 24
 - Component padding: p-6 to p-8
-- Section spacing: py-16 to py-24
-- Element gaps: gap-4 to gap-6
-- Container max-width: max-w-7xl
-
-**Grid Systems:**
-- Dashboard: 12-column grid with sidebar (aside 280px width)
-- Product cards: grid-cols-1 md:grid-cols-2 lg:grid-cols-3
-- Form layouts: Single column max-w-md for focused inputs
+- Section spacing: py-20 to py-32
+- Container: max-w-7xl
 
 ### D. Component Library
 
-**Authentication Pages (Login/Signup):**
-- Centered card design (max-w-md) with soft shadow
-- Logo placement: top-center with mb-8
-- Input fields: Consistent h-12 with focus:ring-2 states
-- Social login buttons: Full-width with provider icons (Google, GitHub)
-- Form validation: Inline error states in destructive color
-- "Remember me" checkbox with label alignment
-- Footer links: "Need help?" and "Privacy Policy" in muted text
+**Navigation:**
+- Fixed top nav: Backdrop-blur-md with border-b, h-16
+- Logo left, navigation center, user controls right
+- Sidebar (280px): Brand kit selector at top, main nav, upgrade banner at bottom
+- Active states: Left border-l-4 primary + surface background
 
-**Dashboard Layout:**
-- Fixed sidebar (280px) with smooth navigation transitions
-- Top navigation bar: User avatar, notifications bell, search bar
-- Sidebar sections: Dashboard, Create Product, My Products, Settings, Help
-- Active state: Left border-l-4 with primary color + bg-surface
-- Main content area: Generous padding (p-8) with max-w-7xl container
+**Product Creation Studio:**
+- Three-panel layout: Assets sidebar (240px) | Canvas/Editor (flex-1) | Properties panel (320px)
+- Asset sidebar: Tabbed sections (Brand Kit, Images, Templates, Recent)
+- Canvas area: Rich text editor with floating toolbar
+- Properties: Context-sensitive controls (typography, colors, spacing, export settings)
+- Export panel: Multi-format selector with preview thumbnails
 
-**Product Creation Interface:**
-- Prominent "Create New Product" hero section with gradient background
-- Product type selector: Large cards (200x180px) with icons and descriptions
-  - Templates, Text Content, Graphics, Marketing Copy, etc.
-- Creation wizard: Step indicator at top (1/4 progress)
-- Prompt input: Expandable textarea (min-h-32) with character counter
-- Parameter controls: Sliders for creativity, length, style with real-time preview
-- Generation button: Large, prominent with loading spinner state
-- Results display: Split view (input left, output right) with copy/download actions
+**Brand Kit Manager:**
+- Card-based layout for multiple brand kits
+- Each kit shows: Name, color palette preview (5 circles), logo thumbnail
+- Quick actions: Edit, Duplicate, Set as Default
+- Colors displayed as swatches (40x40px rounded-lg) with HEX on hover
+- Typography preview showing font pairs in actual typefaces
 
-**Product Cards (Dashboard):**
-- Card design: Rounded-xl with hover:shadow-lg transition
-- Thumbnail area: aspect-video with gradient placeholder
-- Product metadata: Title (font-semibold), type badge, creation date
-- Action buttons: Edit, Download, Delete (icon-only with tooltips)
-- Status indicators: Draft/Published with appropriate colors
+**Template Gallery:**
+- Masonry grid layout (Pinterest-style)
+- Cards: Hover reveals title + creator + "Use Template" CTA
+- Filter bar: Category pills, search, sort dropdown
+- Categories: eBook Covers, Course Modules, Checklists, Lead Magnets, Social Graphics
 
-**Navigation Components:**
-- Header: Sticky top-0 with backdrop-blur-md effect
-- Breadcrumbs: Home / Create Product / Text Generator
-- Tabs: Underline style with smooth indicator transition
-- Dropdown menus: Subtle shadow with border, max-h-64 scroll
+**Asset Management:**
+- Grid view (default): 4-5 columns of thumbnails
+- List view: Name, type, size, date, actions
+- Bulk actions toolbar: Delete, Move to folder, Download
+- Drag-drop upload zone with progress indicators
+- Folder tree navigation in left sidebar
 
-**Form Elements:**
-- Input fields: border rounded-lg h-12 px-4
-- Focus states: ring-2 ring-primary ring-offset-2
-- Labels: text-sm font-medium mb-2
-- Helper text: text-xs text-muted below inputs
-- Checkboxes/Radio: Custom styled with primary accent
-- Select dropdowns: Chevron icon, consistent height
+**Version Control Panel:**
+- Timeline view showing saved versions with timestamps
+- Visual diff showing changes between versions
+- Actions: Restore, Compare, Create Branch
+- Auto-save indicator in header with last saved time
 
-**Buttons:**
-- Primary: bg-primary text-white px-6 h-11 rounded-lg
-- Secondary: border-2 bg-transparent hover:bg-surface
-- Outline on images: backdrop-blur-sm bg-white/10 border-white/20
-- Icon buttons: Square (40x40px) with hover:bg-surface
+**Export Interface:**
+- Format selector: Cards for PDF, DOCX, HTML, EPUB, PNG
+- Each card shows file icon, name, size estimate
+- Preview pane showing actual export appearance
+- Advanced options: Quality settings, compression, metadata
 
-**Data Display:**
-- Empty states: Centered with illustration, heading, and CTA
-- Loading states: Skeleton screens matching component structure
-- Tables: Striped rows, sticky header, sortable columns
-- Stats cards: Large number (text-4xl), label below, trend indicator
+**Dashboard (Home):**
+- Welcome header with name + quick stats (4 cards: Products Created, Downloads, Storage, Templates Saved)
+- Recent projects grid (3 columns): Thumbnail, title, type badge, last edited, quick actions
+- "Start Creating" hero card with gradient background and type selector buttons
+- Activity feed sidebar showing recent actions and collaborator updates
 
 ### E. Visual Enhancements
 
-**Animations (Minimal & Purposeful):**
-- Page transitions: Fade-in (opacity 0 to 1) 200ms
-- Button interactions: Scale on active (scale-95)
-- Card hovers: Subtle lift (translateY -2px) with shadow increase
-- Loading spinners: Smooth rotation on primary actions only
+**Gradients:**
+- Hero backgrounds: Purple to pink diagonal (135deg)
+- Product cards: Subtle surface to transparent
+- CTA sections: Primary to secondary with 20% opacity overlay
 
-**Shadows & Depth:**
-- Cards: shadow-sm default, shadow-lg on hover
-- Modals: shadow-2xl with backdrop blur
-- Dropdowns: shadow-md
-- Avoid excessive depth layers
+**Animations (Minimal):**
+- Page transitions: Fade 200ms
+- Card hovers: translateY -2px with shadow increase
+- Button interactions: scale-95 on active
+- Panel slides: 300ms ease-out
+
+**Shadows:**
+- Cards: shadow-sm default, shadow-xl on hover
+- Modals: shadow-2xl
+- Floating toolbars: shadow-lg
 
 **Border Radius:**
-- Cards/Containers: rounded-xl (12px)
+- Cards: rounded-xl (12px)
 - Buttons: rounded-lg (8px)
-- Input fields: rounded-lg (8px)
-- Images: rounded-md (6px)
+- Inputs: rounded-lg (8px)
+- Thumbnails: rounded-md (6px)
 - Badges: rounded-full
 
 ---
 
 ## Page-Specific Guidelines
 
-### Landing Page (Pre-Auth)
-**Structure:** Hero → Features → How It Works → Pricing → CTA → Footer
+### Landing Page
+**Structure:** Hero → Creator Types → Features → Template Showcase → How It Works → Pricing → Testimonials → CTA → Footer
 
-**Hero Section (h-screen):**
-- Large hero image: Abstract AI/digital creation visualization (gradient mesh or particle system)
-- Centered headline: "Create Digital Products with AI" (text-6xl)
-- Subheading explaining value proposition (text-xl max-w-2xl)
-- Dual CTA: "Start Creating Free" (primary) + "Watch Demo" (outline with backdrop blur)
-- Trust indicators below: "10,000+ products created" with small user avatars
+**Hero (80vh):**
+- Full-width gradient background (purple-to-pink)
+- Large hero image: Mockup showcasing multiple product types (eBook cover, course interface, checklist) in floating card composition
+- Centered headline: "Create Professional Digital Products in Minutes" (text-7xl)
+- Subheading: Value proposition (text-xl max-w-3xl)
+- Dual CTA: "Start Creating Free" (primary solid) + "Explore Templates" (outline with backdrop-blur-md bg-white/10 border-white/20)
+- Trust indicators: User count, product stats, creator logos
 
-**Features Grid (py-24):**
-- 3-column layout showing core capabilities
-- Each feature: Icon (48x48 in primary color), title, description
-- Subtle hover effect (translateY -4px)
+**Creator Types (py-24):**
+- 4-column grid: Content Creators, Educators, Entrepreneurs, Coaches
+- Each card: Icon, headline, description, example products
+- Gradient borders matching primary/secondary colors
 
-**How It Works (py-20):**
-- 4-step process with numbered badges
-- Alternating image-text layout (zigzag pattern)
-- Screenshots of actual dashboard in product
+**Features (py-24, bg-surface):**
+- 6 features in 3-column grid
+- Icons (Heroicons 64px) with primary color
+- Title, description, "Learn more" link
+- Hover: Card lifts with shadow increase
+
+**Template Showcase (py-32):**
+- Large heading: "1000+ Professional Templates"
+- Tabbed categories: eBooks, Courses, Checklists, Lead Magnets
+- 6-card grid showing actual template previews
+- "Browse All Templates" CTA
+
+**How It Works (py-24):**
+- 4-step numbered process with large numerals
+- Alternating layout: Image left/right zigzag
+- Screenshots of actual studio interface
+- Visual connections between steps (dotted lines)
+
+**Pricing (py-24, bg-surface):**
+- 3-tier comparison cards
+- Free, Pro, Team with feature matrices
+- Highlight Pro tier with primary border
+- Annual/Monthly toggle
+
+**Testimonials (py-20):**
+- 3-column grid of creator testimonials
+- Avatar, name, role, quote, product thumbnail
+- Subtle gradient backgrounds
 
 **Footer:**
-- 4-column layout: Product, Company, Resources, Legal
-- Newsletter signup: Inline form with email input + button
-- Social media icons (github, twitter, linkedin)
-- Trust badges: Security, compliance icons
+- 5-column layout: Product, Features, Resources, Company, Legal
+- Newsletter signup with inline form
+- Social icons, trust badges
 
-### Dashboard (Post-Auth)
-**Layout:** Sidebar + Main content area
+### Dashboard
+**Welcome Section:**
+- Personalized greeting with current date
+- Quick stats cards (4 across): Products Created, Views/Downloads, Storage Used, Templates Saved
+- Each stat: Large number (text-4xl), icon, trend indicator
 
-**Sidebar Navigation:**
-- Logo at top with home link
-- Primary nav items with icons (Heroicons)
-- User profile at bottom with avatar + dropdown
-- Upgrade/Pro banner if applicable
+**Quick Actions:**
+- Large cards for: "Create New Product", "Browse Templates", "Manage Brand Kits"
+- Gradient backgrounds with relevant icons
 
-**Main Content:**
-- Welcome header: "Welcome back, [Name]" with current date
-- Quick stats row: Products Created, Downloads, Storage Used (3-column cards)
-- Recent products grid (2-3 columns)
-- Empty state for new users with onboarding prompts
+**Recent Projects:**
+- 3-column grid of project cards
+- Thumbnail, title, type badge, last edited timestamp
+- Quick actions: Open, Duplicate, Delete
 
-### Create Product Page
-**Workflow:** Type Selection → Customization → Generation → Review
+**Activity Sidebar:**
+- Scrollable feed of recent actions
+- Collaborator updates if team plan
 
-**Type Selection:**
-- Grid of product types (6 options)
-- Large cards with gradient backgrounds
-- Clear icons and descriptions
+### Product Studio
+**Main Canvas:**
+- Central editing area with ruler guides
+- Floating toolbar: Text formatting, alignment, colors, assets
+- Zoom controls bottom-right
+- Canvas background: Subtle grid pattern
 
-**Customization Panel:**
-- Left sidebar: Parameter controls
-- Main area: Large prompt input
-- Examples dropdown for inspiration
-- Real-time token/cost estimate
+**Left Sidebar (Assets):**
+- Tabs: Brand Kit, Stock Images, Icons, Shapes, Templates
+- Search bar at top
+- Drag-and-drop functionality
+- Upload button prominent
 
-**Results View:**
-- Generated content in formatted preview
-- Action bar: Regenerate, Edit, Save, Download
-- Version history sidebar (collapsed by default)
+**Right Panel (Properties):**
+- Context-sensitive based on selection
+- Typography controls: Font, size, weight, line height
+- Color picker with brand kit swatches
+- Spacing/positioning with number inputs
+- Export settings at bottom
 
 ---
 
 ## Images
 
 **Hero Image (Landing):**
-- Abstract digital/AI visualization: Flowing gradient mesh or particle network
-- Colors: Purple to blue gradient with ethereal glow
-- Placement: Full-width background with content overlay
-- Style: Modern, tech-forward, inspiring creativity
+- Composition: Floating mockups showing diverse products (eBook cover, course dashboard screenshot, checklist PDF, social graphic) arranged in layered perspective
+- Style: Modern glass morphism effect with subtle shadows
+- Colors: Products feature purple/pink accents
+- Treatment: Depth with blur layers, slight rotation for dynamism
+- Placement: Right side of hero, extending beyond viewport edge
 
 **Feature Screenshots:**
-- Actual dashboard interface screenshots
+- Studio interface showing actual product creation workflow
+- Brand kit manager with color palettes visible
+- Template gallery in masonry layout
 - Placement: How It Works section, alternating sides
-- Treatment: Subtle shadow, slight perspective tilt
-- Border: Light border to define edges
+- Treatment: Shadow-2xl, subtle perspective tilt (2-3 degrees)
 
-**Product Thumbnails:**
-- AI-generated preview images for each product type
-- Placement: Dashboard product cards
-- Size: 16:9 aspect ratio, 400x225px
-- Fallback: Gradient with product type icon
+**Template Previews:**
+- Actual product thumbnails (eBook covers, course interfaces, etc.)
+- Placement: Template Showcase section, pricing tiers
+- Aspect: Various (match product type)
+- Fallback: Gradient with product icon
+
+**Dashboard Thumbnails:**
+- User project preview images
+- Placement: Recent projects grid
+- Size: 16:9 aspect ratio
+- Treatment: Rounded-md with border
 
 ---
 
 ## Accessibility & Responsive
 
-- All interactive elements min-height: 44px (touch targets)
-- Focus indicators: 2px ring in primary color
-- Color contrast: WCAG AA minimum (4.5:1 for text)
-- Mobile breakpoints: Stack columns, collapsible sidebar to drawer
-- Form inputs maintain dark/light mode consistency
+- Touch targets: 44px minimum
+- Focus indicators: 2px ring primary color
+- Contrast: WCAG AA (4.5:1 text)
+- Mobile: Stack columns, sidebar converts to drawer
+- Form inputs: Consistent styling across themes
+- Multi-column layouts collapse to single column on mobile
+- Dashboard sidebar: Collapsible with hamburger menu on tablets/mobile
