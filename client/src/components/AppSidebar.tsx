@@ -1,4 +1,4 @@
-import { Home, Sparkles, FolderOpen, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle } from "lucide-react";
+import { Home, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +17,7 @@ import type { User } from "@shared/schema";
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "My Projects",
     url: "/dashboard",
     icon: Home,
   },
@@ -40,11 +40,6 @@ const menuItems = [
     title: "Create Product",
     url: "/create",
     icon: Sparkles,
-  },
-  {
-    title: "My Products",
-    url: "/products",
-    icon: FolderOpen,
   },
   {
     title: "Settings",
