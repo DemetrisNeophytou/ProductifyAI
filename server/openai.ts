@@ -4,6 +4,23 @@ import OpenAI from "openai";
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.Productifykey });
 
+function removeEmojis(text: string): string {
+  // Remove common emoji ranges - uses simple character filtering
+  return text.split('').filter(char => {
+    const code = char.codePointAt(0) || 0;
+    // Filter out common emoji ranges
+    return !(
+      (code >= 0x1F600 && code <= 0x1F64F) || // Emoticons
+      (code >= 0x1F300 && code <= 0x1F5FF) || // Misc Symbols and Pictographs
+      (code >= 0x1F680 && code <= 0x1F6FF) || // Transport and Map
+      (code >= 0x2600 && code <= 0x26FF) ||   // Misc symbols
+      (code >= 0x2700 && code <= 0x27BF) ||   // Dingbats
+      (code >= 0x1F900 && code <= 0x1F9FF) || // Supplemental Symbols and Pictographs
+      (code >= 0x1FA70 && code <= 0x1FAFF)    // Symbols and Pictographs Extended-A
+    );
+  }).join('');
+}
+
 interface GenerateProductParams {
   prompt: string;
   type: string;
@@ -29,6 +46,11 @@ Tone:
 - Use bullet points, steps, and examples.
 - Always frame answers toward revenue and real execution.
 
+IMPORTANT FORMATTING RULES:
+- NEVER use emoji characters in your responses
+- Use text labels, bullet points, and numbered lists instead
+- Keep responses professional and text-based only
+
 Do not give generic answers. Every reply should feel like a high-end strategist coaching the user to build a real digital product. Think about:
 - Who is the target audience and what transformation do they want?
 - What makes this product worth buying? (positioning & unique value)
@@ -47,13 +69,13 @@ Provide strategic, actionable guidance that helps creators build products that s
         { role: "system", content: systemPrompt },
         { role: "user", content: message }
       ],
-      max_completion_tokens: 2048,
-      temperature: 0.7,
+      max_completion_tokens: 4096,
     });
 
     const content = response.choices[0].message.content || "";
-    console.log(`[OpenAI] Chat completed - Response length: ${content.length} characters`);
-    return content;
+    const cleanedContent = removeEmojis(content);
+    console.log(`[OpenAI] Chat completed - Response length: ${cleanedContent.length} characters (${content.length - cleanedContent.length} emoji chars removed), finish_reason: ${response.choices[0].finish_reason}`);
+    return cleanedContent;
   } catch (error: any) {
     console.error('[OpenAI] Chat failed:', error);
     if (error?.status === 429 || error?.code === 'insufficient_quota') {

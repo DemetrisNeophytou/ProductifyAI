@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Sparkles, User } from "lucide-react";
+import { Send, Sparkles, User, DollarSign, Target, Rocket, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
@@ -102,30 +102,58 @@ export default function AICoach() {
         <ScrollArea className="h-full">
           <div ref={scrollRef} className="p-6 space-y-4">
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center" data-testid="welcome-screen">
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-semibold mb-2">Welcome to AI Coach</h2>
-                <p className="text-muted-foreground max-w-md mb-6">
+                <h2 className="text-xl font-semibold mb-2" data-testid="text-welcome-title">Welcome to AI Coach</h2>
+                <p className="text-muted-foreground max-w-md mb-6" data-testid="text-welcome-description">
                   I'm your Digital Product Creator 2.0 strategist. Ask me anything about:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
-                  <Card className="p-4 text-left hover-elevate cursor-pointer" onClick={() => setInput("What should I consider when pricing my first digital product?")}>
-                    <p className="text-sm font-medium">💰 Pricing Strategy</p>
-                    <p className="text-xs text-muted-foreground mt-1">How to price for profit</p>
+                  <Card 
+                    className="p-4 text-left hover-elevate cursor-pointer" 
+                    onClick={() => setInput("What should I consider when pricing my first digital product?")}
+                    data-testid="card-suggestion-pricing"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">Pricing Strategy</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">How to price for profit</p>
                   </Card>
-                  <Card className="p-4 text-left hover-elevate cursor-pointer" onClick={() => setInput("How do I identify my target audience for a course?")}>
-                    <p className="text-sm font-medium">🎯 Target Audience</p>
-                    <p className="text-xs text-muted-foreground mt-1">Find your ideal customers</p>
+                  <Card 
+                    className="p-4 text-left hover-elevate cursor-pointer" 
+                    onClick={() => setInput("How do I identify my target audience for a course?")}
+                    data-testid="card-suggestion-audience"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">Target Audience</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Find your ideal customers</p>
                   </Card>
-                  <Card className="p-4 text-left hover-elevate cursor-pointer" onClick={() => setInput("What's the best way to launch a new digital product?")}>
-                    <p className="text-sm font-medium">🚀 Launch Strategy</p>
-                    <p className="text-xs text-muted-foreground mt-1">Plan your product launch</p>
+                  <Card 
+                    className="p-4 text-left hover-elevate cursor-pointer" 
+                    onClick={() => setInput("What's the best way to launch a new digital product?")}
+                    data-testid="card-suggestion-launch"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Rocket className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">Launch Strategy</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Plan your product launch</p>
                   </Card>
-                  <Card className="p-4 text-left hover-elevate cursor-pointer" onClick={() => setInput("How can I create upsell opportunities?")}>
-                    <p className="text-sm font-medium">📈 Upsell Funnels</p>
-                    <p className="text-xs text-muted-foreground mt-1">Maximize revenue per customer</p>
+                  <Card 
+                    className="p-4 text-left hover-elevate cursor-pointer" 
+                    onClick={() => setInput("How can I create upsell opportunities?")}
+                    data-testid="card-suggestion-upsell"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium">Upsell Funnels</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Maximize revenue per customer</p>
                   </Card>
                 </div>
               </div>
@@ -136,6 +164,7 @@ export default function AICoach() {
                   className={`flex gap-3 ${
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
+                  data-testid={`message-${message.role}-${message.id}`}
                 >
                   {message.role === "assistant" && (
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -149,7 +178,9 @@ export default function AICoach() {
                         : ""
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${message.id}`}>
+                      {message.content}
+                    </p>
                   </Card>
                   {message.role === "user" && (
                     <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -160,12 +191,12 @@ export default function AICoach() {
               ))
             )}
             {chatMutation.isPending && (
-              <div className="flex gap-3 justify-start">
+              <div className="flex gap-3 justify-start" data-testid="indicator-thinking">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                 </div>
                 <Card className="p-4">
-                  <p className="text-sm text-muted-foreground">Thinking...</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-thinking">Thinking...</p>
                 </Card>
               </div>
             )}
