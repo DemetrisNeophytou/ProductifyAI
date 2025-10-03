@@ -20,6 +20,7 @@ import CreateProduct from "@/pages/CreateProduct";
 import Products from "@/pages/Products";
 import BrandKit from "@/pages/BrandKit";
 import Assets from "@/pages/Assets";
+import AICoach from "@/pages/AICoach";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -104,6 +105,11 @@ function Router() {
                 <h1 className="text-3xl font-bold">Settings</h1>
                 <p className="text-muted-foreground mt-2">Configure your account preferences</p>
               </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/ai-coach">
+            <DashboardLayout>
+              <AICoach />
             </DashboardLayout>
           </Route>
           <Route path="/help">
