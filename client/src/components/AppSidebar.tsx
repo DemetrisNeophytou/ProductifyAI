@@ -1,4 +1,4 @@
-import { Home, Sparkles, FolderOpen, Palette, Settings, HelpCircle, LogOut } from "lucide-react";
+import { Home, Sparkles, FolderOpen, Palette, Image, Settings, HelpCircle, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,11 @@ const menuItems = [
     title: "Brand Kit",
     url: "/brand-kit",
     icon: Palette,
+  },
+  {
+    title: "Assets",
+    url: "/assets",
+    icon: Image,
   },
   {
     title: "Create Product",
