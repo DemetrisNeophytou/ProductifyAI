@@ -1,5 +1,5 @@
 import { db } from './db';
-import { users } from '@shared/schema';
+import { users, projects } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { stripe, SUBSCRIPTION_PLANS, TRIAL_DAYS, SubscriptionTier, SubscriptionStatus } from './stripe-config';
 
@@ -78,9 +78,11 @@ export async function checkSubscriptionLimits(userId: string): Promise<{
     };
   }
 
-  const projectsUsed = await db.query.projects.findMany({
-    where: eq(users.id, userId),
-  }).then(projects => projects.length);
+  const userProjects = await db.query.projects.findMany({
+    where: eq(projects.userId, userId),
+  });
+  
+  const projectsUsed = userProjects.length;
 
   const projectsLimit = user.projectsLimit || 0;
   const aiTokensUsed = user.aiTokensUsed || 0;
