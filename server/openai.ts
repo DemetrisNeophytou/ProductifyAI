@@ -88,6 +88,145 @@ Provide strategic, actionable guidance that helps creators build products that s
   }
 }
 
+export async function writeChapter(params: {
+  title: string;
+  type: string;
+  context?: string;
+  audience?: string;
+  tone?: string;
+}): Promise<string> {
+  console.log(`[OpenAI] Writing chapter: ${params.title}`);
+
+  const systemPrompt = `You are "Digital Product Creator 2.0", an elite content strategist and instructional designer.
+
+Your task: Write a complete, high-quality chapter/lesson for a digital product.
+
+Requirements:
+- Write 500-1500 words of valuable, actionable content
+- Use clear section headings and structure
+- Include practical examples and real-world applications
+- Make it engaging and easy to understand
+- Focus on transformation and results for the reader
+- NEVER use emoji characters - use text only
+
+Format the output as clean, well-structured content ready to be published.`;
+
+  const userPrompt = `Write a complete chapter titled "${params.title}" for a ${params.type}.
+
+${params.context ? `Context: ${params.context}` : ''}
+${params.audience ? `Target audience: ${params.audience}` : ''}
+${params.tone ? `Tone: ${params.tone}` : ''}
+
+Make it comprehensive, valuable, and actionable.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 4096,
+    });
+
+    const content = response.choices[0].message.content || "";
+    return removeEmojis(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Write chapter failed:', error);
+    throw new Error(`AI_GENERATION_ERROR: ${error?.message || "Failed to generate chapter"}`);
+  }
+}
+
+export async function expandContent(params: {
+  originalContent: string;
+  expandBy: string;
+}): Promise<string> {
+  console.log('[OpenAI] Expanding content');
+
+  const systemPrompt = `You are "Digital Product Creator 2.0", an expert content expander.
+
+Your task: Expand and improve existing content by adding more detail, examples, or better flow.
+
+Requirements:
+- Keep the original meaning and structure
+- Add valuable details, examples, or explanations
+- Maintain the same tone and style
+- Make it more comprehensive and useful
+- NEVER use emoji characters
+
+Return only the expanded content.`;
+
+  const userPrompt = `Expand this content: "${params.originalContent}"
+
+Expansion request: ${params.expandBy}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 4096,
+    });
+
+    const content = response.choices[0].message.content || "";
+    return removeEmojis(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Expand content failed:', error);
+    throw new Error(`AI_EXPANSION_ERROR: ${error?.message || "Failed to expand content"}`);
+  }
+}
+
+export async function suggestImprovements(params: {
+  sectionTitle: string;
+  currentContent: string;
+  productType: string;
+}): Promise<string[]> {
+  console.log('[OpenAI] Generating suggestions');
+
+  const systemPrompt = `You are "Digital Product Creator 2.0", a strategic content advisor.
+
+Your task: Provide 2-3 concise, actionable suggestions to improve a content section.
+
+Requirements:
+- Each suggestion should be specific and actionable
+- Focus on value, clarity, and engagement
+- Keep suggestions brief (1-2 sentences each)
+- NEVER use emoji characters
+
+Return suggestions as a numbered list.`;
+
+  const userPrompt = `Product type: ${params.productType}
+Section: "${params.sectionTitle}"
+Current content length: ${params.currentContent.length} characters
+
+Provide 2-3 suggestions to improve this section.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 500,
+    });
+
+    const content = removeEmojis(response.choices[0].message.content || "");
+    const suggestions = content
+      .split('\n')
+      .filter(line => line.trim().match(/^\d+\./))
+      .map(line => line.replace(/^\d+\.\s*/, '').trim())
+      .filter(s => s.length > 0);
+
+    return suggestions.slice(0, 3);
+  } catch (error: any) {
+    console.error('[OpenAI] Suggestions failed:', error);
+    throw new Error(`AI_SUGGESTION_ERROR: ${error?.message || "Failed to generate suggestions"}`);
+  }
+}
+
 export async function generateProduct(params: GenerateProductParams): Promise<string> {
   const { prompt, type, creativity, length, style } = params;
 

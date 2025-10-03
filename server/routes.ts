@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateProduct, chatWithCoach } from "./openai";
+import { z } from "zod";
 import {
   insertBrandKitSchema,
   insertProjectSchema,
@@ -180,6 +181,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Content Generation Routes
+  const writeChapterSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    type: z.string().min(1, "Type is required"),
+    context: z.string().optional(),
+    audience: z.string().optional(),
+    tone: z.string().optional(),
+  });
+
+  app.post("/api/write-chapter", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = writeChapterSchema.parse(req.body);
+      const { writeChapter } = await import('./openai');
+      const content = await writeChapter(data);
+
+      res.json({ content });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error writing chapter:", error);
+      res.status(500).json({ message: "Failed to generate chapter content" });
+    }
+  });
+
+  const expandContentSchema = z.object({
+    originalContent: z.string().min(1, "Original content is required"),
+    expandBy: z.string().min(1, "Expansion instructions are required"),
+  });
+
+  app.post("/api/expand", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = expandContentSchema.parse(req.body);
+      const { expandContent } = await import('./openai');
+      const expandedContent = await expandContent(data);
+
+      res.json({ content: expandedContent });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error expanding content:", error);
+      res.status(500).json({ message: "Failed to expand content" });
+    }
+  });
+
+  const suggestSchema = z.object({
+    sectionTitle: z.string().min(1, "Section title is required"),
+    currentContent: z.string().default(""),
+    productType: z.string().min(1, "Product type is required"),
+  });
+
+  app.post("/api/suggest", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = suggestSchema.parse(req.body);
+      const { suggestImprovements } = await import('./openai');
+      const suggestions = await suggestImprovements(data);
+
+      res.json({ suggestions });
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating suggestions:", error);
+      res.status(500).json({ message: "Failed to generate suggestions" });
+    }
+  });
+
   app.delete("/api/products/:id", isAuthenticated, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
@@ -324,6 +408,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error duplicating project:", error);
       res.status(500).json({ message: "Failed to duplicate project" });
+    }
+  });
+
+  // Export routes
+  app.get("/api/projects/:id/export/pdf", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const sections = await storage.getProjectSections(project.id);
+      const { generatePDF } = await import('./pdf-export');
+      const { convertTipTapToPlainText } = await import('./content-converter');
+      
+      const pdfBytes = await generatePDF({
+        title: project.title,
+        type: project.type,
+        description: project.description,
+        sections: sections.map(s => ({
+          title: s.title,
+          content: convertTipTapToPlainText(s.content),
+          order: s.order
+        }))
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${project.title}.pdf"`);
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  app.get("/api/projects/:id/export/docx", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const sections = await storage.getProjectSections(project.id);
+      const { generateDOCX } = await import('./docx-export');
+      const { convertTipTapToPlainText } = await import('./content-converter');
+      
+      const docxBuffer = await generateDOCX({
+        title: project.title,
+        type: project.type,
+        description: project.description,
+        sections: sections.map(s => ({
+          title: s.title,
+          content: convertTipTapToPlainText(s.content),
+          order: s.order
+        }))
+      });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${project.title}.docx"`);
+      res.send(docxBuffer);
+    } catch (error) {
+      console.error("Error generating DOCX:", error);
+      res.status(500).json({ message: "Failed to generate DOCX" });
     }
   });
 
