@@ -58,13 +58,29 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
+  const existingUser = await storage.getUser(claims["sub"]);
+  const isNewUser = !existingUser;
+
+  const userData: any = {
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
-  });
+  };
+
+  if (isNewUser) {
+    const trialStartDate = new Date();
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 3); // 3-day trial
+
+    userData.subscriptionTier = 'trial';
+    userData.subscriptionStatus = 'trialing';
+    userData.trialStartDate = trialStartDate;
+    userData.trialEndDate = trialEndDate;
+  }
+
+  await storage.upsertUser(userData);
 }
 
 export async function setupAuth(app: Express) {

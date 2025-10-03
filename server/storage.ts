@@ -26,6 +26,8 @@ export interface IStorage {
   // User operations - Required for Replit Auth
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<UpsertUser>): Promise<User>;
+  updateUserByStripeSubscription(stripeSubscriptionId: string, data: Partial<UpsertUser>): Promise<void>;
   
   // Brand Kit operations
   getBrandKit(userId: string): Promise<BrandKit | undefined>;
@@ -83,6 +85,28 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async updateUser(id: string, data: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateUserByStripeSubscription(stripeSubscriptionId: string, data: Partial<UpsertUser>): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.stripeSubscriptionId, stripeSubscriptionId));
   }
 
   // Brand Kit operations
