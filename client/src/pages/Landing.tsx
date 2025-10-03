@@ -10,7 +10,7 @@ export default function Landing() {
     <div className="min-h-screen">
       <header className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold">AI Product Creator</h1>
+          <h1 className="text-xl font-bold">Productify AI</h1>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link href="/login">
@@ -20,7 +20,7 @@ export default function Landing() {
             </Link>
             <Link href="/signup">
               <Button data-testid="button-nav-signup">
-                Sign up
+                Start Free Trial
               </Button>
             </Link>
           </div>
@@ -69,7 +69,7 @@ export default function Landing() {
           </div>
           <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © 2024 AI Product Creator. All rights reserved.
+              © 2024 Productify AI. All rights reserved.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-foreground">
