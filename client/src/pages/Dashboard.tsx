@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { StatsCard } from "@/components/StatsCard";
-import { Sparkles, Download, HardDrive, Plus, FileText, BookOpen, ListChecks } from "lucide-react";
+import { Sparkles, Download, HardDrive, Plus, FileText, BookOpen, ListChecks, Crown, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -32,6 +33,17 @@ export default function Dashboard() {
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: subscriptionStatus } = useQuery<{
+    tier: 'free' | 'plus' | 'pro' | null;
+    status: 'active' | 'canceled' | 'expired' | null;
+    isOnTrial: boolean;
+    trialEndsAt: string | null;
+    daysRemaining: number;
+  }>({
+    queryKey: ["/api/subscription/status"],
     enabled: isAuthenticated,
   });
 
@@ -100,18 +112,105 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <WelcomeDialog />
+      
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Welcome back!</h1>
-          <p className="text-muted-foreground">Create amazing digital products with AI</p>
+          <h1 className="text-4xl font-bold mb-2">Build Your €100k+ Business</h1>
+          <p className="text-muted-foreground">Create and sell digital products with AI-powered strategies</p>
         </div>
         <Link href="/projects/new">
           <Button data-testid="button-create-new">
             <Plus className="h-4 w-4 mr-2" />
-            New Project
+            New Product
           </Button>
         </Link>
       </div>
+
+      {subscriptionStatus?.isOnTrial && (
+        <Card className="border-primary/20 bg-primary/5" data-testid="card-trial-status">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-xl">Free Trial Active</CardTitle>
+                    <Badge variant="secondary" data-testid="badge-days-remaining">
+                      {subscriptionStatus.daysRemaining} {subscriptionStatus.daysRemaining === 1 ? 'day' : 'days'} left
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-sm">
+                    Full access to all features • No credit card required • Cancel anytime
+                  </CardDescription>
+                </div>
+              </div>
+              <Link href="/pricing">
+                <Button data-testid="button-view-plans">
+                  View Plans
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
+      {subscriptionStatus?.tier === 'plus' && (
+        <Card className="border-primary/20" data-testid="card-plus-status">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Zap className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-xl">Plus Plan</CardTitle>
+                    <Badge variant="secondary" data-testid="badge-plus-active">Active</Badge>
+                  </div>
+                  <CardDescription className="text-sm">
+                    €24.99/month • 10 products • 20k AI tokens/month
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Link href="/pricing">
+                  <Button variant="outline" data-testid="button-upgrade-to-pro">
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade to Pro
+                  </Button>
+                </Link>
+                <Button variant="ghost" onClick={() => window.location.href = '/api/billing/portal'} data-testid="button-manage-billing">
+                  Manage Billing
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
+      {subscriptionStatus?.tier === 'pro' && (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10" data-testid="card-pro-status">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <Crown className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-xl">Pro Plan</CardTitle>
+                    <Badge variant="default" data-testid="badge-pro-active">Active</Badge>
+                  </div>
+                  <CardDescription className="text-sm">
+                    €59.99/3 months • Unlimited products • Unlimited AI • Advanced strategies
+                  </CardDescription>
+                </div>
+              </div>
+              <Button variant="ghost" onClick={() => window.location.href = '/api/billing/portal'} data-testid="button-manage-billing-pro">
+                Manage Billing
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard
