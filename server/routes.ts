@@ -22,6 +22,15 @@ import {
   insertCommunityPostSchema,
   insertCommunityCommentSchema,
 } from "@shared/schema";
+import {
+  communityPostLimiter,
+  communityCommentLimiter,
+  communityLikeLimiter,
+  aiChatLimiter,
+  aiGenerationLimiter,
+  checkoutLimiter,
+  generalApiLimiter,
+} from "./rate-limiter";
 
 interface AuthRequest extends Request {
   user?: {
@@ -34,6 +43,9 @@ interface AuthRequest extends Request {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // General rate limiting for all API routes
+  app.use('/api', generalApiLimiter);
 
   // Auth routes
   app.get("/api/auth/user", isAuthenticated, async (req: AuthRequest, res) => {
@@ -80,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/products/generate", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/products/generate", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -146,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/chat", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/chat", isAuthenticated, aiChatLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -201,7 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     goal: z.string().optional(),
   });
 
-  app.post("/api/generate-outline", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/generate-outline", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -230,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     tone: z.string().optional(),
   });
 
-  app.post("/api/write-chapter", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/write-chapter", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -256,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     expandBy: z.string().min(1, "Expansion instructions are required"),
   });
 
-  app.post("/api/expand", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/expand", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -283,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     productType: z.string().min(1, "Product type is required"),
   });
 
-  app.post("/api/suggest", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/suggest", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -929,7 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/subscription/create-checkout", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/subscription/create-checkout", isAuthenticated, checkoutLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -1127,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/community/posts", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/community/posts", isAuthenticated, communityPostLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -1161,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/community/posts/:id/comments", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/community/posts/:id/comments", isAuthenticated, communityCommentLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -1186,7 +1198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/community/posts/:id/like", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/community/posts/:id/like", isAuthenticated, communityLikeLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
