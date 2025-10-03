@@ -16,6 +16,15 @@ Productify AI is a fullstack platform that allows users to:
 ## Recent Changes
 
 **October 3, 2025**
+- **Community Feature Complete**: Full-featured community platform for digital product creators
+  - Database schema: communityPosts, communityComments, communityPostLikes tables
+  - 6 API endpoints: create posts, view posts, comment, like, delete
+  - Category-based filtering (Success Stories, Questions, Tips & Strategies, Product Showcase, General)
+  - Real-time like/comment counts with optimized cache invalidation
+  - Privacy-protected: Only public user fields exposed (firstName, lastName, profileImageUrl)
+  - Pagination with safety limits (max 100 posts per request)
+  - Error handling with user-friendly toast notifications
+  - E2E tested and architect-approved for MVP production
 - **AI Coach Feature Complete**: Full-featured chat interface with Digital Product Creator 2.0 strategist
   - POST /api/chat endpoint with elite strategist system prompt (20+ years experience, $100k+/year focus)
   - Emoji-free responses (system prompt + post-processing emoji removal)
@@ -167,6 +176,30 @@ Productify AI is a fullstack platform that allows users to:
 - Old products table from simple generator
 - Will be migrated or removed in later phase
 
+#### community_posts
+- `id` (varchar, UUID primary key)
+- `userId` (varchar, foreign key → users)
+- `title` (text)
+- `content` (text)
+- `category` (varchar: Success Stories, Questions, Tips & Strategies, Product Showcase, General)
+- `likesCount` (integer, default 0)
+- `commentsCount` (integer, default 0)
+- `createdAt`, `updatedAt` (timestamps)
+
+#### community_comments
+- `id` (varchar, UUID primary key)
+- `postId` (varchar, foreign key → community_posts)
+- `userId` (varchar, foreign key → users)
+- `content` (text)
+- `createdAt`, `updatedAt` (timestamps)
+
+#### community_post_likes
+- `id` (varchar, UUID primary key)
+- `postId` (varchar, foreign key → community_posts)
+- `userId` (varchar, foreign key → users)
+- `createdAt` (timestamp)
+- Unique constraint on (postId, userId)
+
 ## API Routes
 
 ### Authentication
@@ -204,6 +237,17 @@ Productify AI is a fullstack platform that allows users to:
 - `GET /api/projects/:projectId/versions` - Get project versions (requires auth)
 - `POST /api/projects/:projectId/versions` - Create version (requires auth)
 - `POST /api/versions/:versionId/restore` - Restore version (requires auth)
+
+### Community
+- `GET /api/community/posts` - Get all posts with pagination (requires auth)
+- `POST /api/community/posts` - Create new post (requires auth)
+- `GET /api/community/posts/:id` - Get post details with comments (requires auth)
+- `POST /api/community/posts/:id/comments` - Add comment to post (requires auth)
+- `POST /api/community/posts/:id/like` - Toggle like on post (requires auth)
+- `DELETE /api/community/posts/:id` - Delete post (requires auth, owner only)
+
+### AI Chat
+- `POST /api/chat` - Send message to AI coach (requires auth)
 
 ### Legacy (Temporary)
 - `GET /api/products` - Returns empty array (backwards compatibility)

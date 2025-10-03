@@ -19,6 +19,8 @@ import {
   insertProjectSchema,
   insertSectionSchema,
   insertAssetSchema,
+  insertCommunityPostSchema,
+  insertCommunityCommentSchema,
 } from "@shared/schema";
 
 interface AuthRequest extends Request {
@@ -1109,6 +1111,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Webhook handler error:', error);
       res.status(500).json({ error: 'Webhook handler failed' });
+    }
+  });
+
+  // Community routes
+  app.get("/api/community/posts", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+      const posts = await storage.getCommunityPosts(limit, offset);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  app.post("/api/community/posts", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const validation = insertCommunityPostSchema.safeParse({ ...req.body, userId });
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid post data", errors: validation.error });
+      }
+
+      const post = await storage.createCommunityPost(validation.data);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create post" });
+    }
+  });
+
+  app.get("/api/community/posts/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const post = await storage.getCommunityPost(req.params.id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      const comments = await storage.getPostComments(req.params.id);
+      res.json({ ...post, comments });
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).json({ message: "Failed to fetch post" });
+    }
+  });
+
+  app.post("/api/community/posts/:id/comments", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const validation = insertCommunityCommentSchema.safeParse({ 
+        ...req.body, 
+        userId,
+        postId: req.params.id 
+      });
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid comment data", errors: validation.error });
+      }
+
+      const comment = await storage.createCommunityComment(validation.data);
+      await storage.incrementCommentCount(req.params.id);
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  app.post("/api/community/posts/:id/like", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const result = await storage.togglePostLike(req.params.id, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  app.delete("/api/community/posts/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const post = await storage.getCommunityPost(req.params.id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      if (post.userId !== userId) {
+        return res.status(403).json({ message: "You can only delete your own posts" });
+      }
+
+      await storage.deleteCommunityPost(req.params.id);
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ message: "Failed to delete post" });
     }
   });
 
