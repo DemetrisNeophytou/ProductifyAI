@@ -62,12 +62,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate content using OpenAI
+      const parsedCreativity = parseFloat(creativity) || 0.7;
+      const parsedLength = parseInt(length) || 500;
+      const parsedStyle = style || "professional";
+
       const content = await generateProduct({
         prompt,
         type,
-        creativity: parseFloat(creativity) || 0.7,
-        length: parseInt(length) || 500,
-        style: style || "professional",
+        creativity: parsedCreativity,
+        length: parsedLength,
+        style: parsedStyle,
       });
 
       // Save product to database
@@ -77,9 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type,
         content,
         prompt,
-        creativity,
-        length,
-        style,
+        creativity: parsedCreativity.toString(),
+        length: parsedLength,
+        style: parsedStyle,
       });
 
       const product = await storage.createProduct(productData);
