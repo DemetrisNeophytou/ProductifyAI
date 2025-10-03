@@ -19,6 +19,7 @@ import ProjectEditor from "@/pages/ProjectEditor";
 import CreateProduct from "@/pages/CreateProduct";
 import Products from "@/pages/Products";
 import BrandKit from "@/pages/BrandKit";
+import Assets from "@/pages/Assets";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -70,6 +71,11 @@ function Router() {
           <Route path="/brand-kit">
             <DashboardLayout>
               <BrandKit />
+            </DashboardLayout>
+          </Route>
+          <Route path="/assets">
+            <DashboardLayout>
+              <Assets />
             </DashboardLayout>
           </Route>
           <Route path="/projects/new">
