@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, FileText, ListChecks, Sparkles, ArrowRight } from "lucide-react";
+import { BookOpen, FileText, ListChecks, Sparkles, ArrowRight, GraduationCap } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_TEMPLATES } from "@shared/templates";
 
 const projectTypes = [
   {
@@ -20,6 +21,12 @@ const projectTypes = [
     id: "course",
     name: "Online Course",
     description: "Build a structured learning experience",
+    icon: GraduationCap,
+  },
+  {
+    id: "workbook",
+    name: "Workbook",
+    description: "Interactive worksheets and exercises",
     icon: FileText,
   },
   {
@@ -40,7 +47,10 @@ export default function NewProject() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedType, setSelectedType] = useState<string>("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [title, setTitle] = useState("");
+
+  const availableTemplates = PRODUCT_TEMPLATES.filter(t => t.type === selectedType);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -48,6 +58,7 @@ export default function NewProject() {
         type: selectedType,
         title: title || `New ${projectTypes.find(t => t.id === selectedType)?.name}`,
         status: "draft",
+        templateId: selectedTemplate || null,
       });
       return await response.json();
     },
@@ -109,7 +120,10 @@ export default function NewProject() {
                   className={`cursor-pointer transition-all hover-elevate ${
                     selectedType === type.id ? "ring-2 ring-primary" : ""
                   }`}
-                  onClick={() => setSelectedType(type.id)}
+                  onClick={() => {
+                    setSelectedType(type.id);
+                    setSelectedTemplate("");
+                  }}
                   data-testid={`card-type-${type.id}`}
                 >
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
@@ -124,6 +138,50 @@ export default function NewProject() {
             })}
           </div>
         </div>
+
+        {selectedType && availableTemplates.length > 0 && (
+          <div className="space-y-3">
+            <Label>Choose a Template (Optional)</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card
+                className={`cursor-pointer transition-all hover-elevate ${
+                  selectedTemplate === "" ? "ring-2 ring-primary" : ""
+                }`}
+                onClick={() => setSelectedTemplate("")}
+                data-testid="card-template-blank"
+              >
+                <CardHeader className="space-y-0 pb-2">
+                  <CardTitle className="text-lg">Start from Scratch</CardTitle>
+                  <CardDescription className="mt-1">
+                    Create your own structure
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              {availableTemplates.map((template) => (
+                <Card
+                  key={template.id}
+                  className={`cursor-pointer transition-all hover-elevate ${
+                    selectedTemplate === template.id ? "ring-2 ring-primary" : ""
+                  }`}
+                  onClick={() => setSelectedTemplate(template.id)}
+                  data-testid={`card-template-${template.id}`}
+                >
+                  <CardHeader className="space-y-0 pb-2">
+                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    <CardDescription className="mt-1">
+                      {template.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <p className="text-xs text-muted-foreground">
+                      {template.sections.length} sections included
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end gap-3">
           <Button
