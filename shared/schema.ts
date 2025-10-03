@@ -29,13 +29,17 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  subscriptionTier: varchar("subscription_tier", { length: 20 }).default("free"), // free, starter, pro, studio
-  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("inactive"), // inactive, active, cancelled, past_due
+  subscriptionTier: varchar("subscription_tier", { length: 20 }).default("trial"), // trial, plus, pro
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trialing"), // trialing, active, cancelled, past_due, expired
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
-  projectsLimit: integer("projects_limit").default(1), // Free: 1, Starter: 5, Pro/Studio: unlimited (-1)
+  stripePriceId: varchar("stripe_price_id"), // Specific price ID (monthly/quarterly)
+  trialStartDate: timestamp("trial_start_date"),
+  trialEndDate: timestamp("trial_end_date"),
+  subscriptionPeriodEnd: timestamp("subscription_period_end"),
+  projectsLimit: integer("projects_limit").default(10), // Trial/Plus: 10, Pro: unlimited (-1)
   aiTokensUsed: integer("ai_tokens_used").default(0),
-  aiTokensLimit: integer("ai_tokens_limit").default(5000), // Free/Starter: 5000, Pro: 50000, Studio: unlimited (-1)
+  aiTokensLimit: integer("ai_tokens_limit").default(20000), // Trial/Plus: 20000, Pro: unlimited (-1)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
