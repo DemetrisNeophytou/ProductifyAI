@@ -20,38 +20,45 @@ export function LandingHero() {
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm mb-8">
           <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-white">AI-Powered Creation Platform</span>
+          <span className="text-sm font-medium text-white">€100k+ Digital Product Monetization Coach</span>
         </div>
 
         <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight">
-          Create Digital Products<br />with AI
+          Build Your €100k+<br />Digital Product Business
         </h1>
         
-        <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mb-12">
-          Generate professional templates, content, graphics, and marketing materials in seconds using advanced AI technology
+        <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-4">
+          Create and sell digital products that generate €100,000+ per year
+        </p>
+        
+        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12">
+          No experience needed. Our AI Monetization Coach guides you step-by-step from idea to launch, with proven pricing strategies and sales systems.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
           <Link href="/signup">
             <Button size="lg" className="h-12 px-8 text-base" data-testid="button-get-started">
-              Start Creating Free
+              Start 3-Day Free Trial
             </Button>
           </Link>
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="h-12 px-8 text-base backdrop-blur-sm bg-white/10 border-white/20 text-white hover:bg-white/20" 
-            data-testid="button-watch-demo"
-          >
-            <Play className="h-5 w-5 mr-2" />
-            Watch Demo
-          </Button>
+          <Link href="/pricing">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-12 px-8 text-base backdrop-blur-sm bg-white/10 border-white/20 text-white hover:bg-white/20" 
+              data-testid="button-view-pricing"
+            >
+              View Pricing
+            </Button>
+          </Link>
         </div>
 
         <div className="flex items-center justify-center gap-2 text-white/70">
-          <span className="text-sm">10,000+ products created</span>
+          <span className="text-sm">3-Day Free Trial</span>
           <span className="text-white/40">•</span>
-          <span className="text-sm">Join thousands of creators</span>
+          <span className="text-sm">No Credit Card Required</span>
+          <span className="text-white/40">•</span>
+          <span className="text-sm">Cancel Anytime</span>
         </div>
       </div>
     </div>
