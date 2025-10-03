@@ -44,7 +44,11 @@ export async function checkSubscriptionLimits(userId: string): Promise<{
   projectsLimit: number;
   aiTokensUsed: number;
   aiTokensLimit: number;
-  tier: string;
+  tier: string | null;
+  status: string | null;
+  isOnTrial: boolean;
+  trialEndsAt: string | null;
+  daysRemaining: number;
 }> {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
@@ -60,10 +64,25 @@ export async function checkSubscriptionLimits(userId: string): Promise<{
       aiTokensUsed: 0,
       aiTokensLimit: 0,
       tier: 'expired',
+      status: 'expired',
+      isOnTrial: false,
+      trialEndsAt: null,
+      daysRemaining: 0,
     };
   }
 
   const hasAccess = await hasActiveAccess(userId);
+  
+  const isOnTrial = user.subscriptionStatus === 'trialing' && user.trialEndDate ? new Date() < new Date(user.trialEndDate) : false;
+  const trialEndsAt = user.trialEndDate ? user.trialEndDate.toISOString() : null;
+  
+  let daysRemaining = 0;
+  if (isOnTrial && user.trialEndDate) {
+    const now = new Date();
+    const end = new Date(user.trialEndDate);
+    const diffMs = end.getTime() - now.getTime();
+    daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
   
   if (!hasAccess) {
     return {
@@ -75,6 +94,10 @@ export async function checkSubscriptionLimits(userId: string): Promise<{
       aiTokensUsed: user.aiTokensUsed || 0,
       aiTokensLimit: user.aiTokensLimit || 0,
       tier: user.subscriptionTier || 'expired',
+      status: user.subscriptionStatus || 'expired',
+      isOnTrial,
+      trialEndsAt,
+      daysRemaining,
     };
   }
 
@@ -99,7 +122,11 @@ export async function checkSubscriptionLimits(userId: string): Promise<{
     projectsLimit,
     aiTokensUsed,
     aiTokensLimit,
-    tier: user.subscriptionTier || 'trial',
+    tier: user.subscriptionTier,
+    status: user.subscriptionStatus,
+    isOnTrial,
+    trialEndsAt,
+    daysRemaining,
   };
 }
 
