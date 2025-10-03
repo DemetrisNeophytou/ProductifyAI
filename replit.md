@@ -1,335 +1,9 @@
 # Productify AI
 
-A comprehensive AI-powered digital product creation platform that empowers users to create, manage, and export professional digital products including eBooks, online courses, checklists, templates, and lead magnets.
-
 ## Overview
-
-Productify AI is a fullstack platform that allows users to:
-- Create professional digital products using AI (GPT-5)
-- Manage brand identity with customizable brand kits
-- Edit content with a rich text editor (TipTap)
-- Export products in multiple formats (PDF, DOCX, MD, HTML, ZIP)
-- Manage assets and versions
-- Generate marketing materials automatically
-- Collaborate and organize projects
-
-## Recent Changes
-
-**October 3, 2025**
-- **Community Feature Complete**: Full-featured community platform for digital product creators
-  - Database schema: communityPosts, communityComments, communityPostLikes tables
-  - 6 API endpoints: create posts, view posts, comment, like, delete
-  - Category-based filtering (Success Stories, Questions, Tips & Strategies, Product Showcase, General)
-  - Real-time like/comment counts with optimized cache invalidation
-  - Privacy-protected: Only public user fields exposed (firstName, lastName, profileImageUrl)
-  - Pagination with safety limits (max 100 posts per request)
-  - Error handling with user-friendly toast notifications
-  - E2E tested and architect-approved for MVP production
-- **AI Coach Feature Complete**: Full-featured chat interface with Digital Product Creator 2.0 strategist
-  - POST /api/chat endpoint with elite strategist system prompt (20+ years experience, $100k+/year focus)
-  - Emoji-free responses (system prompt + post-processing emoji removal)
-  - Chat UI with welcome state, suggestion cards (pricing, audience, launch, upsell strategies)
-  - Real-time chat with loading states and message history
-  - All interactive elements have data-testid attributes for testing
-  - E2E tested and architect-approved
-- **"Digital Product Creator 2.0" AI Integration**: Upgraded OpenAI system prompt to act as elite product strategist
-  - AI now positioned as 20+ year expert in digital products and monetization
-  - Strategic focus on $100k+/year revenue goals
-  - Provides actionable guidance on audience, positioning, pricing, upsells, and funnels
-  - Premium, confidence-building tone in all generations
-  - Creativity control properly mapped to temperature (0-1 → 0-2)
-  - Comprehensive logging for debugging
-  - Production-ready and architect-approved
-- **Phase 6 Complete: Asset Library System**
-  - Asset listing, search, and delete functionality
-  - Production-ready Unsplash integration with comprehensive security hardening
-  - Reusable AssetPicker component for use throughout the app
-  - SSRF protection with strict domain allowlisting
-- **Phase 1 Infrastructure Complete**: Migrated from simple product generator to full Productify AI platform
-- **Database Schema Update**: Implemented comprehensive schema with 6 new tables:
-  - `brand_kits`: Store user brand identity (logo, colors, fonts, tone of voice)
-  - `projects`: Main project table supporting multiple product types
-  - `sections`: Hierarchical content sections with drag-drop ordering
-  - `assets`: File management for images, documents, media
-  - `project_versions`: Version control with snapshot restoration
-  - `products_old`: Archived old products table for migration
-- **Storage Layer Refactored**: Complete rewrite with methods for all new entities
-- **API Routes Updated**: New REST endpoints for projects, sections, assets, versions
-- **Phase 2 Dependencies Complete**: Installed all required packages (TipTap, @hello-pangea/dnd, pdf-lib, docx, markdown-it, jszip, unsplash-js)
-- **Design System Implemented**: Purple/pink color palette with design guidelines
-- **Frontend UI Complete**: Dashboard, project creation, and project editor with drag-drop sections
-- **Auto-save System**: Implemented production-ready auto-save with:
-  - 1-second debouncing to prevent excessive API calls
-  - Dirty flag tracking per section
-  - In-flight edit protection (newer edits never overwritten by older saves)
-  - Error handling with automatic retry
-  - Optimistic cache updates
-  - Smart synchronization that preserves unsaved changes
-- **Export Functionality**: PDF, DOCX, and HTML exports client-side
-
-**October 2, 2024**
-- Initial application setup with Replit Auth and OpenAI integration
-- Implemented complete authentication flow with session management
-- Built basic product generator with AI content generation
-
-## Project Architecture
-
-### Tech Stack
-
-**Core Stack**
-- **Frontend**: React + Vite + TypeScript + Tailwind CSS + shadcn/ui
-- **Backend**: Express.js + TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Replit Auth (OpenID Connect)
-- **AI**: OpenAI GPT-5 (via Productifykey environment variable)
-
-**Planned Additions (Phase 2-9)**
-- **Rich Text Editor**: TipTap
-- **Drag & Drop**: react-beautiful-dnd
-- **Export**: pdf-lib, docx.js, markdown-it
-- **Image Assets**: Unsplash API
-- **UI Components**: Additional shadcn components
-
-### Directory Structure
-```
-├── client/               # Frontend application
-│   └── src/
-│       ├── components/   # Reusable React components
-│       ├── pages/        # Page components
-│       ├── hooks/        # Custom React hooks
-│       └── lib/          # Utility functions
-├── server/               # Backend application
-│   ├── routes.ts         # API routes
-│   ├── storage.ts        # Database operations
-│   ├── replitAuth.ts     # Authentication setup
-│   └── openai.ts         # AI integration
-└── shared/
-    └── schema.ts         # Shared types and schemas
-```
-
-## Database Schema
-
-### Core Tables
-
-#### users
-- `id` (varchar, UUID primary key)
-- `email` (varchar, unique)
-- `firstName` (varchar)
-- `lastName` (varchar)
-- `profileImageUrl` (varchar)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### brand_kits
-- `id` (varchar, UUID primary key)
-- `userId` (varchar, foreign key → users, unique)
-- `logoUrl` (varchar, optional)
-- `primaryColor` (varchar, hex color)
-- `secondaryColor` (varchar, hex color)
-- `fonts` (jsonb: { heading, body, accent })
-- `toneOfVoice` (text: professional, casual, friendly, etc.)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### projects
-- `id` (varchar, UUID primary key)
-- `userId` (varchar, foreign key → users)
-- `type` (varchar: ebook, course, checklist, template, lead_magnet)
-- `title` (text)
-- `status` (varchar: draft, in_progress, completed, published)
-- `metadata` (jsonb: author, description, tags, target_audience, etc.)
-- `coverImageUrl` (varchar, optional)
-- `backgroundColor` (varchar, optional)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### sections
-- `id` (varchar, UUID primary key)
-- `projectId` (varchar, foreign key → projects)
-- `type` (varchar: chapter, lesson, step, module, etc.)
-- `title` (text)
-- `content` (text, JSON/HTML from TipTap editor)
-- `order` (integer, for drag-drop ordering)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### assets
-- `id` (varchar, UUID primary key)
-- `userId` (varchar, foreign key → users)
-- `projectId` (varchar, foreign key → projects, optional)
-- `type` (varchar: image, document, video, audio)
-- `url` (varchar)
-- `filename` (varchar)
-- `size` (integer, bytes)
-- `metadata` (jsonb: dimensions, duration, etc.)
-- `createdAt` (timestamp)
-
-#### project_versions
-- `id` (varchar, UUID primary key)
-- `projectId` (varchar, foreign key → projects)
-- `versionNumber` (integer)
-- `snapshot` (jsonb: complete project + sections snapshot)
-- `createdAt` (timestamp)
-
-#### sessions (unchanged)
-- `sid` (varchar, primary key)
-- `sess` (jsonb)
-- `expire` (timestamp)
-
-#### products_old (archived)
-- Old products table from simple generator
-- Will be migrated or removed in later phase
-
-#### community_posts
-- `id` (varchar, UUID primary key)
-- `userId` (varchar, foreign key → users)
-- `title` (text)
-- `content` (text)
-- `category` (varchar: Success Stories, Questions, Tips & Strategies, Product Showcase, General)
-- `likesCount` (integer, default 0)
-- `commentsCount` (integer, default 0)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### community_comments
-- `id` (varchar, UUID primary key)
-- `postId` (varchar, foreign key → community_posts)
-- `userId` (varchar, foreign key → users)
-- `content` (text)
-- `createdAt`, `updatedAt` (timestamps)
-
-#### community_post_likes
-- `id` (varchar, UUID primary key)
-- `postId` (varchar, foreign key → community_posts)
-- `userId` (varchar, foreign key → users)
-- `createdAt` (timestamp)
-- Unique constraint on (postId, userId)
-
-## API Routes
-
-### Authentication
-- `GET /api/login` - Initiate login flow
-- `GET /api/callback` - OAuth callback
-- `GET /api/logout` - Logout user
-- `GET /api/auth/user` - Get current user (requires auth)
-
-### Brand Kits
-- `GET /api/brand-kit` - Get user's brand kit (requires auth)
-- `POST /api/brand-kit` - Create/update brand kit (requires auth)
-
-### Projects
-- `GET /api/projects` - Get user's projects (requires auth)
-- `POST /api/projects` - Create new project (requires auth)
-- `GET /api/projects/:id` - Get single project (requires auth)
-- `PATCH /api/projects/:id` - Update project (requires auth)
-- `DELETE /api/projects/:id` - Delete project (requires auth)
-- `POST /api/projects/:id/duplicate` - Duplicate project (requires auth)
-
-### Sections
-- `GET /api/projects/:projectId/sections` - Get project sections (requires auth)
-- `POST /api/projects/:projectId/sections` - Create section (requires auth)
-- `PATCH /api/sections/:id` - Update section (requires auth)
-- `DELETE /api/sections/:id` - Delete section (requires auth)
-- `POST /api/sections/reorder` - Reorder sections (requires auth)
-
-### Assets
-- `GET /api/assets` - Get user's assets (requires auth)
-- `GET /api/projects/:projectId/assets` - Get project assets (requires auth)
-- `POST /api/assets` - Upload asset (requires auth)
-- `DELETE /api/assets/:id` - Delete asset (requires auth)
-
-### Versions
-- `GET /api/projects/:projectId/versions` - Get project versions (requires auth)
-- `POST /api/projects/:projectId/versions` - Create version (requires auth)
-- `POST /api/versions/:versionId/restore` - Restore version (requires auth)
-
-### Community
-- `GET /api/community/posts` - Get all posts with pagination (requires auth)
-- `POST /api/community/posts` - Create new post (requires auth)
-- `GET /api/community/posts/:id` - Get post details with comments (requires auth)
-- `POST /api/community/posts/:id/comments` - Add comment to post (requires auth)
-- `POST /api/community/posts/:id/like` - Toggle like on post (requires auth)
-- `DELETE /api/community/posts/:id` - Delete post (requires auth, owner only)
-
-### AI Chat
-- `POST /api/chat` - Send message to AI coach (requires auth)
-
-### Legacy (Temporary)
-- `GET /api/products` - Returns empty array (backwards compatibility)
-- `POST /api/products/generate` - Legacy generator (returns temp data)
-
-## Environment Variables
-
-Required secrets:
-- `Productifykey` - OpenAI API key for content generation (custom variable name)
-- `DATABASE_URL` - PostgreSQL connection string
-- `SESSION_SECRET` - Session encryption secret
-- `REPL_ID` - Replit application ID
-- `REPLIT_DOMAINS` - Comma-separated list of domains
-
-## Implementation Plan
-
-### Phase 1: Foundation & Core Infrastructure ✅
-- [x] Database schema design and migration
-- [x] Storage layer with all CRUD operations
-- [x] API route structure preparation
-- [x] OpenAI integration verification
-
-### Phase 2: Install Dependencies & Setup ✅
-- [x] Install TipTap rich text editor
-- [x] Install @hello-pangea/dnd for drag-drop
-- [x] Install pdf-lib, docx.js for exports
-- [x] Install Unsplash API integration
-- [x] Update design guidelines with purple/pink palette
-
-### Phase 3: Brand Kit Management ✅
-- [x] Brand kit creation/edit UI
-- [x] Color picker integration (dual mode: color picker + hex input)
-- [x] Font selection interface (heading, body, accent fonts)
-- [x] Tone of voice selector (6 predefined options)
-- [x] Logo URL placeholder (file upload in Phase 6)
-- [x] Sidebar navigation integration
-
-### Phase 4: Project Creation & Management ✅
-- [x] Project type selection UI
-- [x] Project wizard/form (NewProject page)
-- [x] Project dashboard/list view
-- [x] Project detail page (ProjectEditor)
-- [ ] Duplicate project feature (API ready, UI pending)
-
-### Phase 5: Rich Content Editor ✅
-- [x] Section management UI with prebuilt templates
-- [x] Drag-drop section reordering with @hello-pangea/dnd
-- [x] Auto-save functionality with dirty flags and error handling
-- [ ] TipTap rich text editor (using textarea currently, TipTap ready for upgrade)
-- [ ] AI content generation integration
-
-### Phase 6: Asset Management
-- [ ] Asset library UI
-- [ ] File upload system
-- [ ] Unsplash integration
-- [ ] Asset picker component
-- [ ] Image optimization
-
-### Phase 7: Export System (Partially Complete)
-- [x] PDF export (pdf-lib) - basic implementation
-- [x] DOCX export (docx.js) - basic implementation
-- [x] HTML export - basic implementation
-- [ ] Markdown export
-- [ ] ZIP multi-file export
-- [ ] Advanced formatting and styling in exports
-
-### Phase 8: Version Control
-- [ ] Version creation UI
-- [ ] Version history view
-- [ ] Version comparison
-- [ ] Restore functionality
-- [ ] Auto-versioning
-
-### Phase 9: Marketing & Polish
-- [ ] Marketing copy generator
-- [ ] Social media assets
-- [ ] Landing page builder
-- [ ] Analytics dashboard
-- [ ] Final polish & testing
+Productify AI is an AI-powered digital product creation platform designed to help users create, manage, and export various professional digital products such as eBooks, online courses, checklists, templates, and lead magnets. The platform aims to empower users with advanced AI capabilities for content generation, brand management, and efficient product delivery, supporting them in achieving high revenue goals in the digital product space.
 
 ## User Preferences
-
 - Modern, clean UI design with purple primary color (#a855f7)
 - Dark mode support throughout
 - Responsive layout for all screen sizes
@@ -337,63 +11,37 @@ Required secrets:
 - Minimal animations and smooth transitions
 - Professional, productive interface for content creators
 
-## Development
+## System Architecture
 
-```bash
-# Install dependencies
-npm install
+### UI/UX Decisions
+The platform features a modern, clean UI design utilizing a purple primary color (#a855f7) and supporting dark mode. It is built to be responsive across all screen sizes, employing shadcn components for consistency and incorporating minimal animations and smooth transitions to provide a professional and productive interface.
 
-# Run database migrations (force push to sync new schema)
-npm run db:push --force
+### Technical Implementations
+Productify AI is a fullstack application built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui for the frontend, and Express.js with TypeScript for the backend. It uses PostgreSQL with Drizzle ORM for database management and Replit Auth for authentication. AI capabilities are powered by OpenAI GPT-5, featuring an "elite product strategist" AI coach. Key features include a rich text editor (TipTap), drag-and-drop functionality (@hello-pangea/dnd), and robust auto-save with optimistic caching. The system also supports multi-format exports (PDF, DOCX, HTML) and includes a comprehensive asset library system with Unsplash integration. A community platform for digital product creators is integrated with real-time interaction features.
 
-# Start development server
-npm run dev
-```
+### Feature Specifications
+- **Digital Product Creation**: AI-powered generation and editing of eBooks, online courses, checklists, templates, and lead magnets.
+- **Brand Identity Management**: Customizable brand kits including logos, colors, fonts, and tone of voice.
+- **Content Editing**: Rich text editor for detailed content creation and modification.
+- **Asset Management**: Upload, search, and delete assets, with Unsplash integration for images.
+- **Version Control**: Snapshotting and restoration of project versions.
+- **Export Functionality**: Export products in multiple formats (PDF, DOCX, HTML, with plans for MD and ZIP).
+- **Community Platform**: Features for posts, comments, likes, and category-based filtering.
+- **AI Coach**: Interactive chat with an AI strategist providing guidance on product development and monetization.
+- **Auto-save System**: Ensures data persistence with debouncing, dirty flag tracking, and in-flight edit protection.
 
-The app will be available at http://localhost:5000
+### System Design Choices
+The project architecture emphasizes modularity with clear separation between client and server. The database schema is designed to support complex digital products, brand kits, projects, sections, assets, and versioning. Core tables include `users`, `brand_kits`, `projects`, `sections`, `assets`, `project_versions`, `community_posts`, `community_comments`, and `community_post_likes`. API routes are structured RESTfully, covering authentication, brand kits, projects, sections, assets, versions, and community interactions. Error handling is robust, providing user-friendly toast notifications for various issues.
 
-## Features Roadmap
-
-### Current Features
-- User authentication (Replit Auth)
-- Basic AI product generation
-- User dashboard
-
-### Planned Features (9-Phase Plan)
-- Brand kit management
-- Multi-format project creation
-- Rich text editing with TipTap
-- Drag-drop content organization
-- Multi-format exports (PDF, DOCX, MD, HTML, ZIP)
-- Asset management with Unsplash
-- Version control and history
-- Marketing asset generation
-- Collaboration tools
-
-## Known Limitations
-
-- Legacy product generator routes are temporary
-- Export features not yet implemented
-- Rich text editor pending integration
-- Version control UI not built
-- Marketing asset generation pending
-
-## Error Handling
-
-The application handles:
-- Authentication errors (401 Unauthorized)
-- AI quota exceeded errors (429 Rate Limit)
-- Invalid API key errors
-- Network failures
-- General server errors
-- Database constraint violations
-
-All errors display user-friendly toast notifications.
-
-## Migration Notes
-
-- Old `products` table renamed to `products_old`
-- New schema supports complex digital products
-- API routes updated to use `/api/projects` instead of `/api/products`
-- Legacy routes maintained for backwards compatibility
-- Storage layer completely refactored for new structure
+## External Dependencies
+- **AI**: OpenAI GPT-5
+- **Database**: PostgreSQL
+- **ORM**: Drizzle ORM
+- **Authentication**: Replit Auth (OpenID Connect)
+- **Rich Text Editor**: TipTap
+- **Drag & Drop**: @hello-pangea/dnd
+- **PDF Generation**: pdf-lib
+- **DOCX Generation**: docx.js
+- **Markdown Processing**: markdown-it
+- **ZIP Archiving**: jszip
+- **Image Assets**: Unsplash API
