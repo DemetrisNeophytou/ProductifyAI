@@ -165,6 +165,51 @@ export const insertProjectVersionSchema = createInsertSchema(projectVersions).om
   createdAt: true,
 });
 
+// Community Posts - User-generated community content
+export const communityPosts = pgTable("community_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 50 }).default("general"),
+  likesCount: integer("likes_count").default(0),
+  commentsCount: integer("comments_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Community Comments - Comments on posts
+export const communityComments = pgTable("community_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Community Post Likes - Track who liked what
+export const communityPostLikes = pgTable("community_post_likes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postId: varchar("post_id").notNull().references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
+  id: true,
+  likesCount: true,
+  commentsCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommunityCommentSchema = createInsertSchema(communityComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type BrandKit = typeof brandKits.$inferSelect;
 export type InsertBrandKit = z.infer<typeof insertBrandKitSchema>;
@@ -180,3 +225,11 @@ export type InsertAsset = z.infer<typeof insertAssetSchema>;
 
 export type ProjectVersion = typeof projectVersions.$inferSelect;
 export type InsertProjectVersion = z.infer<typeof insertProjectVersionSchema>;
+
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+
+export type CommunityComment = typeof communityComments.$inferSelect;
+export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
+
+export type CommunityPostLike = typeof communityPostLikes.$inferSelect;

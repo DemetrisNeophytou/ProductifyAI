@@ -6,6 +6,9 @@ import {
   sections,
   assets,
   projectVersions,
+  communityPosts,
+  communityComments,
+  communityPostLikes,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -18,9 +21,13 @@ import {
   type InsertAsset,
   type ProjectVersion,
   type InsertProjectVersion,
+  type CommunityPost,
+  type InsertCommunityPost,
+  type CommunityComment,
+  type InsertCommunityComment,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - Required for Replit Auth
@@ -60,6 +67,16 @@ export interface IStorage {
   createVersion(version: InsertProjectVersion): Promise<ProjectVersion>;
   getProjectVersions(projectId: string, limit?: number): Promise<ProjectVersion[]>;
   restoreVersion(versionId: string): Promise<Project>;
+  
+  // Community operations
+  getCommunityPosts(limit?: number, offset?: number): Promise<(CommunityPost & { user: User })[]>;
+  getCommunityPost(id: string): Promise<(CommunityPost & { user: User }) | undefined>;
+  createCommunityPost(post: InsertCommunityPost): Promise<CommunityPost>;
+  deleteCommunityPost(id: string): Promise<void>;
+  getPostComments(postId: string): Promise<(CommunityComment & { user: User })[]>;
+  createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment>;
+  incrementCommentCount(postId: string): Promise<void>;
+  togglePostLike(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -341,6 +358,140 @@ export class DatabaseStorage implements IStorage {
 
       return restored;
     });
+  }
+
+  // Community operations
+  async getCommunityPosts(limit: number = 50, offset: number = 0): Promise<(CommunityPost & { user: User })[]> {
+    return await db
+      .select({
+        id: communityPosts.id,
+        userId: communityPosts.userId,
+        title: communityPosts.title,
+        content: communityPosts.content,
+        category: communityPosts.category,
+        likesCount: communityPosts.likesCount,
+        commentsCount: communityPosts.commentsCount,
+        createdAt: communityPosts.createdAt,
+        updatedAt: communityPosts.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(communityPosts)
+      .leftJoin(users, eq(communityPosts.userId, users.id))
+      .orderBy(desc(communityPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getCommunityPost(id: string): Promise<(CommunityPost & { user: User }) | undefined> {
+    const [post] = await db
+      .select({
+        id: communityPosts.id,
+        userId: communityPosts.userId,
+        title: communityPosts.title,
+        content: communityPosts.content,
+        category: communityPosts.category,
+        likesCount: communityPosts.likesCount,
+        commentsCount: communityPosts.commentsCount,
+        createdAt: communityPosts.createdAt,
+        updatedAt: communityPosts.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(communityPosts)
+      .leftJoin(users, eq(communityPosts.userId, users.id))
+      .where(eq(communityPosts.id, id));
+    return post;
+  }
+
+  async createCommunityPost(postData: InsertCommunityPost): Promise<CommunityPost> {
+    const [post] = await db
+      .insert(communityPosts)
+      .values(postData)
+      .returning();
+    return post;
+  }
+
+  async deleteCommunityPost(id: string): Promise<void> {
+    await db.delete(communityPosts).where(eq(communityPosts.id, id));
+  }
+
+  async getPostComments(postId: string): Promise<(CommunityComment & { user: User })[]> {
+    return await db
+      .select({
+        id: communityComments.id,
+        postId: communityComments.postId,
+        userId: communityComments.userId,
+        content: communityComments.content,
+        createdAt: communityComments.createdAt,
+        updatedAt: communityComments.updatedAt,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(communityComments)
+      .leftJoin(users, eq(communityComments.userId, users.id))
+      .where(eq(communityComments.postId, postId))
+      .orderBy(communityComments.createdAt);
+  }
+
+  async createCommunityComment(commentData: InsertCommunityComment): Promise<CommunityComment> {
+    const [comment] = await db
+      .insert(communityComments)
+      .values(commentData)
+      .returning();
+    return comment;
+  }
+
+  async incrementCommentCount(postId: string): Promise<void> {
+    await db
+      .update(communityPosts)
+      .set({
+        commentsCount: sql`${communityPosts.commentsCount} + 1`,
+      })
+      .where(eq(communityPosts.id, postId));
+  }
+
+  async togglePostLike(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const [existingLike] = await db
+      .select()
+      .from(communityPostLikes)
+      .where(and(eq(communityPostLikes.postId, postId), eq(communityPostLikes.userId, userId)));
+
+    if (existingLike) {
+      await db.delete(communityPostLikes).where(eq(communityPostLikes.id, existingLike.id));
+      await db
+        .update(communityPosts)
+        .set({
+          likesCount: sql`${communityPosts.likesCount} - 1`,
+        })
+        .where(eq(communityPosts.id, postId));
+
+      const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      return { liked: false, likesCount: post?.likesCount || 0 };
+    } else {
+      await db.insert(communityPostLikes).values({ postId, userId });
+      await db
+        .update(communityPosts)
+        .set({
+          likesCount: sql`${communityPosts.likesCount} + 1`,
+        })
+        .where(eq(communityPosts.id, postId));
+
+      const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
+      return { liked: true, likesCount: post?.likesCount || 0 };
+    }
   }
 }
 

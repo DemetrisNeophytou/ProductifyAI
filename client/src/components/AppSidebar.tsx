@@ -1,4 +1,4 @@
-import { Home, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown } from "lucide-react";
+import { Home, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,11 @@ const menuItems = [
     title: "AI Coach",
     url: "/ai-coach",
     icon: MessageCircle,
+  },
+  {
+    title: "Community",
+    url: "/community",
+    icon: Users,
   },
   {
     title: "Brand Kit",

@@ -22,6 +22,7 @@ import BrandKit from "@/pages/BrandKit";
 import Assets from "@/pages/Assets";
 import AICoach from "@/pages/AICoach";
 import Pricing from "@/pages/Pricing";
+import Community from "@/pages/Community";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -111,6 +112,11 @@ function Router() {
           <Route path="/ai-coach">
             <DashboardLayout>
               <AICoach />
+            </DashboardLayout>
+          </Route>
+          <Route path="/community">
+            <DashboardLayout>
+              <Community />
             </DashboardLayout>
           </Route>
           <Route path="/pricing">
