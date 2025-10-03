@@ -16,6 +16,19 @@ Productify AI is a fullstack platform that allows users to:
 ## Recent Changes
 
 **October 3, 2025**
+- **"Digital Product Creator 2.0" AI Integration**: Upgraded OpenAI system prompt to act as elite product strategist
+  - AI now positioned as 20+ year expert in digital products and monetization
+  - Strategic focus on $100k+/year revenue goals
+  - Provides actionable guidance on audience, positioning, pricing, upsells, and funnels
+  - Premium, confidence-building tone in all generations
+  - Creativity control properly mapped to temperature (0-1 → 0-2)
+  - Comprehensive logging for debugging
+  - Production-ready and architect-approved
+- **Phase 6 Complete: Asset Library System**
+  - Asset listing, search, and delete functionality
+  - Production-ready Unsplash integration with comprehensive security hardening
+  - Reusable AssetPicker component for use throughout the app
+  - SSRF protection with strict domain allowlisting
 - **Phase 1 Infrastructure Complete**: Migrated from simple product generator to full Productify AI platform
 - **Database Schema Update**: Implemented comprehensive schema with 6 new tables:
   - `brand_kits`: Store user brand identity (logo, colors, fonts, tone of voice)
