@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateProduct } from "./openai";
+import { generateProduct, chatWithCoach } from "./openai";
 import {
   insertBrandKitSchema,
   insertProjectSchema,
@@ -131,6 +131,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: "Failed to generate product. Please try again." });
+    }
+  });
+
+  app.post("/api/chat", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { message } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const response = await chatWithCoach(message);
+
+      res.json({
+        message: response,
+      });
+    } catch (error: any) {
+      console.error("Error in AI chat:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded. Please add credits to your OpenAI account or contact support.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("INVALID_API_KEY")) {
+        return res.status(500).json({ 
+          message: "AI service is temporarily unavailable. Please contact support.",
+          code: "INVALID_API_KEY"
+        });
+      }
+      
+      if (error?.message?.startsWith("AI_CHAT_ERROR")) {
+        return res.status(500).json({ 
+          message: error.message.replace("AI_CHAT_ERROR: ", ""),
+          code: "AI_ERROR"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to get AI response. Please try again." });
     }
   });
 
