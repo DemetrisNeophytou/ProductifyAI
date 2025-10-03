@@ -245,6 +245,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const projectData = insertProjectSchema.parse({ ...req.body, userId });
       const project = await storage.createProject(projectData);
+      
+      // If a template is selected, create sections from template
+      if (req.body.templateId) {
+        const { PRODUCT_TEMPLATES } = await import('@shared/templates');
+        const template = PRODUCT_TEMPLATES.find(t => t.id === req.body.templateId);
+        if (template) {
+          for (const section of template.sections) {
+            await storage.createSection({
+              projectId: project.id,
+              type: section.type,
+              title: section.title,
+              content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '' }] }] },
+              order: section.order,
+            });
+          }
+        }
+      }
+      
       res.json(project);
     } catch (error) {
       console.error("Error creating project:", error);
