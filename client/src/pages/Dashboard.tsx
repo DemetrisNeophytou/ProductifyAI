@@ -1,15 +1,16 @@
 import { useEffect } from "react";
 import { StatsCard } from "@/components/StatsCard";
-import { ProductCard } from "@/components/ProductCard";
-import { Sparkles, Download, HardDrive } from "lucide-react";
+import { Sparkles, Download, HardDrive, Plus, FileText, BookOpen, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import type { Product } from "@shared/schema";
+import type { Project } from "@shared/schema";
 
 export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -29,21 +30,21 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, toast]);
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
     enabled: isAuthenticated,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/products/${id}`);
+      await apiRequest("DELETE", `/api/projects/${id}`);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Product deleted successfully.",
+        description: "Project deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -59,13 +60,35 @@ export default function Dashboard() {
       }
       toast({
         title: "Error",
-        description: "Failed to delete product.",
+        description: "Failed to delete project.",
         variant: "destructive",
       });
     },
   });
 
-  const recentProducts = products.slice(0, 3);
+  const getProjectIcon = (type: string) => {
+    switch(type) {
+      case 'ebook': return BookOpen;
+      case 'course': return FileText;
+      case 'checklist': return ListChecks;
+      case 'template': return FileText;
+      case 'lead_magnet': return Sparkles;
+      default: return FileText;
+    }
+  };
+
+  const getProjectTypeLabel = (type: string) => {
+    switch(type) {
+      case 'ebook': return 'eBook';
+      case 'course': return 'Course';
+      case 'checklist': return 'Checklist';
+      case 'template': return 'Template';
+      case 'lead_magnet': return 'Lead Magnet';
+      default: return type;
+    }
+  };
+
+  const recentProjects = projects.slice(0, 6);
 
   if (authLoading || !isAuthenticated) {
     return (
@@ -80,12 +103,12 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold mb-2">Welcome back!</h1>
-          <p className="text-muted-foreground">Here's what's happening with your products today</p>
+          <p className="text-muted-foreground">Create amazing digital products with AI</p>
         </div>
-        <Link href="/create">
+        <Link href="/projects/new">
           <Button data-testid="button-create-new">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Create New Product
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
           </Button>
         </Link>
       </div>
@@ -93,12 +116,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard
           icon={Sparkles}
-          label="Products Created"
-          value={products.length}
+          label="Projects Created"
+          value={projects.length}
         />
         <StatsCard
           icon={Download}
-          label="Total Downloads"
+          label="Total Exports"
           value="0"
         />
         <StatsCard
@@ -110,46 +133,45 @@ export default function Dashboard() {
 
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold">Recent Products</h2>
-          <Link href="/products">
-            <a className="text-sm text-primary hover:underline" data-testid="link-view-all">
-              View all
-            </a>
-          </Link>
+          <h2 className="text-2xl font-semibold">Your Projects</h2>
         </div>
         {isLoading ? (
-          <p className="text-muted-foreground">Loading products...</p>
-        ) : recentProducts.length === 0 ? (
+          <p className="text-muted-foreground">Loading projects...</p>
+        ) : recentProjects.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No products yet. Create your first one!</p>
-            <Link href="/create">
+            <p className="text-muted-foreground mb-4">No projects yet. Create your first one!</p>
+            <Link href="/projects/new">
               <Button>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Create Product
+                <Plus className="h-4 w-4 mr-2" />
+                Create Project
               </Button>
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                title={product.title}
-                type={product.type}
-                createdAt={new Date(product.createdAt!)}
-                onEdit={() => console.log("Edit", product.id)}
-                onDownload={() => {
-                  const blob = new Blob([product.content], { type: 'text/plain' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${product.title}.txt`;
-                  a.click();
-                }}
-                onDelete={() => deleteMutation.mutate(product.id)}
-              />
-            ))}
+            {recentProjects.map((project) => {
+              const Icon = getProjectIcon(project.type);
+              return (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <Card className="hover-elevate cursor-pointer" data-testid={`card-project-${project.id}`}>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-base font-semibold line-clamp-1">{project.title}</CardTitle>
+                      <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="secondary" data-testid={`badge-type-${project.type}`}>
+                          {getProjectTypeLabel(project.type)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(project.createdAt!).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
