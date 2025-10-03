@@ -1,4 +1,4 @@
-import { Home, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle } from "lucide-react";
+import { Home, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +40,11 @@ const menuItems = [
     title: "Create Product",
     url: "/create",
     icon: Sparkles,
+  },
+  {
+    title: "Upgrade",
+    url: "/pricing",
+    icon: Crown,
   },
   {
     title: "Settings",

@@ -1,0 +1,284 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Check, Zap, Crown, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { loadStripe } from '@stripe/stripe-js';
+import { apiRequest } from "@/lib/queryClient";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+interface SubscriptionStatus {
+  hasAccess: boolean;
+  canCreateProject: boolean;
+  canUseAI: boolean;
+  projectsUsed: number;
+  projectsLimit: number;
+  aiTokensUsed: number;
+  aiTokensLimit: number;
+  tier: string;
+}
+
+export default function Pricing() {
+  const { toast } = useToast();
+
+  const { data: subscriptionStatus, isLoading } = useQuery<SubscriptionStatus>({
+    queryKey: ['/api/subscription/status'],
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: async ({ priceId, tier }: { priceId: string; tier: string }) => {
+      const response = await fetch('/api/subscription/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priceId, tier }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create checkout session');
+      }
+
+      return response.json();
+    },
+    onSuccess: async (data: any) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Checkout Failed",
+        description: error.message || "Failed to start checkout",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubscribe = (priceId: string, tier: 'plus' | 'pro') => {
+    checkoutMutation.mutate({ priceId, tier });
+  };
+
+  const formatLimit = (limit: number) => {
+    return limit === -1 ? 'Unlimited' : limit.toString();
+  };
+
+  const getDaysRemaining = () => {
+    return 3;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loading-spinner" />
+      </div>
+    );
+  }
+
+  const isOnTrial = subscriptionStatus?.tier === 'trial';
+
+  return (
+    <div className="container max-w-6xl mx-auto px-4 py-12">
+      {isOnTrial && (
+        <div className="text-center mb-12">
+          <Badge variant="secondary" className="mb-4" data-testid="badge-trial">
+            {getDaysRemaining()}-Day Free Trial Active
+          </Badge>
+          <h1 className="text-4xl font-bold mb-4" data-testid="heading-trial">
+            Welcome to Productify AI
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-trial-message">
+            You're currently on a 3-day free trial with full access. 
+            After your trial ends, choose a plan below to continue creating amazing digital products.
+          </p>
+        </div>
+      )}
+
+      {!isOnTrial && subscriptionStatus?.tier && (
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
+            Choose Your Plan
+          </h1>
+          <p className="text-lg text-muted-foreground" data-testid="text-current-plan">
+            Current plan: <strong className="text-foreground capitalize">{subscriptionStatus.tier}</strong>
+          </p>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <Card className="relative" data-testid="card-plan-plus">
+          <CardHeader>
+            <div className="flex items-center justify-between mb-2">
+              <Zap className="h-8 w-8 text-primary" />
+              <Badge variant="secondary" data-testid="badge-popular">Popular</Badge>
+            </div>
+            <CardTitle className="text-3xl" data-testid="heading-plus-title">Productify AI Plus</CardTitle>
+            <CardDescription data-testid="text-plus-description">
+              High-value tools for serious creators
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <div className="text-4xl font-bold mb-2" data-testid="text-plus-price">
+                Starting at $29/mo
+              </div>
+              <p className="text-sm text-muted-foreground" data-testid="text-plus-billing">
+                Billed monthly or quarterly
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3" data-testid="feature-plus-outlines">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>AI-powered outlines</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-plus-chapters">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Chapter writing & expansion</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-plus-export">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>PDF/DOCX export with branding</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-plus-projects">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Up to {formatLimit(10)} projects</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-plus-tokens">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>{formatLimit(20000)} AI tokens/month</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4">
+              <Button 
+                className="w-full" 
+                size="lg"
+                disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('price_PLUS_MONTHLY', 'plus')}
+                data-testid="button-plus-monthly"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Start with Monthly ($29/mo)'
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('price_PLUS_QUARTERLY', 'plus')}
+                data-testid="button-plus-quarterly"
+              >
+                Or choose Quarterly (save 15%)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="relative border-primary" data-testid="card-plan-pro">
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+            <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
+              <Crown className="h-3 w-3 mr-1" />
+              Best Value
+            </Badge>
+          </div>
+          <CardHeader>
+            <div className="flex items-center justify-between mb-2">
+              <Crown className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-3xl" data-testid="heading-pro-title">Productify AI Pro</CardTitle>
+            <CardDescription data-testid="text-pro-description">
+              Advanced features for power users
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <div className="text-4xl font-bold mb-2" data-testid="text-pro-price">
+                Starting at $79/mo
+              </div>
+              <p className="text-sm text-muted-foreground" data-testid="text-pro-billing">
+                Billed monthly or quarterly
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3" data-testid="feature-pro-everything">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="font-semibold">Everything in Plus, plus:</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-pricing">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Pricing strategy templates</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-funnels">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Sales funnel builder</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-launch">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Launch plan generator</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-templates">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Premium templates</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-projects">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Unlimited projects</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-tokens">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Unlimited AI tokens</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-support">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Priority support</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4">
+              <Button 
+                className="w-full" 
+                size="lg"
+                disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('price_PRO_MONTHLY', 'pro')}
+                data-testid="button-pro-monthly"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Start with Monthly ($79/mo)'
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('price_PRO_QUARTERLY', 'pro')}
+                data-testid="button-pro-quarterly"
+              >
+                Or choose Quarterly (save 15%)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="text-center text-sm text-muted-foreground" data-testid="text-cancel-anytime">
+        <p>Cancel anytime. No questions asked.</p>
+        <p className="mt-2">All plans include a 30-day money-back guarantee.</p>
+      </div>
+    </div>
+  );
+}
