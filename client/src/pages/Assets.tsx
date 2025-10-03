@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,29 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Upload, Search, Trash2, Image as ImageIcon, FileText, Video, Music } from "lucide-react";
+import { Upload, Search, Trash2, Image as ImageIcon, FileText, Video, Music, Download, ExternalLink } from "lucide-react";
 import type { Asset } from "@shared/schema";
+
+interface UnsplashPhoto {
+  id: string;
+  urls: {
+    regular: string;
+    small: string;
+    thumb: string;
+  };
+  width: number;
+  height: number;
+  user: {
+    name: string;
+    links: {
+      html: string;
+    };
+  };
+  links: {
+    download_location: string;
+  };
+  alt_description?: string;
+}
 
 const getAssetIcon = (type: string) => {
   switch (type) {
@@ -42,9 +64,23 @@ export default function Assets() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [unsplashQuery, setUnsplashQuery] = useState("");
+  const [unsplashSearchQuery, setUnsplashSearchQuery] = useState("");
 
   const { data: assets = [], isLoading } = useQuery<Asset[]>({
     queryKey: ["/api/assets"],
+  });
+
+  const { data: unsplashResults, isLoading: isSearchingUnsplash } = useQuery({
+    queryKey: ["/api/unsplash/search", unsplashSearchQuery],
+    enabled: !!unsplashSearchQuery,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/unsplash/search?query=${encodeURIComponent(unsplashSearchQuery)}&per_page=12`
+      );
+      if (!response.ok) throw new Error("Failed to search Unsplash");
+      return response.json();
+    },
   });
 
   const deleteMutation = useMutation({
@@ -66,6 +102,42 @@ export default function Assets() {
       });
     },
   });
+
+  const importUnsplashMutation = useMutation({
+    mutationFn: async (photo: UnsplashPhoto) => {
+      const response = await apiRequest("POST", "/api/unsplash/import", {
+        unsplashId: photo.id,
+        url: photo.urls.regular,
+        width: photo.width,
+        height: photo.height,
+        photographer: photo.user.name,
+        photographerUrl: photo.user.links.html,
+        download_location: photo.links.download_location,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      toast({
+        title: "Image imported",
+        description: "The Unsplash image has been added to your library.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to import image. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUnsplashSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (unsplashQuery.trim()) {
+      setUnsplashSearchQuery(unsplashQuery.trim());
+    }
+  };
 
   const filteredAssets = assets.filter(
     (asset) =>
@@ -92,27 +164,109 @@ export default function Assets() {
         </div>
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-upload-asset">
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Asset
+            <Button data-testid="button-add-asset">
+              <ImageIcon className="mr-2 h-4 w-4" />
+              Add Asset
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Upload Asset</DialogTitle>
+              <DialogTitle>Add Asset</DialogTitle>
               <DialogDescription>
-                File upload functionality will be implemented with drag-and-drop support.
+                Upload your own files or search for stock images from Unsplash
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="border-2 border-dashed rounded-lg p-12 text-center">
-                <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Drag and drop files here, or click to browse
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">(Coming soon in this phase)</p>
-              </div>
-            </div>
+            <Tabs defaultValue="unsplash" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="unsplash" data-testid="tab-unsplash">
+                  Unsplash Stock Images
+                </TabsTrigger>
+                <TabsTrigger value="upload" data-testid="tab-upload">
+                  Upload File
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="unsplash" className="space-y-4 mt-4">
+                <form onSubmit={handleUnsplashSearch} className="flex gap-2">
+                  <Input
+                    placeholder="Search for images (e.g., 'workspace', 'nature', 'technology')"
+                    value={unsplashQuery}
+                    onChange={(e) => setUnsplashQuery(e.target.value)}
+                    data-testid="input-unsplash-search"
+                  />
+                  <Button type="submit" data-testid="button-search-unsplash">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </form>
+
+                {isSearchingUnsplash && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Searching Unsplash...
+                  </div>
+                )}
+
+                {unsplashResults && unsplashResults.results && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {unsplashResults.results.map((photo: UnsplashPhoto) => (
+                      <div key={photo.id} className="group relative aspect-video rounded-lg overflow-hidden bg-muted">
+                        <img
+                          src={photo.urls.small}
+                          alt={photo.alt_description || "Unsplash image"}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 p-2">
+                          <Button
+                            size="sm"
+                            onClick={() => importUnsplashMutation.mutate(photo)}
+                            disabled={importUnsplashMutation.isPending}
+                            data-testid={`button-import-${photo.id}`}
+                          >
+                            <Download className="mr-2 h-3 w-3" />
+                            Import
+                          </Button>
+                          <a
+                            href={photo.user.links.html}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-white mt-2 flex items-center gap-1 hover:underline"
+                          >
+                            by {photo.user.name}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {unsplashResults && unsplashResults.results?.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    No images found. Try a different search term.
+                  </div>
+                )}
+
+                {!unsplashSearchQuery && !isSearchingUnsplash && (
+                  <div className="text-center py-12 space-y-2">
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Search for high-quality stock images from Unsplash
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="upload" className="space-y-4 mt-4">
+                <div className="border-2 border-dashed rounded-lg p-12 text-center">
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop files here, or click to browse
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    (File upload with Replit Object Storage coming soon)
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>
