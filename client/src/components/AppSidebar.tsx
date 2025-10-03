@@ -86,11 +86,12 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link href={item.url}>
-                      <a data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
+                    <Link 
+                      href={item.url}
+                      data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
