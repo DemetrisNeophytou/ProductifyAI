@@ -88,11 +88,13 @@ export default function Pricing() {
             {getDaysRemaining()}-Day Free Trial Active
           </Badge>
           <h1 className="text-4xl font-bold mb-4" data-testid="heading-trial">
-            Welcome to Productify AI
+            Build Your €100k+ Digital Product Business
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-trial-message">
-            You're currently on a 3-day free trial with full access. 
-            After your trial ends, choose a plan below to continue creating amazing digital products.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4" data-testid="text-trial-message">
+            You're on a 3-day trial with full access. No credit card required.
+          </p>
+          <p className="text-base text-muted-foreground max-w-2xl mx-auto" data-testid="text-trial-subtitle">
+            <strong className="text-foreground">You don't need to be an expert.</strong> Our AI Monetization Coach guides you step-by-step to create and sell digital products that generate €100,000+ per year.
           </p>
         </div>
       )}
@@ -115,37 +117,41 @@ export default function Pricing() {
               <Zap className="h-8 w-8 text-primary" />
               <Badge variant="secondary" data-testid="badge-popular">Popular</Badge>
             </div>
-            <CardTitle className="text-3xl" data-testid="heading-plus-title">Productify AI Plus</CardTitle>
+            <CardTitle className="text-3xl" data-testid="heading-plus-title">Plus</CardTitle>
             <CardDescription data-testid="text-plus-description">
-              High-value tools for serious creators
+              Essential tools to create & sell your first products
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <div className="text-4xl font-bold mb-2" data-testid="text-plus-price">
-                Starting at $29/mo
+                €24.99<span className="text-lg font-normal text-muted-foreground">/month</span>
               </div>
               <p className="text-sm text-muted-foreground" data-testid="text-plus-billing">
-                Billed monthly or quarterly
+                Everything you need to launch products that sell
               </p>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-start gap-3" data-testid="feature-plus-outlines">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>AI-powered outlines</span>
+                <span>AI-powered product outlines</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-chapters">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Chapter writing & expansion</span>
+                <span>Full chapter & lesson writing</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-export">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>PDF/DOCX export with branding</span>
+                <span>Professional PDF/DOCX exports</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-plus-strategies">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Basic monetization strategies</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-projects">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Up to {formatLimit(10)} projects</span>
+                <span>Up to {formatLimit(10)} products</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-tokens">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -167,17 +173,8 @@ export default function Pricing() {
                     Processing...
                   </>
                 ) : (
-                  'Start with Monthly ($29/mo)'
+                  'Get Started - €24.99/month'
                 )}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_PLUS_QUARTERLY', 'plus')}
-                data-testid="button-plus-quarterly"
-              >
-                Or choose Quarterly (save 15%)
               </Button>
             </div>
           </CardContent>
@@ -194,18 +191,18 @@ export default function Pricing() {
             <div className="flex items-center justify-between mb-2">
               <Crown className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl" data-testid="heading-pro-title">Productify AI Pro</CardTitle>
+            <CardTitle className="text-3xl" data-testid="heading-pro-title">Pro</CardTitle>
             <CardDescription data-testid="text-pro-description">
-              Advanced features for power users
+              Scale to €100k+ with advanced strategies
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
               <div className="text-4xl font-bold mb-2" data-testid="text-pro-price">
-                Starting at $79/mo
+                €59.99<span className="text-lg font-normal text-muted-foreground">/3 months</span>
               </div>
-              <p className="text-sm text-muted-foreground" data-testid="text-pro-billing">
-                Billed monthly or quarterly
+              <p className="text-sm text-muted-foreground" data-testid="text-plus-billing">
+                Save 20% • Only €19.99/month
               </p>
             </div>
 
@@ -216,31 +213,31 @@ export default function Pricing() {
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-pricing">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Pricing strategy templates</span>
+                <span>Advanced pricing strategies (€47-€497 products)</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-funnels">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Sales funnel builder</span>
+                <span>Sales funnel templates & automation</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-launch">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Launch plan generator</span>
+                <span>30-day launch plans (€10k-50k+ goals)</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-templates">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Premium templates</span>
+                <span>Premium revenue-optimized templates</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-projects">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Unlimited projects</span>
+                <span>Unlimited products</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-tokens">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Unlimited AI tokens</span>
+                <span>Unlimited AI content generation</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-support">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Priority support</span>
+                <span>Priority support & €100k+ coaching</span>
               </div>
             </div>
 
@@ -249,8 +246,8 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_PRO_MONTHLY', 'pro')}
-                data-testid="button-pro-monthly"
+                onClick={() => handleSubscribe('price_PRO_QUARTERLY', 'pro')}
+                data-testid="button-pro-quarterly"
               >
                 {checkoutMutation.isPending ? (
                   <>
@@ -258,17 +255,8 @@ export default function Pricing() {
                     Processing...
                   </>
                 ) : (
-                  'Start with Monthly ($79/mo)'
+                  'Get Started - €59.99/3 months'
                 )}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_PRO_QUARTERLY', 'pro')}
-                data-testid="button-pro-quarterly"
-              >
-                Or choose Quarterly (save 15%)
               </Button>
             </div>
           </CardContent>
