@@ -1,0 +1,93 @@
+I am building a Monetize-style app on Replit, but it must go further:
+
+It needs to have a specialized AI inside, just like “Digital Product Creator 2.0”, which is 100% focused on helping creators build, launch and scale digital products (ebooks, courses, memberships, templates).
+
+
+
+The AI should act as a Digital Product Strategist — not just generate text. It must:
+
+
+
+Give users strategic guidance (audience, positioning, pricing, upsells, launch plans).
+Generate ready-to-use materials (outlines, chapters, sales copy, emails, launch calendars).
+Help them design and brand their products inside the app.
+Be able to expand/improve their content on demand.
+Export everything cleanly to PDF/HTML inside the app.
+
+
+
+
+End Goal: Users can create a full digital product and launch plan inside the app without leaving it — so they can realistically make $100k+/year from digital products.
+
+
+
+
+
+
+
+
+
+REQUIRED FEATURES:
+
+
+
+
+
+AI Core Features (OpenAI):
+Endpoints:
+/api/generate-outline → Title options, chapters, hooks, bonuses.
+/api/write-chapter → Chapter content in Markdown with hook, context, steps, examples, recap.
+/api/expand → Expands/improves user text.
+
+Model: gpt-4o-mini or similar.
+Limit to ~1200 tokens per request for efficiency.
+
+Dashboard & Editor:
+Dashboard: Projects, Brand Kit, Templates, Billing.
+Wizard: (1) Choose product type (ebook/course) (2) Input Audience + Big Promise (3) Generate Outline.
+Editor Tabs:
+Content: see chapters, buttons to write/expand content.
+Design: Brand Kit (colors, fonts).
+Export: Export to PDF.
+
+
+Export to PDF:
+Beautiful A4 PDF with cover page (title, subtitle, author, brand colors).
+Use Playwright or html2pdf.js for fast export.
+
+Pricing & Stripe (test mode):
+Pricing tiers: Starter €29/mo, Pro €79/mo, Studio €199/mo.
+Stripe Checkout in test mode.
+Billing page with “Manage Billing” (Stripe portal).
+
+Keep it focused:
+DO NOT add Unsplash, stock images or unrelated integrations.
+DO NOT overcomplicate with extra features.
+Deliver exactly the above features, stable and working.
+
+
+
+
+
+
+
+
+
+
+
+SUCCESS CRITERIA:
+
+
+
+
+
+From the dashboard, I can:
+Create a new ebook/course.
+Generate outline, write chapters, expand/improve content.
+Customize brand kit.
+Export the whole product as a PDF.
+Subscribe to a plan with Stripe test mode.
+
+The AI feels specialized and strategic, not generic text generation.
+
+“This app must replicate the experience of a dedicated Digital Product Strategist AI like ‘Digital Product Creator 2.0’. Focus on strategic guidance + ready-made assets, not generic content.”

@@ -495,6 +495,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unsplash integration routes
+  app.get("/api/unsplash/search", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const { query, page = "1", per_page = "12" } = req.query;
+      
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+      if (!accessKey) {
+        return res.status(500).json({ message: "Unsplash API key not configured" });
+      }
+
+      const searchUrl = new URL("https://api.unsplash.com/search/photos");
+      searchUrl.searchParams.set("query", query);
+      searchUrl.searchParams.set("page", page.toString());
+      searchUrl.searchParams.set("per_page", per_page.toString());
+
+      const response = await fetch(searchUrl.toString(), {
+        headers: {
+          Authorization: `Client-ID ${accessKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Unsplash API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error searching Unsplash:", error);
+      res.status(500).json({ message: "Failed to search Unsplash" });
+    }
+  });
+
+  app.post("/api/unsplash/import", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Validate request body
+      const { z } = await import("zod");
+      const unsplashImportSchema = z.object({
+        unsplashId: z.string().min(1),
+        url: z.string().url(),
+        width: z.number().positive().int().or(z.string().transform((v) => {
+          const num = Number(v);
+          if (!Number.isFinite(num) || num <= 0 || !Number.isInteger(num)) {
+            throw new Error('Width must be a positive integer');
+          }
+          return num;
+        })),
+        height: z.number().positive().int().or(z.string().transform((v) => {
+          const num = Number(v);
+          if (!Number.isFinite(num) || num <= 0 || !Number.isInteger(num)) {
+            throw new Error('Height must be a positive integer');
+          }
+          return num;
+        })),
+        photographer: z.string(),
+        photographerUrl: z.string().url(),
+        download_location: z.string().url().optional(),
+      });
+
+      const validation = unsplashImportSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid request data", errors: validation.error.errors });
+      }
+
+      const { unsplashId, url, width, height, photographer, photographerUrl, download_location } = validation.data;
+
+      // Strict URL validation helper (prevent SSRF)
+      const isValidUnsplashHostname = (hostname: string): boolean => {
+        return hostname === 'unsplash.com' || hostname.endsWith('.unsplash.com');
+      };
+      
+      // Validate image URL
+      const imageUrl = new URL(url);
+      if (imageUrl.protocol !== 'https:' || !isValidUnsplashHostname(imageUrl.hostname)) {
+        return res.status(400).json({ message: "Invalid image URL - must be HTTPS from Unsplash" });
+      }
+
+      // Validate photographer URL (prevent SSRF via metadata)
+      const photographerUrlParsed = new URL(photographerUrl);
+      if (photographerUrlParsed.protocol !== 'https:' || !isValidUnsplashHostname(photographerUrlParsed.hostname)) {
+        return res.status(400).json({ message: "Invalid photographer URL - must be HTTPS from Unsplash" });
+      }
+
+      // Trigger download endpoint (required by Unsplash API guidelines)
+      // Only if download_location is provided and is from Unsplash API domain
+      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+      if (accessKey && download_location) {
+        try {
+          const downloadUrl = new URL(download_location);
+          // Strict validation: must be HTTPS from Unsplash domain (exact or subdomain)
+          if (downloadUrl.protocol !== 'https:' || !isValidUnsplashHostname(downloadUrl.hostname)) {
+            console.warn("Invalid download_location - must be HTTPS from Unsplash API, skipping trigger");
+          } else {
+            const downloadResponse = await fetch(download_location, {
+              headers: {
+                Authorization: `Client-ID ${accessKey}`,
+              },
+            });
+            if (!downloadResponse.ok) {
+              console.error("Failed to trigger Unsplash download:", downloadResponse.statusText);
+              // Log but don't fail the import - Unsplash download trigger is best-effort
+            }
+          }
+        } catch (err) {
+          console.error("Failed to trigger Unsplash download:", err);
+          // Log but don't fail the import
+        }
+      }
+
+      // Create asset record
+      const asset = await storage.createAsset({
+        userId,
+        projectId: null,
+        type: "image",
+        url,
+        filename: `unsplash-${unsplashId}.jpg`,
+        metadata: {
+          size: 0,
+          mimeType: "image/jpeg",
+          width: Number(width),
+          height: Number(height),
+          unsplash: {
+            id: unsplashId,
+            photographer,
+            photographerUrl,
+          },
+        } as any,
+      });
+
+      res.json(asset);
+    } catch (error) {
+      console.error("Error importing Unsplash image:", error);
+      res.status(500).json({ message: "Failed to import image" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
