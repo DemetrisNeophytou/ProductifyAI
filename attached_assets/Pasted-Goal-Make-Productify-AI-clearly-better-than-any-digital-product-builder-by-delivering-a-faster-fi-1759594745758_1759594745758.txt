@@ -1,0 +1,171 @@
+Goal: Make Productify AI clearly better than any “digital product builder” by delivering a faster first win, richer templates, frictionless checkout, visible results, and role-based AI that feels like a team.
+Important: In all user-facing copy/UI do not reference competitors or specific creators. Internally we can take inspiration, but the brand voice must be 100% ours.
+
+0) Non-negotiables (keep existing app safe)
+	•	Use feature flags for every new module (flags.ts): onboardingV2, templateVault, missionControl, revenueCounter, paymentsV2, aiAgentsGrid, quickActions, seoOneClick, imageGen, costCalc.
+	•	No breaking changes: wrap new endpoints under /api/v2/*.
+	•	Model config: read from env OPENAI_MODEL (default to our current model). Never hard-code.
+	•	Cost control: add MAX_TOKENS, RESPONSE_MODE=fast|quality, request logging + per-user rate limits.
+	•	Copy guideline: never mention other platforms/people in UI.
+
+⸻
+
+1) Interactive Onboarding (first win ≤90 seconds)
+
+Why: Dramatically reduce drop-off; users must feel progress instantly.
+Flow (4 steps, single page wizard):
+	1.	“What do you want to create?” → eBook | Mini-Course | Template Pack | Playbook | Newsletter
+	2.	AI returns 3 validated ideas with scores (Pain, Money, Speed, Access).
+	3.	User picks one → AI generates Offer Snapshot (title, promise, 3 bullets, 3-tier pricing, revenue math).
+	4.	One-click Create Project → lands in editor with draft outline + cover.
+
+Deliverables
+	•	components/onboarding/CreatorWizard.tsx
+	•	POST /api/v2/ai/validate-idea
+	•	POST /api/v2/ai/generate-offer
+
+Acceptance
+	•	From fresh account to ready draft in ≤90s on mid phone.
+	•	Progress bar + confetti “First win unlocked”.
+
+⸻
+
+2) Template Vault (ship fast)
+
+Why: Users convert when they feel 80–90% done.
+Categories (minimum at launch):
+	•	eBook (10 layouts)
+	•	Mini-Course (5 outlines)
+	•	Sales Page (15 sections)
+	•	Email Sequences (welcome, launch x5, nurture; 20 total)
+	•	Lead-magnet (checklists, swipe files; 10)
+
+One-click actions
+	•	“Use this template” → pre-fills editor.
+	•	“AI Polish Copy”, “AI Generate Images”, “AI SEO Optimize”, “AI Add Upsells”.
+
+Deliverables
+	•	modules/templates/* JSON schema with metadata (use-cases, length, tone).
+	•	POST /api/v2/ai/enhance with mode: 'polish'|'images'|'seo'|'upsells'.
+
+Acceptance
+	•	Library searchable by niche/result.
+	•	Any template → usable draft in <3s.
+
+⸻
+
+3) AI Agents Grid (role-based, not generic chat)
+
+Why: Feels like a team; lowers intimidation.
+Cards (minimum 7):
+	•	Idea Finder 💡
+	•	Offer Crafter 💰
+	•	Content Writer ✍️
+	•	Launch Manager 🚀
+	•	Funnel Planner 🎯
+	•	AI Coach 🧠
+	•	Analytics Agent 📈
+
+Each card opens a guided panel (left inputs, right AI output with smart defaults).
+System prompts live in /prompts/<agent>.md (concise, with do/don’t + JSON output schema).
+
+Acceptance
+	•	Each agent returns structured JSON + a copy/paste block.
+	•	No raw “AI rambling”; outputs are clean sections (headlines, bullets, CTAs, etc.).
+
+⸻
+
+4) “Mission Control” Dashboard
+
+Why: Clarity → momentum.
+Widgets:
+	•	Revenue Counter (dummy until we connect payments; explain privacy).
+	•	Quick Actions: Generate New Product (30s), Clone Best Seller, Launch Promo.
+	•	Progress Tracker with micro-wins & badges.
+	•	Cost-Savings Calculator (“All-in-one vs piecemeal tools” — generic, no brand names).
+
+Deliverables
+	•	pages/dashboard.tsx (mobile-first), modules/calc/cost.ts.
+
+Acceptance
+	•	Initial data loads <1s (use skeletons/cache).
+	•	Badges awarded on first draft, first publish, first checkout connect, first sale.
+
+⸻
+
+5) Payments & Checkout (frictionless)
+
+Why: Money in = product is real.
+Phase A (now): Stripe)
+	•	One-click Connect with Stripe (Standard).
+	•	Multi-currency (€, $, £).
+	•	Taxes: enable Stripe Tax if available; otherwise simple VAT note.
+	•	Checkout links generator per product.
+
+Phase B (later flag): Merchant-of-Record integration
+	•	If we integrate a MoR later, UI copy stays generic (“Global tax handled”).
+
+Deliverables
+	•	POST /api/v2/payments/create-checkout-link,
+	•	GET /api/v2/payments/stats.
+
+Acceptance
+	•	User can publish product + share checkout link in <5 min.
+	•	Test mode & live mode toggles; clear error states.
+
+⸻
+
+6) Social Proof & “Success Wall”
+
+Why: Proof drives action.
+	•	Live earnings counter (aggregate or “creators have earned this month”).
+	•	Wins gallery (snippets: “Published in 2 hours”, “First sale in 3 hours”)
+	•	Result carousels (before/after copy, launch screenshots).
+
+Deliverables
+	•	modules/proof/successWall.tsx, seed with demo data; live mode later.
+
+Acceptance
+	•	Switchable demo/live.
+	•	Shareable: /success page with OpenGraph.
+
+⸻
+
+7) One-Click Publish & SEO
+
+Why: Remove last-mile friction.
+	•	Built-in landing page for every product (clean theme).
+	•	SEO one-click: title, meta desc, OG image, schema JSON-LD.
+	•	Cover image: AI-generated (brand-safe, no copyrighted logos).
+
+Deliverables
+	•	pages/p/[slug].tsx, POST /api/v2/ai/seo, POST /api/v2/ai/cover.
+
+Acceptance
+	•	Lighthouse SEO ≥ 95 on mobile.
+	•	Share link looks pro by default.
+
+⸻
+
+8) Growth Tools
+	•	Lead magnet generator (PDF + cover).
+	•	5-Email Launch Sequence (cold→warm→close).
+	•	Social snippets (X, IG, TikTok hooks) w/ 3 styles (direct, story, authority).
+	•	Affiliate ready (IDs in checkout links; basic leaderboard later).
+
+⸻
+
+9) Quality, Performance, Safety
+	•	Stream AI responses; hard timeout 25s; 2 retries with jitter; graceful fallbacks.
+	•	Autosave & Version history (store deltas).
+	•	i18n initial: English + Greek UI + content tone toggle.
+	•	Accessibility: keyboard nav, ARIA, color-contrast AA.
+	•	Privacy: clear copy about data use; redact PII in logs.
+
+⸻
+
+10) Fix & Harden (existing issues you may see)
+	•	“Objects are not valid as a React child” → audit components rendering raw objects; always JSON.stringify or map arrays; add <ErrorBoundary>.
+	•	“Method is not a valid HTTP token.” → ensure no Method header; it’s method on fetch. Ensure Authorization: Bearer ${key} is correct.
+	•	401 on API key → env OPENAI_API_KEY + OPENAI_MODEL; add health check /api/v2/ai/health.
+	•	Add a thin OpenAI client with sane defaults (streaming, retries, abort controller).
