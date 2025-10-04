@@ -239,12 +239,14 @@ export async function handleContentBuilder(inputs: Record<string, any>, tier: st
 }
 
 export async function handleOutlineBuilder(inputs: Record<string, any>, tier: string): Promise<BuilderResponse> {
-  const { productType, topic, audienceLevel } = inputs;
+  const { productType, topic, targetAudience, mainGoal, experienceLevel } = inputs;
   
   const outline = await generateOutline({
     productType: productType || 'course',
     topic: topic || 'Getting Started',
-    audienceLevel: audienceLevel || 'beginner',
+    targetAudience: targetAudience || 'beginners',
+    mainGoal: mainGoal || 'Learn the fundamentals',
+    experienceLevel: experienceLevel || 'beginner',
     tier
   });
 

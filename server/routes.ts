@@ -591,6 +591,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unified AI Builder API Contract
+  // Standardized endpoint for all builder modules
+  app.post("/api/builders/unified", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { module, inputs, format, tier } = req.body;
+      
+      if (!module || !inputs) {
+        return res.status(400).json({ message: "module and inputs are required" });
+      }
+
+      // Get user's subscription tier
+      const user = await storage.getUser(userId);
+      const userTier = tier || user?.subscriptionTier || 'free';
+      
+      const { handleBuilderRequest } = await import('./ai-builder-contracts');
+      const response = await handleBuilderRequest({
+        module,
+        inputs,
+        format: format || 'json',
+        tier: userTier === 'trial' ? 'plus' : userTier
+      });
+
+      // Always return 200 with standardized response
+      return res.status(200).json(response);
+    } catch (error: any) {
+      console.error("Error in unified builder:", error);
+      
+      // Still return 200 with error structure
+      return res.status(200).json({
+        ok: false,
+        module: req.body.module || 'unknown',
+        deliverables: [],
+        kpis: [],
+        nextActions: [`Error: ${error?.message || 'Unknown error occurred'}`]
+      });
+    }
+  });
+
   app.delete("/api/products/:id", isAuthenticated, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
