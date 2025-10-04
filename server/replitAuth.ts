@@ -78,6 +78,8 @@ async function upsertUser(
     userData.subscriptionStatus = 'trialing';
     userData.trialStartDate = trialStartDate;
     userData.trialEndDate = trialEndDate;
+    userData.projectsLimit = 3;
+    userData.aiTokensLimit = 5000;
   }
 
   await storage.upsertUser(userData);
