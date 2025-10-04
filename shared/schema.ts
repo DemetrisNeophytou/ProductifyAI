@@ -334,3 +334,133 @@ export type InsertAiSession = z.infer<typeof insertAiSessionSchema>;
 
 export type AiMessage = typeof aiMessages.$inferSelect;
 export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
+
+// Payment History - Track all subscription transactions
+export const paymentHistory = pgTable("payment_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stripeInvoiceId: varchar("stripe_invoice_id"),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  amount: integer("amount").notNull(), // in cents
+  currency: varchar("currency", { length: 3 }).default("eur"),
+  status: varchar("status", { length: 20 }).notNull(), // succeeded, failed, pending, refunded
+  plan: varchar("plan", { length: 20 }).notNull(), // plus, pro
+  billingPeriod: varchar("billing_period", { length: 20 }), // monthly, quarterly
+  metadata: jsonb("metadata").$type<{
+    description?: string;
+    receiptUrl?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_payment_history_user").on(table.userId),
+]);
+
+// Testimonials - User success stories and reviews
+export const testimonials = pgTable("testimonials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // nullable for anonymized testimonials
+  name: text("name").notNull(),
+  role: text("role"), // e.g., "Digital Product Creator", "Course Builder"
+  avatarUrl: text("avatar_url"),
+  rating: integer("rating").notNull().default(5), // 1-5 stars
+  content: text("content").notNull(),
+  revenueGenerated: integer("revenue_generated"), // in cents, optional
+  productType: varchar("product_type", { length: 50 }), // ebook, course, etc.
+  featured: integer("featured").default(0), // 0 or 1, for homepage display
+  approved: integer("approved").default(0), // 0 or 1, moderation flag
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_testimonials_featured").on(table.featured),
+  index("idx_testimonials_approved").on(table.approved),
+]);
+
+// Referral Codes - Track referral program
+export const referralCodes = pgTable("referral_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  code: varchar("code", { length: 20 }).notNull().unique(), // e.g., "JOHN2024" 
+  referredCount: integer("referred_count").default(0), // how many people used this code
+  rewardEarned: integer("reward_earned").default(0), // in cents, total commission earned
+  active: integer("active").default(1), // 0 or 1
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_referral_codes_user").on(table.userId),
+  index("idx_referral_codes_code").on(table.code),
+]);
+
+// Referral Conversions - Track successful referrals
+export const referralConversions = pgTable("referral_conversions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referralCodeId: varchar("referral_code_id").notNull().references(() => referralCodes.id, { onDelete: "cascade" }),
+  referrerId: varchar("referrer_id").notNull().references(() => users.id, { onDelete: "cascade" }), // user who owns the code
+  referredUserId: varchar("referred_user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // new user who signed up
+  status: varchar("status", { length: 20 }).default("pending"), // pending, converted, paid
+  rewardAmount: integer("reward_amount").default(0), // commission in cents
+  createdAt: timestamp("created_at").defaultNow(),
+  convertedAt: timestamp("converted_at"), // when they subscribed
+}, (table) => [
+  index("idx_referral_conversions_referrer").on(table.referrerId),
+  index("idx_referral_conversions_referred").on(table.referredUserId),
+]);
+
+// Analytics Events - Track user behavior and conversions
+export const analyticsEvents = pgTable("analytics_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // nullable for anonymous events
+  sessionId: varchar("session_id"), // browser session tracking
+  eventType: varchar("event_type", { length: 50 }).notNull(), // page_view, project_created, ai_used, checkout_started, subscription_completed
+  eventData: jsonb("event_data").$type<{
+    page?: string;
+    projectType?: string;
+    builderType?: string;
+    plan?: string;
+    revenue?: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_analytics_events_user").on(table.userId),
+  index("idx_analytics_events_type").on(table.eventType),
+  index("idx_analytics_events_created").on(table.createdAt),
+]);
+
+// Zod schemas
+export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralCodeSchema = createInsertSchema(referralCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralConversionSchema = createInsertSchema(referralConversions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type PaymentHistory = typeof paymentHistory.$inferSelect;
+export type InsertPaymentHistory = z.infer<typeof insertPaymentHistorySchema>;
+
+export type Testimonial = typeof testimonials.$inferSelect;
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+
+export type ReferralCode = typeof referralCodes.$inferSelect;
+export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
+
+export type ReferralConversion = typeof referralConversions.$inferSelect;
+export type InsertReferralConversion = z.infer<typeof insertReferralConversionSchema>;
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
