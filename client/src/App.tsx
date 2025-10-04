@@ -11,7 +11,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Plus } from "lucide-react";
+import { Plus, Crown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CommandBar } from "@/components/CommandBar";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -42,10 +44,24 @@ import Analytics from "@/pages/Analytics";
 import Referrals from "@/pages/Referrals";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [commandOpen, setCommandOpen] = useState(false);
+  
   const style = {
     "--sidebar-width": "20rem",
     "--sidebar-width-icon": "4rem",
   };
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -55,6 +71,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           <header className="flex items-center justify-between gap-4 px-6 py-3 border-b sticky top-0 z-40 bg-background">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-3">
+              <Link href="/pricing">
+                <Button variant="outline" size="default" data-testid="button-upgrade">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Upgrade
+                </Button>
+              </Link>
               <Link href="/onboarding">
                 <Button variant="default" size="default" data-testid="button-create-product">
                   <Plus className="h-4 w-4 mr-2" />
@@ -69,6 +91,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
     </SidebarProvider>
   );
 }

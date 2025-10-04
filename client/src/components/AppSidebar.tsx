@@ -1,4 +1,4 @@
-import { Home, Lightbulb, FileText, PenTool, DollarSign, Rocket, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown, Users, BookOpen } from "lucide-react";
+import { Home, Lightbulb, FileText, Rocket, BarChart3, MessageCircle, Palette, Users, Settings, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,44 +16,31 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import type { User } from "@shared/schema";
 
-const dashboardItems = [
+const mainItems = [
   {
-    title: "My Projects",
+    title: "Dashboard",
     url: "/dashboard",
     icon: Home,
   },
-];
-
-const builderItems = [
   {
-    title: "Idea Finder",
+    title: "Create Product",
     url: "/builders/idea-finder",
     icon: Lightbulb,
   },
   {
-    title: "Product Outline",
-    url: "/builders/outline",
+    title: "Content Studio",
+    url: "/builders/content",
     icon: FileText,
   },
   {
-    title: "Offer Builder",
-    url: "/builders/offer",
-    icon: DollarSign,
-  },
-  {
-    title: "Content Writer",
-    url: "/builders/content",
-    icon: PenTool,
-  },
-  {
-    title: "Funnel & Launch",
+    title: "Launch & Sales",
     url: "/builders/funnel",
     icon: Rocket,
   },
   {
-    title: "Mission Control",
-    url: "/ai-builders",
-    icon: Sparkles,
+    title: "Performance",
+    url: "/analytics",
+    icon: BarChart3,
   },
 ];
 
@@ -64,42 +51,19 @@ const toolsItems = [
     icon: MessageCircle,
   },
   {
-    title: "Templates",
-    url: "/templates",
-    icon: BookOpen,
-  },
-  {
     title: "Brand Kit",
     url: "/brand-kit",
     icon: Palette,
-  },
-  {
-    title: "Assets",
-    url: "/assets",
-    icon: Image,
   },
   {
     title: "Community",
     url: "/community",
     icon: Users,
   },
-];
-
-const accountItems = [
-  {
-    title: "Upgrade",
-    url: "/pricing",
-    icon: Crown,
-  },
   {
     title: "Settings",
     url: "/settings",
     icon: Settings,
-  },
-  {
-    title: "Help",
-    url: "/help",
-    icon: HelpCircle,
   },
 ];
 
@@ -126,39 +90,17 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-lg font-bold px-4 py-6">
             Productify AI
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {dashboardItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link 
-                      href={item.url}
-                      data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
-            AI Builders
+          <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground mt-2">
+            Main
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {builderItems.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link 
                       href={item.url}
-                      data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
+                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       <item.icon />
                       <span>{item.title}</span>
@@ -174,7 +116,7 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
-            Tools
+            Tools & Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -183,29 +125,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link 
                       href={item.url}
-                      data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
-                    >
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {accountItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url}>
-                    <Link 
-                      href={item.url}
-                      data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
+                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                     >
                       <item.icon />
                       <span>{item.title}</span>
