@@ -164,7 +164,7 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_PLUS_MONTHLY', 'plus')}
+                onClick={() => handleSubscribe('price_1SEEtkgAgnQzW8UqGtur2sN4', 'plus')}
                 data-testid="button-plus-monthly"
               >
                 {checkoutMutation.isPending ? (
@@ -246,7 +246,7 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_PRO_QUARTERLY', 'pro')}
+                onClick={() => handleSubscribe('price_1SEF9zAggnQzW8Uq7LcOJB8Q', 'pro')}
                 data-testid="button-pro-quarterly"
               >
                 {checkoutMutation.isPending ? (
