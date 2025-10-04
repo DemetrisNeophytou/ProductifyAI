@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -16,50 +15,116 @@ interface ChatMessage {
 export default function AICoach() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const chatMutation = useMutation({
-    mutationFn: async (message: string) => {
+  const handleStreamingChat = async (userMessage: string) => {
+    setIsLoading(true);
+    
+    const assistantMessageId = Date.now().toString();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
+    try {
+      abortControllerRef.current = new AbortController();
+      
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message: userMessage, stream: true }),
+        signal: abortControllerRef.current.signal,
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to get AI response");
       }
-      
-      const data = await response.json();
-      return data.message;
-    },
-    onSuccess: (response, userMessage) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: "assistant",
-          content: response,
-        },
-      ]);
-    },
-    onError: (error: any) => {
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response stream available");
+      }
+
+      let accumulatedContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            
+            if (data === '[DONE]') {
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+
+              if (parsed.content) {
+                accumulatedContent += parsed.content;
+                
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
+              }
+            } catch (parseError) {
+            }
+          }
+        }
+      }
+
+      setIsLoading(false);
+    } catch (error: any) {
       console.error("Chat error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to get AI response. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+      
+      setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
+      
+      if (error.name !== 'AbortError') {
+        const isConfigError = error.message?.includes("temporarily unavailable") || error.message?.includes("API");
+        toast({
+          title: isConfigError ? "Service Unavailable" : "Connection Error",
+          description: error.message || "Unable to reach Productify Coach. Please try again in a moment.",
+          variant: "destructive",
+          action: isConfigError ? undefined : {
+            label: "Retry",
+            onClick: () => handleStreamingChat(userMessage),
+          } as any,
+        });
+      }
+      
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || chatMutation.isPending) return;
+    if (!input.trim() || isLoading) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -73,7 +138,7 @@ export default function AICoach() {
       },
     ]);
 
-    chatMutation.mutate(userMessage);
+    handleStreamingChat(userMessage);
   };
 
   useEffect(() => {
@@ -90,9 +155,9 @@ export default function AICoach() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">AI Coach</h1>
+            <h1 className="text-2xl font-bold">Productify Coach</h1>
             <p className="text-sm text-muted-foreground">
-              Get strategic guidance from your Digital Product Creator 2.0
+              Your AI expert for building €100k+ digital product businesses
             </p>
           </div>
         </div>
@@ -106,9 +171,9 @@ export default function AICoach() {
                 <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-xl font-semibold mb-2" data-testid="text-welcome-title">Welcome to AI Coach</h2>
+                <h2 className="text-xl font-semibold mb-2" data-testid="text-welcome-title">Welcome to Productify Coach</h2>
                 <p className="text-muted-foreground max-w-md mb-6" data-testid="text-welcome-description">
-                  I'm your Digital Product Creator 2.0 strategist. Ask me anything about:
+                  I'm your expert AI coach for creating and monetizing digital products. Ask me anything about:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
                   <Card 
@@ -180,6 +245,9 @@ export default function AICoach() {
                   >
                     <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${message.id}`}>
                       {message.content}
+                      {message.role === "assistant" && !message.content && isLoading && (
+                        <span className="inline-block w-2 h-4 bg-primary/50 animate-pulse ml-1" />
+                      )}
                     </p>
                   </Card>
                   {message.role === "user" && (
@@ -190,13 +258,15 @@ export default function AICoach() {
                 </div>
               ))
             )}
-            {chatMutation.isPending && (
+            {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
               <div className="flex gap-3 justify-start" data-testid="indicator-thinking">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                 </div>
                 <Card className="p-4">
-                  <p className="text-sm text-muted-foreground" data-testid="text-thinking">Thinking...</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-thinking">
+                    Thinking<span className="animate-pulse">...</span>
+                  </p>
                 </Card>
               </div>
             )}
@@ -209,7 +279,7 @@ export default function AICoach() {
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your AI coach anything about digital products..."
+            placeholder="Ask Productify Coach anything about creating and selling digital products..."
             className="resize-none min-h-[60px]"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -222,7 +292,7 @@ export default function AICoach() {
           <Button
             type="submit"
             size="icon"
-            disabled={!input.trim() || chatMutation.isPending}
+            disabled={!input.trim() || isLoading}
             className="h-[60px] w-[60px]"
             data-testid="button-send-message"
           >

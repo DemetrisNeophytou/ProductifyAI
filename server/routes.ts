@@ -165,17 +165,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { message } = req.body;
+      const { message, stream } = req.body;
 
       if (!message) {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      const response = await chatWithCoach(message);
+      if (stream) {
+        const { chatWithCoachStream } = await import('./openai');
+        const streamResponse = await chatWithCoachStream(message);
 
-      res.json({
-        message: response,
-      });
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        try {
+          for await (const chunk of streamResponse) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              res.write(`data: ${JSON.stringify({ content })}\n\n`);
+            }
+          }
+          res.write('data: [DONE]\n\n');
+          res.end();
+        } catch (streamError: any) {
+          console.error("Error during streaming:", streamError);
+          res.write(`data: ${JSON.stringify({ error: "Stream interrupted. Please try again." })}\n\n`);
+          res.end();
+        }
+      } else {
+        const response = await chatWithCoach(message);
+        res.json({ message: response });
+      }
     } catch (error: any) {
       console.error("Error in AI chat:", error);
       
@@ -938,6 +959,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking subscription status:", error);
       res.status(500).json({ message: "Failed to check subscription status" });
+    }
+  });
+
+  app.get("/api/usage", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { projects } = await storage.getUserProjects(userId);
+
+      res.json({
+        aiTokensUsed: user.aiTokensUsed || 0,
+        aiTokensLimit: user.aiTokensLimit || 5000,
+        projectsUsed: projects.length,
+        projectsLimit: user.projectsLimit || 3,
+        tier: user.subscriptionTier || 'trial',
+      });
+    } catch (error) {
+      console.error("Error fetching usage:", error);
+      res.status(500).json({ message: "Failed to fetch usage data" });
     }
   });
 
