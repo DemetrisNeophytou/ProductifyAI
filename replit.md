@@ -17,7 +17,7 @@ Productify AI is an AI-powered digital product creation platform designed to hel
 The platform features a modern, clean UI design utilizing a purple primary color (#a855f7) and supporting dark mode. It is built to be responsive across all screen sizes, employing shadcn components for consistency and incorporating minimal animations and smooth transitions to provide a professional and productive interface.
 
 ### Technical Implementations
-Productify AI is a fullstack application built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui for the frontend, and Express.js with TypeScript for the backend. It uses PostgreSQL with Drizzle ORM for database management and Replit Auth for authentication. AI capabilities are powered by OpenAI GPT-5, featuring an "elite product strategist" AI coach. Key features include a rich text editor (TipTap), drag-and-drop functionality (@hello-pangea/dnd), and robust auto-save with optimistic caching. The system also supports multi-format exports (PDF, DOCX, HTML) and includes a comprehensive asset library system with Unsplash integration. A community platform for digital product creators is integrated with real-time interaction features.
+Productify AI is a fullstack application built with React, Vite, TypeScript, Tailwind CSS, and shadcn/ui for the frontend, and Express.js with TypeScript for the backend. It uses PostgreSQL with Drizzle ORM for database management and Replit Auth for authentication. AI capabilities are powered by OpenAI GPT-5, featuring a specialized "Digital Product AI Coach" that provides ultra-fast, actionable guidance for creating and monetizing digital products. Key features include a rich text editor (TipTap), drag-and-drop functionality (@hello-pangea/dnd), and robust auto-save with optimistic caching. The system also supports multi-format exports (PDF, DOCX, HTML) and includes a comprehensive asset library system with Unsplash integration. A community platform for digital product creators is integrated with real-time interaction features.
 
 ### Feature Specifications
 - **Digital Product Creation**: AI-powered generation and editing of eBooks, online courses, checklists, templates, and lead magnets.
@@ -34,7 +34,7 @@ Productify AI is a fullstack application built with React, Vite, TypeScript, Tai
 The project architecture emphasizes modularity with clear separation between client and server. The database schema is designed to support complex digital products, brand kits, projects, sections, assets, and versioning. Core tables include `users`, `brand_kits`, `projects`, `sections`, `assets`, `project_versions`, `community_posts`, `community_comments`, and `community_post_likes`. API routes are structured RESTfully, covering authentication, brand kits, projects, sections, assets, versions, and community interactions. Error handling is robust, providing user-friendly toast notifications for various issues.
 
 ## External Dependencies
-- **AI**: OpenAI GPT-4o (requires OPENAI_API_KEY secret)
+- **AI**: OpenAI GPT-5 (requires OPENAI_API_KEY secret)
 - **Database**: PostgreSQL
 - **ORM**: Drizzle ORM
 - **Authentication**: Replit Auth (OpenID Connect)
@@ -53,7 +53,7 @@ The platform requires a valid OpenAI API key to enable AI features:
 
 1. **Add API Key**: Configure `OPENAI_API_KEY` in Replit Secrets (Tools → Secrets)
 2. **Get API Key**: Obtain from https://platform.openai.com/api-keys
-3. **Required Access**: The key must have access to GPT-4o model
+3. **Required Access**: The key must have access to GPT-5 model for ultra-fast responses
 4. **Billing**: Ensure OpenAI account has available credits
 
 ### Resilient Error Handling
@@ -64,9 +64,13 @@ The application is designed to be resilient:
 - **Easy Recovery**: Once API key is added to secrets, all AI features work immediately without code changes
 
 ### AI Features Requiring API Key
-- AI Coach (streaming chat assistant)
-- Idea Finder (5 AI-generated product ideas)
-- Outline Builder (tier-based: Free=3-4 chapters, Plus=5-7, Pro=8-12+monetization)
-- Content Writer (tier-based with multi-format support for Pro)
-- Offer Builder (pricing strategy with bonuses/upsells)
-- Funnel & Launch Planner (complete execution roadmap)
+All features powered by GPT-5 for ultra-fast, specialized coaching:
+- **AI Coach** - Streaming chat assistant with specialized digital product expertise (GPT-5 powered)
+  - Interactive coaching for product creation, launch strategies, and monetization
+  - Ready-made templates, frameworks, and exact copy on demand
+  - Step-by-step guidance from idea to €100k+ revenue
+- **Idea Finder** - 5 AI-generated profitable product ideas
+- **Outline Builder** - Tier-based: Free=3-4 chapters, Plus=5-7, Pro=8-12+monetization
+- **Content Writer** - Tier-based with multi-format support for Pro
+- **Offer Builder** - Pricing strategy with bonuses/upsells
+- **Funnel & Launch Planner** - Complete execution roadmap
