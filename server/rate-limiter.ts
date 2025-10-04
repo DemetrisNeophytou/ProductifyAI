@@ -77,6 +77,18 @@ export const checkoutLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+export const aiBuilderChatLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 30,
+  message: 'Too many AI chat requests. Please wait a minute.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    const authReq = req as AuthRequest;
+    return !authReq.user?.claims?.sub;
+  },
+});
+
 export const generalApiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 100,

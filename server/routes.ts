@@ -29,6 +29,7 @@ import {
   communityLikeLimiter,
   aiChatLimiter,
   aiGenerationLimiter,
+  aiBuilderChatLimiter,
   checkoutLimiter,
   generalApiLimiter,
 } from "./rate-limiter";
@@ -701,7 +702,7 @@ Be systematic, growth-focused, and results-oriented.`
   });
 
   // POST /api/ai/sessions/:id/messages - Send message with streaming
-  app.post("/api/ai/sessions/:id/messages", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+  app.post("/api/ai/sessions/:id/messages", isAuthenticated, aiBuilderChatLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
