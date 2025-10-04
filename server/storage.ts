@@ -11,6 +11,11 @@ import {
   communityPostLikes,
   aiSessions,
   aiMessages,
+  paymentHistory,
+  testimonials,
+  referralCodes,
+  referralConversions,
+  analyticsEvents,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -31,6 +36,16 @@ import {
   type InsertAiSession,
   type AiMessage,
   type InsertAiMessage,
+  type PaymentHistory,
+  type InsertPaymentHistory,
+  type Testimonial,
+  type InsertTestimonial,
+  type ReferralCode,
+  type InsertReferralCode,
+  type ReferralConversion,
+  type InsertReferralConversion,
+  type AnalyticsEvent,
+  type InsertAnalyticsEvent,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -94,6 +109,39 @@ export interface IStorage {
   // AI Message operations
   createAiMessage(message: InsertAiMessage): Promise<AiMessage>;
   getSessionMessages(sessionId: string): Promise<AiMessage[]>;
+  
+  // Payment History operations
+  createPaymentHistory(payment: InsertPaymentHistory): Promise<PaymentHistory>;
+  getUserPaymentHistory(userId: string, limit?: number): Promise<PaymentHistory[]>;
+  
+  // Testimonial operations
+  createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  getApprovedTestimonials(limit?: number): Promise<Testimonial[]>;
+  getFeaturedTestimonials(limit?: number): Promise<Testimonial[]>;
+  approveTestimonial(id: string): Promise<void>;
+  featureTestimonial(id: string, featured: boolean): Promise<void>;
+  
+  // Referral Code operations
+  createReferralCode(code: InsertReferralCode): Promise<ReferralCode>;
+  getUserReferralCode(userId: string): Promise<ReferralCode | undefined>;
+  getReferralCodeByCode(code: string): Promise<ReferralCode | undefined>;
+  updateReferralCodeStats(codeId: string, referredCount: number, rewardEarned: number): Promise<void>;
+  
+  // Referral Conversion operations
+  createReferralConversion(conversion: InsertReferralConversion): Promise<ReferralConversion>;
+  getUserReferralConversions(referrerId: string): Promise<ReferralConversion[]>;
+  updateReferralConversionStatus(id: string, status: string, rewardAmount?: number): Promise<void>;
+  
+  // Analytics Event operations
+  trackEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getUserAnalytics(userId: string, limit?: number): Promise<AnalyticsEvent[]>;
+  getEventsByType(eventType: string, limit?: number): Promise<AnalyticsEvent[]>;
+  getAnalyticsSummary(userId?: string): Promise<{
+    totalProjects: number;
+    totalAiUsage: number;
+    totalRevenue: number;
+    conversionRate: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -565,6 +613,184 @@ export class DatabaseStorage implements IStorage {
       .from(aiMessages)
       .where(eq(aiMessages.sessionId, sessionId))
       .orderBy(aiMessages.createdAt);
+  }
+  
+  // Payment History operations
+  async createPaymentHistory(paymentData: InsertPaymentHistory): Promise<PaymentHistory> {
+    const [payment] = await db.insert(paymentHistory).values(paymentData).returning();
+    return payment;
+  }
+  
+  async getUserPaymentHistory(userId: string, limit: number = 50): Promise<PaymentHistory[]> {
+    return await db
+      .select()
+      .from(paymentHistory)
+      .where(eq(paymentHistory.userId, userId))
+      .orderBy(desc(paymentHistory.createdAt))
+      .limit(limit);
+  }
+  
+  // Testimonial operations
+  async createTestimonial(testimonialData: InsertTestimonial): Promise<Testimonial> {
+    const [testimonial] = await db.insert(testimonials).values(testimonialData).returning();
+    return testimonial;
+  }
+  
+  async getApprovedTestimonials(limit: number = 20): Promise<Testimonial[]> {
+    return await db
+      .select()
+      .from(testimonials)
+      .where(eq(testimonials.approved, 1))
+      .orderBy(desc(testimonials.createdAt))
+      .limit(limit);
+  }
+  
+  async getFeaturedTestimonials(limit: number = 6): Promise<Testimonial[]> {
+    return await db
+      .select()
+      .from(testimonials)
+      .where(and(eq(testimonials.approved, 1), eq(testimonials.featured, 1)))
+      .orderBy(desc(testimonials.rating), desc(testimonials.revenueGenerated))
+      .limit(limit);
+  }
+  
+  async approveTestimonial(id: string): Promise<void> {
+    await db
+      .update(testimonials)
+      .set({ approved: 1 })
+      .where(eq(testimonials.id, id));
+  }
+  
+  async featureTestimonial(id: string, featured: boolean): Promise<void> {
+    await db
+      .update(testimonials)
+      .set({ featured: featured ? 1 : 0 })
+      .where(eq(testimonials.id, id));
+  }
+  
+  // Referral Code operations
+  async createReferralCode(codeData: InsertReferralCode): Promise<ReferralCode> {
+    const [code] = await db.insert(referralCodes).values(codeData).returning();
+    return code;
+  }
+  
+  async getUserReferralCode(userId: string): Promise<ReferralCode | undefined> {
+    const [code] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.userId, userId));
+    return code;
+  }
+  
+  async getReferralCodeByCode(code: string): Promise<ReferralCode | undefined> {
+    const [referralCode] = await db
+      .select()
+      .from(referralCodes)
+      .where(eq(referralCodes.code, code));
+    return referralCode;
+  }
+  
+  async updateReferralCodeStats(codeId: string, referredCount: number, rewardEarned: number): Promise<void> {
+    await db
+      .update(referralCodes)
+      .set({
+        referredCount,
+        rewardEarned,
+      })
+      .where(eq(referralCodes.id, codeId));
+  }
+  
+  // Referral Conversion operations
+  async createReferralConversion(conversionData: InsertReferralConversion): Promise<ReferralConversion> {
+    const [conversion] = await db.insert(referralConversions).values(conversionData).returning();
+    return conversion;
+  }
+  
+  async getUserReferralConversions(referrerId: string): Promise<ReferralConversion[]> {
+    return await db
+      .select()
+      .from(referralConversions)
+      .where(eq(referralConversions.referrerId, referrerId))
+      .orderBy(desc(referralConversions.createdAt));
+  }
+  
+  async updateReferralConversionStatus(id: string, status: string, rewardAmount?: number): Promise<void> {
+    const updateData: any = { status };
+    if (status === 'converted') {
+      updateData.convertedAt = new Date();
+    }
+    if (rewardAmount !== undefined) {
+      updateData.rewardAmount = rewardAmount;
+    }
+    await db
+      .update(referralConversions)
+      .set(updateData)
+      .where(eq(referralConversions.id, id));
+  }
+  
+  // Analytics Event operations
+  async trackEvent(eventData: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const [event] = await db.insert(analyticsEvents).values(eventData).returning();
+    return event;
+  }
+  
+  async getUserAnalytics(userId: string, limit: number = 100): Promise<AnalyticsEvent[]> {
+    return await db
+      .select()
+      .from(analyticsEvents)
+      .where(eq(analyticsEvents.userId, userId))
+      .orderBy(desc(analyticsEvents.createdAt))
+      .limit(limit);
+  }
+  
+  async getEventsByType(eventType: string, limit: number = 100): Promise<AnalyticsEvent[]> {
+    return await db
+      .select()
+      .from(analyticsEvents)
+      .where(eq(analyticsEvents.eventType, eventType))
+      .orderBy(desc(analyticsEvents.createdAt))
+      .limit(limit);
+  }
+  
+  async getAnalyticsSummary(userId?: string): Promise<{
+    totalProjects: number;
+    totalAiUsage: number;
+    totalRevenue: number;
+    conversionRate: number;
+  }> {
+    let projectQuery = db.select().from(projects);
+    let aiQuery = db.select().from(analyticsEvents).where(eq(analyticsEvents.eventType, 'ai_used'));
+    let revenueQuery = db.select().from(analyticsEvents).where(eq(analyticsEvents.eventType, 'subscription_completed'));
+    
+    if (userId) {
+      projectQuery = projectQuery.where(eq(projects.userId, userId)) as any;
+      aiQuery = aiQuery.where(and(eq(analyticsEvents.userId, userId), eq(analyticsEvents.eventType, 'ai_used'))) as any;
+      revenueQuery = revenueQuery.where(and(eq(analyticsEvents.userId, userId), eq(analyticsEvents.eventType, 'subscription_completed'))) as any;
+    }
+    
+    const projectsData = await projectQuery;
+    const aiEvents = await aiQuery;
+    const revenueEvents = await revenueQuery;
+    
+    const totalRevenue = revenueEvents.reduce((sum, event) => {
+      return sum + ((event.eventData as any)?.revenue || 0);
+    }, 0);
+    
+    const checkoutStarted = await db
+      .select()
+      .from(analyticsEvents)
+      .where(eq(analyticsEvents.eventType, 'checkout_started'));
+    
+    const conversionRate = checkoutStarted.length > 0 
+      ? (revenueEvents.length / checkoutStarted.length) * 100 
+      : 0;
+    
+    return {
+      totalProjects: projectsData.length,
+      totalAiUsage: aiEvents.length,
+      totalRevenue,
+      conversionRate,
+    };
   }
 }
 
