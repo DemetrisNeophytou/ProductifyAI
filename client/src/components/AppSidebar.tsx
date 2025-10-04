@@ -26,11 +26,6 @@ const dashboardItems = [
 
 const builderItems = [
   {
-    title: "Mission Control",
-    url: "/ai-builders",
-    icon: Rocket,
-  },
-  {
     title: "Idea Finder",
     url: "/builders/idea-finder",
     icon: Lightbulb,
@@ -41,37 +36,37 @@ const builderItems = [
     icon: FileText,
   },
   {
-    title: "Content Writer",
-    url: "/builders/content",
-    icon: PenTool,
-  },
-  {
     title: "Offer Builder",
     url: "/builders/offer",
     icon: DollarSign,
+  },
+  {
+    title: "Content Writer",
+    url: "/builders/content",
+    icon: PenTool,
   },
   {
     title: "Funnel & Launch",
     url: "/builders/funnel",
     icon: Rocket,
   },
+  {
+    title: "Mission Control",
+    url: "/ai-builders",
+    icon: Sparkles,
+  },
 ];
 
 const toolsItems = [
-  {
-    title: "Templates",
-    url: "/templates",
-    icon: BookOpen,
-  },
   {
     title: "AI Coach",
     url: "/ai-coach",
     icon: MessageCircle,
   },
   {
-    title: "Community",
-    url: "/community",
-    icon: Users,
+    title: "Templates",
+    url: "/templates",
+    icon: BookOpen,
   },
   {
     title: "Brand Kit",
@@ -84,9 +79,9 @@ const toolsItems = [
     icon: Image,
   },
   {
-    title: "Create Product",
-    url: "/create",
-    icon: Sparkles,
+    title: "Community",
+    url: "/community",
+    icon: Users,
   },
 ];
 
