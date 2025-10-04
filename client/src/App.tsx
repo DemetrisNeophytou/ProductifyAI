@@ -32,6 +32,7 @@ import FunnelPlanner from "@/pages/FunnelPlanner";
 import Onboarding from "@/pages/Onboarding";
 import Templates from "@/pages/Templates";
 import AIBuilders from "@/pages/AIBuilders";
+import AIChatBuilder from "@/pages/AIChatBuilder";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -131,6 +132,9 @@ function Router() {
             <DashboardLayout>
               <AIBuilders />
             </DashboardLayout>
+          </Route>
+          <Route path="/builders/chat">
+            <AIChatBuilder />
           </Route>
           <Route path="/community">
             <DashboardLayout>

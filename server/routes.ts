@@ -733,10 +733,12 @@ Be systematic, growth-focused, and results-oriented.`
 
       // Get conversation history
       const messages = await storage.getSessionMessages(sessionId);
-      const conversationHistory = messages.map(m => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      }));
+      
+      // Build conversation context string
+      const conversationContext = messages
+        .slice(-10) // Last 10 messages for context
+        .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n\n');
 
       // Set up streaming response
       res.setHeader('Content-Type', 'text/event-stream');
@@ -750,14 +752,23 @@ Be systematic, growth-focused, and results-oriented.`
       
       let fullResponse = '';
       
-      await askLLM(
-        systemPrompt,
-        conversationHistory,
-        (chunk) => {
-          fullResponse += chunk;
-          res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+      // Call askLLM with streaming enabled
+      const stream = await askLLM({
+        system: systemPrompt,
+        user: `${conversationContext ? 'Previous conversation:\n' + conversationContext + '\n\nCurrent message:\n' : ''}${content}`,
+        stream: true,
+        mode: 'quality',
+        maxTokens: 2000,
+      }) as AsyncIterable<any>;
+
+      // Process the stream
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+          fullResponse += delta;
+          res.write(`data: ${JSON.stringify({ type: 'chunk', content: delta })}\n\n`);
         }
-      );
+      }
 
       // Save assistant message
       await storage.createAiMessage({
