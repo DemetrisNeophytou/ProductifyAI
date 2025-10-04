@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import type { Product } from "@shared/schema";
+import type { Project } from "@shared/schema";
 
 export default function Products() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -27,21 +27,21 @@ export default function Products() {
     }
   }, [isAuthenticated, authLoading, toast]);
 
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
+  const { data: products = [], isLoading } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
     enabled: isAuthenticated,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/products/${id}`);
+      await apiRequest("DELETE", `/api/projects/${id}`);
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Product deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -104,14 +104,12 @@ export default function Products() {
               title={product.title}
               type={product.type}
               createdAt={new Date(product.createdAt!)}
-              onEdit={() => console.log("Edit", product.id)}
+              onEdit={() => window.location.href = `/projects/${product.id}`}
               onDownload={() => {
-                const blob = new Blob([product.content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${product.title}.txt`;
-                a.click();
+                toast({
+                  title: "Export",
+                  description: "Open project to export as PDF/DOCX",
+                });
               }}
               onDelete={() => deleteMutation.mutate(product.id)}
             />

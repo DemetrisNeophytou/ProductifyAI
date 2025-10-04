@@ -1,4 +1,4 @@
-import { Home, Lightbulb, FileText, PenTool, DollarSign, Rocket, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown, Users } from "lucide-react";
+import { Home, Lightbulb, FileText, PenTool, DollarSign, Rocket, Sparkles, Palette, Image, Settings, HelpCircle, LogOut, MessageCircle, Crown, Users, BookOpen } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +53,11 @@ const builderItems = [
 ];
 
 const toolsItems = [
+  {
+    title: "Templates",
+    url: "/templates",
+    icon: BookOpen,
+  },
   {
     title: "AI Coach",
     url: "/ai-coach",

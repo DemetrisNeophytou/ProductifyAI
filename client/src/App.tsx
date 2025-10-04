@@ -30,6 +30,7 @@ import ContentWriter from "@/pages/ContentWriter";
 import OfferBuilder from "@/pages/OfferBuilder";
 import FunnelPlanner from "@/pages/FunnelPlanner";
 import Onboarding from "@/pages/Onboarding";
+import Templates from "@/pages/Templates";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -107,6 +108,11 @@ function Router() {
           <Route path="/products">
             <DashboardLayout>
               <Products />
+            </DashboardLayout>
+          </Route>
+          <Route path="/templates">
+            <DashboardLayout>
+              <Templates />
             </DashboardLayout>
           </Route>
           <Route path="/settings">
