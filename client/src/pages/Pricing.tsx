@@ -82,8 +82,26 @@ export default function Pricing() {
 
   return (
     <div className="container max-w-6xl mx-auto px-4 py-12">
+      {/* Speed metrics for unauthenticated users */}
+      {!subscriptionStatus?.tier && (
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+            <span className="text-sm font-semibold text-primary" data-testid="text-speed-metrics">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
+          </div>
+          <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
+            Build Your €100k+ Digital Product Business
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-description">
+            Specialized AI that creates complete digital products for you—not generic ChatGPT advice.
+          </p>
+        </div>
+      )}
+      
       {isOnTrial && (
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+            <span className="text-sm font-semibold text-primary">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
+          </div>
           <Badge variant="secondary" className="mb-4" data-testid="badge-trial">
             {getDaysRemaining()}-Day Free Trial Active
           </Badge>
@@ -102,7 +120,7 @@ export default function Pricing() {
       {!isOnTrial && subscriptionStatus?.tier && (
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <span className="text-sm font-semibold text-primary">Specialized AI • Not Generic ChatGPT</span>
+            <span className="text-sm font-semibold text-primary">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
           </div>
           <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
             Invest in the Right Tool
