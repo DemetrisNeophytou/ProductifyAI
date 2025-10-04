@@ -18,6 +18,9 @@ import {
   Type,
   Image as ImageIcon,
   Check,
+  Sparkles,
+  Search,
+  TrendingUp,
 } from "lucide-react";
 import type { Project, Section } from "@shared/schema";
 
@@ -208,6 +211,89 @@ export default function ProjectEditor() {
     setDirtyFlags((prev) => ({ ...prev, [sectionId]: true }));
   };
 
+  // AI Enhancement mutations
+  const polishMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/polish`, {});
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+      toast({ title: "Content polished successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Polish failed", 
+        description: error.message || "Failed to polish content",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const imagesMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/images`, {});
+    },
+    onSuccess: (data: any) => {
+      console.log('Images response:', data);
+      const suggestions = data?.suggestions || [];
+      toast({ 
+        title: "Image suggestions", 
+        description: suggestions.length > 0
+          ? `Try searching: ${suggestions.slice(0, 2).join(', ')}`
+          : "Suggestions generated! Check the response."
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to suggest images", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const seoMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/seo`, {});
+    },
+    onSuccess: (data: any) => {
+      toast({ 
+        title: "SEO recommendations", 
+        description: `Keywords: ${(data.keywords || []).slice(0, 3).join(', ')}` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to generate SEO", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const upsellsMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/upsells`, {});
+    },
+    onSuccess: (data: any) => {
+      console.log('Upsells response:', data);
+      const ideas = data?.ideas || [];
+      toast({ 
+        title: "Upsell ideas", 
+        description: ideas.length > 0 
+          ? `${ideas.length} suggestions generated!` 
+          : "Suggestions generated! Check the response."
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to generate upsells", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   if (!project || isLoading) {
     return (
       <div className="p-8">
@@ -300,10 +386,51 @@ export default function ProjectEditor() {
                               <GripVertical className="h-5 w-5 text-muted-foreground" />
                             </div>
                             <h3 className="text-lg font-semibold flex-1">{section.title}</h3>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
-                                size="sm"
+                                size="icon"
+                                onClick={() => polishMutation.mutate(section.id)}
+                                disabled={polishMutation.isPending}
+                                title="Polish content"
+                                data-testid={`button-polish-${section.id}`}
+                              >
+                                <Sparkles className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => imagesMutation.mutate(section.id)}
+                                disabled={imagesMutation.isPending}
+                                title="Suggest images"
+                                data-testid={`button-images-${section.id}`}
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => seoMutation.mutate(section.id)}
+                                disabled={seoMutation.isPending}
+                                title="SEO recommendations"
+                                data-testid={`button-seo-${section.id}`}
+                              >
+                                <Search className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => upsellsMutation.mutate(section.id)}
+                                disabled={upsellsMutation.isPending}
+                                title="Upsell ideas"
+                                data-testid={`button-upsells-${section.id}`}
+                              >
+                                <TrendingUp className="h-4 w-4" />
+                              </Button>
+                              <div className="w-px h-4 bg-border mx-1" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => deleteSectionMutation.mutate(section.id)}
                                 disabled={deleteSectionMutation.isPending}
                                 data-testid={`button-delete-${section.id}`}
