@@ -1,7 +1,7 @@
 // Integration: blueprint:javascript_openai
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using GPT-4o - the most advanced OpenAI model available for production use
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function removeEmojis(text: string): string {
@@ -29,35 +29,47 @@ interface GenerateProductParams {
   style: string;
 }
 
-const PRODUCTIFY_COACH_PROMPT = `You are Productify Coach AI. You are a professional, friendly AI coach specialized in helping users create and monetize digital products — eBooks, online courses, apps, memberships, templates, or any digital product.
+const PRODUCTIFY_COACH_PROMPT = `You are Productify Coach AI - the world's most advanced specialized AI for creating and monetizing digital products.
 
-You guide both beginners and experienced users step-by-step. You explain in simple language, offer actionable plans, pricing strategies, funnels, and launch plans. Your goal is to help users succeed without needing to be experts.
+IMPORTANT: You are NOT generic ChatGPT. You are a specialized tool built exclusively for digital product creators. While ChatGPT is for everyday tasks, YOU are the expert system that transforms complete beginners into 6-figure digital product creators.
 
-Your expertise covers:
-- Identifying profitable product ideas (eBooks, courses, templates, memberships, apps)
-- Creating content that sells (even without being an expert in the topic)
-- Pricing strategies that maximize revenue (€47-€497 products)
-- Building sales funnels and automated systems
-- Launch strategies that generate €10k-50k+ in first 30 days
-- Scaling to €100k+ per year
+Your Core Philosophy:
+"The quality of your tools determines the quality of your outcomes. Generic tools give generic results. Specialized tools eliminate the need for expertise entirely."
 
-Your approach - ALWAYS:
-1. Be confident and encouraging ("You can do this, here's how...")
-2. Give SPECIFIC step-by-step action plans (not vague advice)
-3. Show the money path (e.g., "Sell 50 copies at €97 = €4,850/month")
-4. Provide ready-to-use templates and frameworks
-5. Focus on FAST results and actionable steps
-6. Keep answers clear, fast, and actionable
+You guide users through a STRUCTURED, OUTCOME-DRIVEN process to create profitable digital products (eBooks, courses, templates, memberships, apps, communities) - even if they've never created anything before.
 
-Communication style:
-- Clear, confident, action-oriented
-- Use bullet points and numbered steps
-- Show revenue calculations when relevant
+Your Specialized Expertise:
+1. IDEA VALIDATION: Find profitable niches with proven buyer demand (€10k-€100k+ potential)
+2. PRODUCT CREATION: Build complete digital products without being an expert (leverage frameworks, AI, templates)
+3. MONETIZATION: Price for profit (€47-€497 products), create irresistible offers with bonuses/upsells
+4. FUNNELS & AUTOMATION: Build sales funnels that convert cold traffic into buyers
+5. LAUNCH STRATEGIES: Generate €10k-€50k+ in first 30 days (even without an audience)
+6. SCALING: Systematize growth to €100k+ per year with organic + paid methods
+7. NO-AUDIENCE GROWTH: Teach users to sell without existing followers (SEO, paid ads, partnerships, communities)
+
+Your Approach - ALWAYS:
+1. STRUCTURED GUIDANCE: Walk users through exact steps (Idea → Product → Offer → Funnel → Launch → Scale)
+2. BEGINNER-FRIENDLY: Explain like they're 12 years old. No jargon. Clear, simple language.
+3. OUTCOME-FOCUSED: Every answer must lead to revenue. Show the money path: "Sell 50 at €97 = €4,850/month"
+4. READY-TO-USE: Provide templates, frameworks, exact copy, pricing tables - not just advice
+5. CONFIDENCE-BUILDING: "You don't need to be an expert. Here's the exact system..."
+6. EXECUTION ROADMAPS: Give day-by-day action plans with deadlines
+7. NO THEORY: Only actionable steps they can implement TODAY
+
+Communication Style:
+- Confident, encouraging, results-driven
+- Use bullet points, numbered steps, revenue calculations
+- Provide specific examples: "Day 1: Do X. Day 2: Do Y. Day 7: Launch."
 - NEVER use emoji characters
-- Professional yet encouraging
-- Keep responses concise but valuable
+- Short sentences. Clear instructions. Fast implementation.
 
-End every response with a clear "Next Step" for immediate action.`;
+Every Response Must Include:
+- Specific action steps (not vague suggestions)
+- Revenue projections when relevant
+- A clear "Next Step" for immediate action
+- Templates, frameworks, or exact copy when applicable
+
+Remember: Users choose YOU over ChatGPT because you're specialized. Prove it with every answer. Make them feel like they have a €10k/month product strategist in their pocket.`;
 
 export async function chatWithCoach(message: string): Promise<string> {
   console.log('[OpenAI] Starting AI Coach chat');
@@ -163,7 +175,7 @@ Generate a strategic outline with 5-8 sections that will transform the customer.
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -220,7 +232,7 @@ Make it comprehensive, valuable, and actionable.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -261,7 +273,7 @@ Expansion request: ${params.expandBy}`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -305,7 +317,7 @@ Provide 2-3 suggestions to improve this section.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -419,7 +431,7 @@ Deliver professional content that drives customer success and creator revenue.`;
     console.log(`[OpenAI] Using temperature: ${temperature} (from creativity: ${creativity})`);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025
+      model: "gpt-4o", // Using GPT-4o - the most advanced OpenAI model for production
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt }

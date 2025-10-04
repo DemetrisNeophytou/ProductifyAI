@@ -155,9 +155,9 @@ export default function AICoach() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Productify Coach</h1>
-            <p className="text-sm text-muted-foreground">
-              Your AI expert for building €100k+ digital product businesses
+            <h1 className="text-2xl font-bold" data-testid="heading-coach-title">Productify Coach</h1>
+            <p className="text-sm text-muted-foreground" data-testid="text-coach-subtitle">
+              Specialized AI for Digital Products • Powered by GPT-4o
             </p>
           </div>
         </div>
@@ -172,8 +172,11 @@ export default function AICoach() {
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
                 <h2 className="text-xl font-semibold mb-2" data-testid="text-welcome-title">Welcome to Productify Coach</h2>
-                <p className="text-muted-foreground max-w-md mb-6" data-testid="text-welcome-description">
-                  I'm your expert AI coach for creating and monetizing digital products. Ask me anything about:
+                <p className="text-muted-foreground max-w-md mb-2" data-testid="text-welcome-description">
+                  Not generic ChatGPT. A specialized AI built exclusively for digital product creators.
+                </p>
+                <p className="text-xs text-muted-foreground max-w-md mb-6 font-semibold" data-testid="text-powered-by">
+                  Powered by GPT-4o
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
                   <Card 
@@ -299,8 +302,8 @@ export default function AICoach() {
             <Send className="h-5 w-5" />
           </Button>
         </form>
-        <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line
+        <p className="text-xs text-muted-foreground mt-2" data-testid="text-input-hint">
+          Press Enter to send • Powered by GPT-4o for specialized digital product guidance
         </p>
       </div>
     </div>

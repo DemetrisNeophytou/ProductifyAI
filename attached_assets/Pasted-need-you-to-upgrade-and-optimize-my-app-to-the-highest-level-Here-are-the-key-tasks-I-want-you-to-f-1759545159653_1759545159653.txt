@@ -1,0 +1,25 @@
+need you to upgrade and optimize my app to the highest level. Here are the key tasks I want you to focus on:
+
+1. Upgrade AI Coach to GPT-5
+	•	Replace the current “GPT-4.0” backend with GPT-5 (or the most advanced available model).
+	•	Enable streaming mode so that responses appear instantly, word by word, like a live conversation.
+	•	Fine-tune and optimize the AI so it is specialized only in digital products (ebooks, courses, apps, templates, memberships, etc.).
+	•	The AI must explain strategies simply, even for complete beginners, and guide users step by step to create and monetize digital products.
+	•	Update the UI label to show “Powered by GPT-5” for branding and marketing credibility.
+
+2. Make the app a true professional competitor (better than Monetise/Iman apps):
+	•	Product Builder: Guided step-by-step system to create digital products from scratch, even for non-experts.
+	•	Monetization Support: AI helps users set pricing, build funnels, and design launch strategies.
+	•	Marketing Materials: Auto-generate sales pages, emails, social posts, and copywriting for product launches.
+	•	Audience-Free Growth: Teach/show users how to sell even without an existing audience (organic and AI-driven methods).
+	•	Community Hub: Fully working community section where users can connect, share advice, and help each other.
+	•	AI Execution Plans: For each digital product idea, AI generates a full execution roadmap (from idea → product → launch → sales).
+	•	Scalability: Optimize for speed and remove lags (dashboard, buttons, navigation). Make it fast and smooth.
+	•	Professional Look: Upgrade design and UX to a modern, premium SaaS standard.
+
+3. Reliability & Business Setup
+	•	Ensure all Stripe integrations (price IDs, API keys, webhooks) are fully working and tested end-to-end.
+	•	Add GitHub backup so the app is always safe and can be transferred if needed.
+	•	Optimize database performance (Supabase/Postgres) for high traffic.
+
+My goal: This platform must help users (even beginners) build and monetize digital products successfully, with a clear roadmap to reach 6-figures/year.

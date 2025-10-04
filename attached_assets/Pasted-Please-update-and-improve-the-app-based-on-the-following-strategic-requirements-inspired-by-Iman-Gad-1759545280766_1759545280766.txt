@@ -1,0 +1,24 @@
+Please update and improve the app based on the following strategic requirements inspired by Iman Gadzhi’s methodology:
+	1.	Positioning: Specialized vs Generic AI
+	•	Make it clear throughout the app (homepage, dashboard, onboarding, marketing copy) that generic AI tools like ChatGPT are for everyday tasks, but our AI is a specialized tool for creating and monetizing digital products.
+	•	The app should emphasize that users don’t need expertise — the AI guides them step by step to produce ebooks, courses, apps, or other digital products.
+	2.	User Experience Flow
+	•	Transform the AI experience from “just answering questions” into a guided structured process.
+	•	The AI should walk users through the exact steps needed to create a finished product, not just give advice.
+	•	Include a strong focus on outcomes rather than generic responses.
+	3.	Competitive Advantage Messaging
+	•	Integrate the key ideas from Iman’s slides directly into the UX and copywriting, for example:
+	•	“The quality of your tools determines the quality of your outcomes.”
+	•	“Choose the wrong tool and you’ll be swimming across the Atlantic. Choose the right tool and you’ll be in Manhattan before dinner.”
+	•	“Specialized tools eliminate the need for expertise entirely.”
+	•	“With the right tools, you can create digital products without being an expert.”
+	4.	Monetization Strategy (Stripe Integration)
+	•	Ensure that the subscription tiers highlight the specialization advantage.
+	•	Free/Trial tier = very limited usage, just to show potential.
+	•	Pro tier (€49.99/month or €119.99/3 months) = full specialized features with guided AI that delivers ready-to-use digital products.
+	5.	Performance & Responsiveness
+	•	The AI should be fast, engaging, and conversational (like ChatGPT-5), not slow or generic.
+	•	Optimize dashboard buttons, prevent errors/fails when clicking, and ensure a smooth real-time response from the AI.
+
+Goal:
+When a user compares our app to ChatGPT, they must immediately see that ChatGPT is generic while our app is specialized, outcome-driven, and built specifically for digital product creators.
