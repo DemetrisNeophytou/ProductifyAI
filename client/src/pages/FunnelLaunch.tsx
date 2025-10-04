@@ -7,19 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Loader2 } from "lucide-react";
+import { Rocket, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const contentWriterSchema = z.object({
-  productType: z.string().min(1, "Please select product type"),
-  topic: z.string().min(1, "Please enter your topic"),
-  targetAudience: z.string().min(1, "Please describe your audience"),
-  tone: z.string().min(1, "Please select tone"),
+const funnelLaunchSchema = z.object({
+  niche: z.string().min(1, "Please enter your niche"),
+  goal: z.string().min(1, "Please enter your goal"),
+  audience: z.string().min(1, "Please describe your audience"),
 });
 
-type ContentWriterForm = z.infer<typeof contentWriterSchema>;
+type FunnelLaunchForm = z.infer<typeof funnelLaunchSchema>;
 
 interface AIResponse {
   ok: boolean;
@@ -34,29 +32,28 @@ interface AIResponse {
   nextActions?: string[];
 }
 
-export default function ContentWriter() {
+export default function FunnelLaunch() {
   const { toast } = useToast();
   const [result, setResult] = useState<AIResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<ContentWriterForm>({
-    resolver: zodResolver(contentWriterSchema),
+  const form = useForm<FunnelLaunchForm>({
+    resolver: zodResolver(funnelLaunchSchema),
     defaultValues: {
-      productType: "",
-      topic: "",
-      targetAudience: "",
-      tone: "",
+      niche: "",
+      goal: "",
+      audience: "",
     },
   });
 
-  const onGenerate = async (data: ContentWriterForm) => {
+  const onGenerate = async (data: FunnelLaunchForm) => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          module: 'content',
+          module: 'funnel',
           inputs: data,
           format: 'markdown'
         })
@@ -67,7 +64,7 @@ export default function ContentWriter() {
       if (!result.ok) {
         toast({
           title: "Generation Failed",
-          description: result.error || "Unable to generate content. Please try again.",
+          description: result.error || "Unable to generate funnel. Please try again.",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -76,8 +73,8 @@ export default function ContentWriter() {
       
       setResult(result);
       toast({
-        title: "Content Created!",
-        description: "Generated production-ready content outline and copy.",
+        title: "Funnel Created!",
+        description: "Generated complete funnel architecture and launch plan.",
       });
     } catch (error: any) {
       toast({
@@ -94,21 +91,21 @@ export default function ContentWriter() {
     <div className="container max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <FileText className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold" data-testid="heading-content-writer">
-            AI Content Writer
+          <Rocket className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold" data-testid="heading-funnel-launch">
+            AI Funnel & Launch Builder
           </h1>
         </div>
         <p className="text-lg text-muted-foreground" data-testid="text-description">
-          Generate production-ready content outlines, copy, and marketing materials
+          Design your complete funnel architecture with traffic strategy and launch timeline
         </p>
       </div>
 
       <Card className="mb-8" data-testid="card-input-form">
         <CardHeader>
-          <CardTitle data-testid="heading-form-title">Content Details</CardTitle>
+          <CardTitle data-testid="heading-form-title">Funnel Details</CardTitle>
           <CardDescription data-testid="text-form-description">
-            Tell us what type of content you need to create
+            Tell us about your niche and goals to create the perfect funnel
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,57 +113,49 @@ export default function ContentWriter() {
             <form onSubmit={form.handleSubmit(onGenerate)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="productType"
+                name="niche"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel data-testid="label-product-type">Content Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-product-type">
-                          <SelectValue placeholder="Select content type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="eBook" data-testid="option-type-ebook">eBook/Guide</SelectItem>
-                        <SelectItem value="Course" data-testid="option-type-course">Online Course</SelectItem>
-                        <SelectItem value="Email Sequence" data-testid="option-type-email">Email Sequence</SelectItem>
-                        <SelectItem value="Sales Page" data-testid="option-type-sales">Sales Page Copy</SelectItem>
-                        <SelectItem value="Ad Copy" data-testid="option-type-ad">Ad Copy</SelectItem>
-                        <SelectItem value="Social Media" data-testid="option-type-social">Social Media Content</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage data-testid="error-product-type" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="topic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel data-testid="label-topic">Topic/Subject</FormLabel>
+                    <FormLabel data-testid="label-niche">Your Niche</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="E.g., Time management for busy entrepreneurs"
+                        placeholder="E.g., Productivity for developers"
                         {...field}
-                        data-testid="input-topic"
+                        data-testid="input-niche"
                       />
                     </FormControl>
-                    <FormMessage data-testid="error-topic" />
+                    <FormMessage data-testid="error-niche" />
                   </FormItem>
                 )}
               />
 
               <FormField
                 control={form.control}
-                name="targetAudience"
+                name="goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel data-testid="label-goal">Your Goal</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="E.g., Generate €10k in 30 days"
+                        {...field}
+                        data-testid="input-goal"
+                      />
+                    </FormControl>
+                    <FormMessage data-testid="error-goal" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="audience"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel data-testid="label-audience">Target Audience</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Who is this content for? What are their pain points?"
+                        placeholder="Describe who will buy from you and their main pain points"
                         className="min-h-[100px]"
                         {...field}
                         data-testid="textarea-audience"
@@ -177,46 +166,22 @@ export default function ContentWriter() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="tone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel data-testid="label-tone">Tone of Voice</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-tone">
-                          <SelectValue placeholder="Select tone" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Professional" data-testid="option-tone-professional">Professional</SelectItem>
-                        <SelectItem value="Casual & Friendly" data-testid="option-tone-casual">Casual & Friendly</SelectItem>
-                        <SelectItem value="Direct & Bold" data-testid="option-tone-direct">Direct & Bold</SelectItem>
-                        <SelectItem value="Educational" data-testid="option-tone-educational">Educational</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage data-testid="error-tone" />
-                  </FormItem>
-                )}
-              />
-
               <Button
                 type="submit"
                 className="w-full"
                 size="lg"
                 disabled={isLoading}
-                data-testid="button-generate-content"
+                data-testid="button-generate-funnel"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" data-testid="loader-generating" />
-                    Writing Content...
+                    Building Funnel...
                   </>
                 ) : (
                   <>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Generate Content
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Generate Funnel Plan
                   </>
                 )}
               </Button>
@@ -229,7 +194,7 @@ export default function ContentWriter() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold" data-testid="heading-results">
-              Your Content
+              Your Funnel & Launch Plan
             </h2>
             <Badge variant="secondary" data-testid="badge-generated">
               Generated
