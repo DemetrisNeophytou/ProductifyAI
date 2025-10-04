@@ -71,7 +71,7 @@ const AI_AGENTS = [
     id: "funnel-planner",
     icon: Rocket,
     title: "Funnel & Launch",
-    description: "AI builds complete funnel and launch roadmap",
+    description: "Smart AI plans and launches your funnel automatically",
     outcome: "€10k-€50k first 30 days",
     href: "/builders/funnel",
     badge: "Launch",
@@ -91,7 +91,7 @@ const AI_AGENTS = [
     id: "ai-coach",
     icon: MessageSquare,
     title: "AI Coach",
-    description: "Chat with Iman Gadzhi's 7-filter framework AI",
+    description: "Chat with your Personal AI Strategy Coach (7-step success framework)",
     outcome: "Expert guidance 24/7",
     href: "/ai-coach",
     badge: "Coach",
@@ -225,7 +225,7 @@ export default function Dashboard() {
             AI Mission Control
           </h1>
           <p className="text-lg text-muted-foreground" data-testid="text-dashboard-subtitle">
-            Your €100k digital product empire, powered by GPT-5
+            Build your first €100k digital product brand with AI precision
           </p>
         </div>
         <div className="flex gap-2">
@@ -282,7 +282,7 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-sm font-medium text-muted-foreground">You Save vs Competitors</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">You Save vs Typical Tool Stack</CardTitle>
                 <div className="text-3xl font-bold mt-1" data-testid="text-savings-amount">
                   €1,440<span className="text-lg text-muted-foreground">/quarter</span>
                 </div>
@@ -299,7 +299,7 @@ export default function Dashboard() {
                 <span className="font-semibold">€59.99/quarter</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Gumroad + Tools:</span>
+                <span className="text-muted-foreground">Other platforms:</span>
                 <span className="font-semibold line-through text-destructive">€500+/quarter</span>
               </div>
               <div className="pt-2 border-t">
@@ -525,7 +525,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2" data-testid="heading-get-started">
               <Rocket className="h-5 w-5 text-primary" />
-              Ready to Build Your €100k Empire?
+              Ready to Create Your €100k Product?
             </CardTitle>
             <CardDescription data-testid="text-get-started">
               Start with our 90-second onboarding or use the AI Idea Finder to discover profitable niches

@@ -19,7 +19,7 @@ const builders: Builder[] = [
     id: "product_idea",
     type: "product_idea",
     title: "Product Idea Validator",
-    description: "Validate €100k+ digital product ideas using Iman Gadzhi's 7-filter framework",
+    description: "Validate €100k+ digital product ideas using AI-powered 7-step profitability framework",
     icon: Lightbulb,
     color: "text-yellow-500",
     benefits: [
