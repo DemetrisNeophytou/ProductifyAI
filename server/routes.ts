@@ -199,20 +199,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (stream) {
         try {
           const { chatWithCoachStream } = await import('./openai');
+          const { StreamingBrandGuard } = await import('./brand-guard');
           const streamResponse = await chatWithCoachStream(message, userId);
 
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
           res.setHeader('Connection', 'keep-alive');
 
+          // Create buffered brand guard to detect split words across chunks
+          const brandGuard = new StreamingBrandGuard();
           let fullResponse = '';
+          
           try {
             for await (const chunk of streamResponse) {
               const content = chunk.choices[0]?.delta?.content || '';
               if (content) {
-                fullResponse += content;
-                res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                // Apply buffered brand-guard filtering (detects split words)
+                const safeContent = await brandGuard.processChunk(content);
+                if (safeContent) {
+                  fullResponse += safeContent;
+                  res.write(`data: ${JSON.stringify({ content: safeContent })}\n\n`);
+                }
               }
+            }
+            
+            // Flush remaining buffer at end of stream
+            const finalContent = await brandGuard.flush();
+            if (finalContent) {
+              fullResponse += finalContent;
+              res.write(`data: ${JSON.stringify({ content: finalContent })}\n\n`);
             }
             
             // Store the complete assistant response in conversation history
@@ -231,21 +246,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If streaming fails (e.g., organization not verified), fall back to non-streaming
           console.log('[Chat] Streaming failed, falling back to non-streaming mode:', streamInitError.message);
           const { chatWithCoach } = await import('./openai');
+          const { filterChunk } = await import('./brand-guard');
           const response = await chatWithCoach(message, userId);
           
-          // Store assistant response for fallback path
-          addToConversationHistory(userId, 'assistant', response);
+          // Apply brand-guard filtering
+          const safeResponse = await filterChunk(response, false);
           
-          res.json({ message: response });
+          // Store assistant response for fallback path
+          addToConversationHistory(userId, 'assistant', safeResponse);
+          
+          res.json({ message: safeResponse });
         }
       } else {
         const { chatWithCoach } = await import('./openai');
+        const { filterChunk } = await import('./brand-guard');
         const response = await chatWithCoach(message, userId);
         
-        // Store assistant response for non-streaming path
-        addToConversationHistory(userId, 'assistant', response);
+        // Apply brand-guard filtering
+        const safeResponse = await filterChunk(response, false);
         
-        res.json({ message: response });
+        // Store assistant response for non-streaming path
+        addToConversationHistory(userId, 'assistant', safeResponse);
+        
+        res.json({ message: safeResponse });
       }
     } catch (error: any) {
       console.error("Error in AI chat:", error);
