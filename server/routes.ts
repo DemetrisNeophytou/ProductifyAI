@@ -15,6 +15,8 @@ import {
   cancelSubscriptionAccess,
 } from "./subscription-helpers";
 import type { SubscriptionTier, SubscriptionStatus } from "./stripe-config";
+import { registerStripeRoutes } from "./stripe-routes";
+import { registerGrowthRoutes } from "./growth-routes";
 import {
   insertBrandKitSchema,
   insertProjectSchema,
@@ -2072,6 +2074,12 @@ Be systematic, growth-focused, and results-oriented.`
       res.status(500).json({ message: "Failed to delete post" });
     }
   });
+
+  // Register Stripe payment and subscription routes
+  registerStripeRoutes(app);
+  
+  // Register growth tools routes (testimonials, referrals, analytics)
+  registerGrowthRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

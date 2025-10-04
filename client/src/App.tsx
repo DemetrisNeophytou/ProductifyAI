@@ -33,6 +33,10 @@ import Onboarding from "@/pages/Onboarding";
 import Templates from "@/pages/Templates";
 import AIBuilders from "@/pages/AIBuilders";
 import AIChatBuilder from "@/pages/AIChatBuilder";
+import Billing from "@/pages/Billing";
+import SuccessStories from "@/pages/SuccessStories";
+import Analytics from "@/pages/Analytics";
+import Referrals from "@/pages/Referrals";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -144,6 +148,26 @@ function Router() {
           <Route path="/pricing">
             <DashboardLayout>
               <Pricing />
+            </DashboardLayout>
+          </Route>
+          <Route path="/billing">
+            <DashboardLayout>
+              <Billing />
+            </DashboardLayout>
+          </Route>
+          <Route path="/success-stories">
+            <DashboardLayout>
+              <SuccessStories />
+            </DashboardLayout>
+          </Route>
+          <Route path="/analytics">
+            <DashboardLayout>
+              <Analytics />
+            </DashboardLayout>
+          </Route>
+          <Route path="/referrals">
+            <DashboardLayout>
+              <Referrals />
             </DashboardLayout>
           </Route>
           <Route path="/help">

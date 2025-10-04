@@ -28,21 +28,13 @@ export default function Pricing() {
   });
 
   const checkoutMutation = useMutation({
-    mutationFn: async ({ priceId, tier }: { priceId: string; tier: string }) => {
-      const response = await fetch('/api/subscription/create-checkout', {
+    mutationFn: async ({ plan, billingPeriod }: { plan: string; billingPeriod: string }) => {
+      const response = await apiRequest('/api/stripe/create-checkout-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ priceId, tier }),
+        body: JSON.stringify({ plan, billingPeriod }),
+        headers: { 'Content-Type': 'application/json' },
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create checkout session');
-      }
-
-      return response.json();
+      return response;
     },
     onSuccess: async (data: any) => {
       if (data.url) {
@@ -58,8 +50,8 @@ export default function Pricing() {
     },
   });
 
-  const handleSubscribe = (priceId: string, tier: 'plus' | 'pro') => {
-    checkoutMutation.mutate({ priceId, tier });
+  const handleSubscribe = (plan: 'plus' | 'pro', billingPeriod: 'monthly' | 'quarterly') => {
+    checkoutMutation.mutate({ plan, billingPeriod });
   };
 
   const formatLimit = (limit: number) => {
@@ -188,7 +180,7 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_1SEEtkgAgnQzW8UqGtur2sN4', 'plus')}
+                onClick={() => handleSubscribe('plus', 'monthly')}
                 data-testid="button-plus-monthly"
               >
                 {checkoutMutation.isPending ? (
@@ -274,7 +266,7 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('price_1SEF9zAggnQzW8Uq7LcOJB8Q', 'pro')}
+                onClick={() => handleSubscribe('pro', 'quarterly')}
                 data-testid="button-pro-quarterly"
               >
                 {checkoutMutation.isPending ? (
