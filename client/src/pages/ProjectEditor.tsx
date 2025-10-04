@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,23 +61,34 @@ export default function ProjectEditor() {
 
   const [localSections, setLocalSections] = useState<Section[]>([]);
   const [dirtyFlags, setDirtyFlags] = useState<Record<string, boolean>>({});
+  const lastSectionsRef = useRef<Section[]>([]);
 
   useEffect(() => {
+    // Only update if server sections actually changed
+    if (JSON.stringify(sections) === JSON.stringify(lastSectionsRef.current)) {
+      return;
+    }
+    
+    lastSectionsRef.current = sections;
+    
     setLocalSections((prevLocal) => {
-      // Merge server data with local changes
-      // Only update sections that are NOT dirty (haven't been edited)
+      // If no local sections yet, initialize with server data
+      if (prevLocal.length === 0) {
+        return sections;
+      }
+      
+      // Merge: keep dirty sections from local, use server for clean sections
       return sections.map((serverSection) => {
+        const localSection = prevLocal.find((s) => s.id === serverSection.id);
+        // Access dirtyFlags from outer scope (current value)
         const isDirty = dirtyFlags[serverSection.id];
-        if (isDirty) {
-          // Keep local version if section is dirty
-          const localSection = prevLocal.find((s) => s.id === serverSection.id);
-          return localSection || serverSection;
+        if (localSection && isDirty) {
+          return localSection;
         }
-        // Use server version if section is not dirty
         return serverSection;
       });
     });
-  }, [sections, dirtyFlags]);
+  }, [sections]);
 
   // Auto-save with debouncing
   useEffect(() => {
@@ -145,9 +156,6 @@ export default function ProjectEditor() {
         
         // Clear dirty flag only if content still matches
         setDirtyFlags((prev) => ({ ...prev, [variables.sectionId]: false }));
-        
-        // Invalidate to ensure we eventually get fresh server data
-        queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
       }
       // If content doesn't match, leave dirty flag set and auto-save will retry with newer content
     },
