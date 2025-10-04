@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas, generateOutline, generateContent, generateOffer, generateFunnel } from "./openai";
+import aiGenerateRouter from "./ai-generate";
 import { z } from "zod";
 import { stripe } from "./stripe-config";
 import { 
@@ -633,6 +634,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // New simplified AI Generate endpoint
+  app.use("/api/ai", isAuthenticated, aiGenerationLimiter, aiGenerateRouter);
 
   app.delete("/api/products/:id", isAuthenticated, async (req: AuthRequest, res) => {
     try {
