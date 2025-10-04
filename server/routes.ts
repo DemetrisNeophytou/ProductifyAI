@@ -172,26 +172,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (stream) {
-        const { chatWithCoachStream } = await import('./openai');
-        const streamResponse = await chatWithCoachStream(message);
-
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-
         try {
-          for await (const chunk of streamResponse) {
-            const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-              res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          const { chatWithCoachStream } = await import('./openai');
+          const streamResponse = await chatWithCoachStream(message);
+
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+
+          try {
+            for await (const chunk of streamResponse) {
+              const content = chunk.choices[0]?.delta?.content || '';
+              if (content) {
+                res.write(`data: ${JSON.stringify({ content })}\n\n`);
+              }
             }
+            res.write('data: [DONE]\n\n');
+            res.end();
+          } catch (streamError: any) {
+            console.error("Error during streaming:", streamError);
+            res.write(`data: ${JSON.stringify({ error: "Stream interrupted. Please try again." })}\n\n`);
+            res.end();
           }
-          res.write('data: [DONE]\n\n');
-          res.end();
-        } catch (streamError: any) {
-          console.error("Error during streaming:", streamError);
-          res.write(`data: ${JSON.stringify({ error: "Stream interrupted. Please try again." })}\n\n`);
-          res.end();
+        } catch (streamInitError: any) {
+          // If streaming fails (e.g., organization not verified), fall back to non-streaming
+          console.log('[Chat] Streaming failed, falling back to non-streaming mode:', streamInitError.message);
+          const response = await chatWithCoach(message);
+          res.json({ message: response });
         }
       } else {
         const response = await chatWithCoach(message);

@@ -59,6 +59,17 @@ export default function IdeaFinder() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/idea-finder'] });
+      
+      // Validate response structure
+      if (!data || !data.ideas || !Array.isArray(data.ideas)) {
+        toast({
+          title: "Invalid Response",
+          description: "Received unexpected data format. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setResults(data);
       toast({
         title: "Ideas Generated!",
@@ -223,7 +234,7 @@ export default function IdeaFinder() {
         </CardContent>
       </Card>
 
-      {results && (
+      {results && results.ideas && Array.isArray(results.ideas) && results.ideas.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold" data-testid="heading-results">
