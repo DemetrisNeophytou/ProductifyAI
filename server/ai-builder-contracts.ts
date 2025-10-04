@@ -92,7 +92,8 @@ export async function handleIdeaFinder(inputs: Record<string, any>, tier: string
     experienceLevel: experienceLevel || 'beginner'
   });
 
-  const parsedIdeas = JSON.parse(ideas);
+  // generateIdeas already returns a parsed object
+  const parsedIdeas = ideas;
 
   return buildSuccessResponse(
     'idea',
