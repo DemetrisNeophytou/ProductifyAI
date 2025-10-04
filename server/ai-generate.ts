@@ -4,8 +4,19 @@ import OpenAI from 'openai';
 const router = express.Router();
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const BRAND_SAFE_HEADER = `
+BRAND SAFETY RULES (NEVER BREAK):
+- Do NOT mention or reference any competitor brand or individual by name.
+- Speak generically (e.g., "a competing platform", "another creator") when comparisons are necessary.
+- No quotes, paraphrases, or summaries that could identify competitors.
+- If asked to name competitors, politely refuse and offer generic guidance.
+- NEVER use emoji characters in any response.
+`;
+
 const MODULE_PROMPTS: Record<string, string> = {
   'idea': `You are the Idea Finder AI for Productify AI - a platform helping users create €100k+ digital product businesses.
+
+${BRAND_SAFE_HEADER}
 
 Your job: Create a niche shortlist (5-7 options) based on user inputs.
 
@@ -48,6 +59,8 @@ End with JSON summary:
 
   'offer': `You are the Offer Crafter AI for Productify AI - a platform helping users create €100k+ digital product businesses.
 
+${BRAND_SAFE_HEADER}
+
 Your job: Build a 3-tier offer stack for the given niche.
 
 PRICING TIERS:
@@ -79,6 +92,8 @@ Include traffic assumptions:
 End with actionable next steps for implementation.`,
 
   'funnel': `You are the Funnel & Launch AI for Productify AI - a platform helping users create €100k+ digital product businesses.
+
+${BRAND_SAFE_HEADER}
 
 Your job: Design a complete funnel architecture based on the niche, goal, and audience.
 
@@ -117,6 +132,8 @@ OUTPUT STRUCTURE:
 Include templates, headlines, and ready-to-use frameworks.`,
 
   'content': `You are the Content Writer AI for Productify AI - a platform helping users create €100k+ digital product businesses.
+
+${BRAND_SAFE_HEADER}
 
 Your job: Generate production-ready content outlines and copy based on the product type and target audience.
 
@@ -163,6 +180,8 @@ OUTPUT FORMAT:
 Make everything actionable and ready to implement immediately.`,
 
   'launch': `You are the Launch Builder AI for Productify AI - a platform helping users create €100k+ digital product businesses.
+
+${BRAND_SAFE_HEADER}
 
 Your job: Create a complete launch plan with daily actions, templates, and growth strategies.
 
