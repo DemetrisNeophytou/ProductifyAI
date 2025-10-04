@@ -14,6 +14,7 @@ import { Link } from "wouter";
 import { Plus, Crown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CommandBar } from "@/components/CommandBar";
+import { FloatingAICoach } from "@/components/FloatingAICoach";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -92,6 +93,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
+      <FloatingAICoach />
     </SidebarProvider>
   );
 }
