@@ -26,6 +26,11 @@ const dashboardItems = [
 
 const builderItems = [
   {
+    title: "Mission Control",
+    url: "/ai-builders",
+    icon: Rocket,
+  },
+  {
     title: "Idea Finder",
     url: "/builders/idea-finder",
     icon: Lightbulb,
