@@ -554,6 +554,257 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to get builder-specific system prompts
+  function getBuilderSystemPrompt(builderType: string): string {
+    const prompts: Record<string, string> = {
+      product_idea: `You are the Product Idea Builder, a GPT-5 powered AI that helps entrepreneurs validate €100k+ digital product ideas using Iman Gadzhi's frameworks.
+
+Your role:
+- Apply the 7-filter validation: Pain • Money • Access • Speed • Expertise • Passion • Scalability
+- Suggest profitable niches in eBooks, courses, templates, memberships
+- Validate market demand and competition
+- Calculate realistic revenue projections
+- Guide users through idea refinement
+
+Be direct, data-driven, and focused on €100k+ revenue potential.`,
+
+      market_research: `You are the Market Research Builder, a GPT-5 powered AI that conducts deep market analysis for digital products.
+
+Your role:
+- Analyze target audience demographics and psychographics
+- Identify pain points and buying triggers
+- Research competitor positioning and pricing
+- Validate market size and growth potential
+- Create customer avatars and journey maps
+- Provide actionable insights for positioning
+
+Be thorough, analytical, and focused on actionable intelligence.`,
+
+      content_plan: `You are the Content Plan Builder, a GPT-5 powered AI that creates comprehensive content strategies for digital products.
+
+Your role:
+- Design product structure (chapters, modules, lessons)
+- Create content outlines with learning objectives
+- Plan content delivery and pacing
+- Suggest multimedia elements and interactivity
+- Optimize for completion and results
+- Apply proven educational frameworks
+
+Be structured, pedagogical, and focused on student success.`,
+
+      launch_strategy: `You are the Launch Strategy Builder, a GPT-5 powered AI that designs €100k+ product launches.
+
+Your role:
+- Create pre-launch, launch, and post-launch timelines
+- Design email sequences and automation
+- Plan social media campaigns and content
+- Build urgency with limited offers and bonuses
+- Optimize pricing and payment plans
+- Calculate launch metrics and goals
+
+Be strategic, persuasive, and focused on conversion.`,
+
+      scale_blueprint: `You are the Scale Blueprint Builder, a GPT-5 powered AI that creates growth systems for digital products.
+
+Your role:
+- Design automated sales funnels
+- Create upsell and cross-sell strategies
+- Build affiliate and partnership programs
+- Implement retention and community systems
+- Plan paid advertising and organic growth
+- Develop systems for sustainable scaling
+
+Be systematic, growth-focused, and results-oriented.`
+    };
+
+    return prompts[builderType] || prompts.product_idea;
+  }
+
+  // AI Sessions - Interactive conversational AI builders
+  // GET /api/ai/sessions - Get all sessions for user
+  app.get("/api/ai/sessions", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const builderType = req.query.builderType as string | undefined;
+      const sessions = await storage.getUserAiSessions(userId, builderType);
+      res.json(sessions);
+    } catch (error: any) {
+      console.error("Error fetching AI sessions:", error);
+      res.status(500).json({ message: "Failed to fetch sessions" });
+    }
+  });
+
+  // POST /api/ai/sessions - Create new AI session
+  const createSessionSchema = z.object({
+    builderType: z.enum(["product_idea", "market_research", "content_plan", "launch_strategy", "scale_blueprint"]),
+    title: z.string().min(1, "Title is required"),
+    metadata: z.object({
+      niche: z.string().optional(),
+      productType: z.string().optional(),
+      currentStep: z.number().optional(),
+      totalSteps: z.number().optional(),
+    }).optional(),
+  });
+
+  app.post("/api/ai/sessions", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = createSessionSchema.parse(req.body);
+      const session = await storage.createAiSession({
+        userId,
+        ...data,
+      });
+
+      res.json(session);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error creating AI session:", error);
+      res.status(500).json({ message: "Failed to create session" });
+    }
+  });
+
+  // GET /api/ai/sessions/:id - Get session with messages
+  app.get("/api/ai/sessions/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const sessionId = req.params.id;
+      const session = await storage.getAiSession(sessionId);
+
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      if (session.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const messages = await storage.getSessionMessages(sessionId);
+      res.json({ ...session, messages });
+    } catch (error: any) {
+      console.error("Error fetching AI session:", error);
+      res.status(500).json({ message: "Failed to fetch session" });
+    }
+  });
+
+  // POST /api/ai/sessions/:id/messages - Send message with streaming
+  app.post("/api/ai/sessions/:id/messages", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const sessionId = req.params.id;
+      const { content } = req.body;
+
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+
+      const session = await storage.getAiSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      if (session.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Save user message
+      await storage.createAiMessage({
+        sessionId,
+        role: "user",
+        content,
+      });
+
+      // Get conversation history
+      const messages = await storage.getSessionMessages(sessionId);
+      const conversationHistory = messages.map(m => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content,
+      }));
+
+      // Set up streaming response
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const { askLLM } = await import('./llm-client');
+      
+      // Get builder-specific system prompt
+      const systemPrompt = getBuilderSystemPrompt(session.builderType);
+      
+      let fullResponse = '';
+      
+      await askLLM(
+        systemPrompt,
+        conversationHistory,
+        (chunk) => {
+          fullResponse += chunk;
+          res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+        }
+      );
+
+      // Save assistant message
+      await storage.createAiMessage({
+        sessionId,
+        role: "assistant",
+        content: fullResponse,
+      });
+
+      // Update session timestamp
+      await storage.updateAiSession(sessionId, {});
+
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (error: any) {
+      console.error("Error processing AI message:", error);
+      res.write(`data: ${JSON.stringify({ type: 'error', message: error.message })}\n\n`);
+      res.end();
+    }
+  });
+
+  // DELETE /api/ai/sessions/:id - Delete session
+  app.delete("/api/ai/sessions/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const sessionId = req.params.id;
+      const session = await storage.getAiSession(sessionId);
+
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      if (session.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteAiSession(sessionId);
+      res.json({ message: "Session deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting AI session:", error);
+      res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
   const expandContentSchema = z.object({
     originalContent: z.string().min(1, "Original content is required"),
     expandBy: z.string().min(1, "Expansion instructions are required"),
