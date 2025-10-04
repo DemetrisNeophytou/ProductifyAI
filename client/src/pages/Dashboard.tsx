@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StatsCard } from "@/components/StatsCard";
 import { 
   Sparkles, 
@@ -34,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
-import { WelcomeDialog } from "@/components/WelcomeDialog";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 const AI_AGENTS = [
   {
@@ -113,6 +113,19 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenOnboarding && isAuthenticated && !authLoading) {
+      setShowOnboarding(true);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+  };
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -217,7 +230,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <WelcomeDialog />
+      <OnboardingModal open={showOnboarding} onClose={handleCloseOnboarding} />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
