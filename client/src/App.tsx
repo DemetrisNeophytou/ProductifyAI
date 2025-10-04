@@ -22,7 +22,7 @@ import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import NewProject from "@/pages/NewProject";
 import ProjectEditor from "@/pages/ProjectEditor";
-import CreateProduct from "@/pages/CreateProduct";
+import WizardCreateProduct from "@/pages/WizardCreateProduct";
 import Products from "@/pages/Products";
 import BrandKit from "@/pages/BrandKit";
 import Assets from "@/pages/Assets";
@@ -78,7 +78,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                   Upgrade
                 </Button>
               </Link>
-              <Link href="/onboarding">
+              <Link href="/create">
                 <Button variant="default" size="default" data-testid="button-create-product">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Product
@@ -145,7 +145,7 @@ function Router() {
           </Route>
           <Route path="/create">
             <DashboardLayout>
-              <CreateProduct />
+              <WizardCreateProduct />
             </DashboardLayout>
           </Route>
           <Route path="/products">
