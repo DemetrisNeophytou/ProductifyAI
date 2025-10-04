@@ -323,6 +323,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      if (error?.message?.startsWith("MISSING_API_KEY")) {
+        return res.status(503).json({ 
+          message: "OpenAI API key not configured. Please add your API key to the OPENAI_API_KEY secret in Replit Settings → Secrets.",
+          code: "MISSING_API_KEY"
+        });
+      }
+      
       res.status(500).json({ message: "Failed to generate ideas. Please try again." });
     }
   });
@@ -347,11 +354,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get subscription tier for Pro features
       const user = await storage.getUser(userId);
-      const subscriptionAccess = await hasActiveAccess(user);
+      const tier = user?.subscriptionTier || 'free';
       
       const result = await generateOutline({
         ...data,
-        tier: subscriptionAccess.tier,
+        tier: tier === 'trial' ? 'plus' : tier,
       });
 
       res.json(result);
@@ -397,11 +404,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = contentWriterSchema.parse(req.body);
       const user = await storage.getUser(userId);
-      const subscriptionAccess = await hasActiveAccess(user);
+      const tier = user?.subscriptionTier || 'free';
       
       const result = await generateContent({
         ...data,
-        tier: subscriptionAccess.tier,
+        tier: tier === 'trial' ? 'plus' : tier,
       });
 
       res.json(result);
@@ -431,11 +438,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = offerBuilderSchema.parse(req.body);
       const user = await storage.getUser(userId);
-      const subscriptionAccess = await hasActiveAccess(user);
+      const tier = user?.subscriptionTier || 'free';
       
       const result = await generateOffer({
         ...data,
-        tier: subscriptionAccess.tier,
+        tier: tier === 'trial' ? 'plus' : tier,
       });
 
       res.json(result);
@@ -465,11 +472,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = funnelPlannerSchema.parse(req.body);
       const user = await storage.getUser(userId);
-      const subscriptionAccess = await hasActiveAccess(user);
+      const tier = user?.subscriptionTier || 'free';
       
       const result = await generateFunnel({
         ...data,
-        tier: subscriptionAccess.tier,
+        tier: tier === 'trial' ? 'plus' : tier,
       });
 
       res.json(result);
