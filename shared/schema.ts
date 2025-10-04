@@ -233,3 +233,51 @@ export type CommunityComment = typeof communityComments.$inferSelect;
 export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
 
 export type CommunityPostLike = typeof communityPostLikes.$inferSelect;
+
+// Artifacts - AI Builder outputs (outlines, content, funnels, etc.)
+export const artifacts = pgTable("artifacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // idea, outline, content, offer, funnel, launch_plan
+  title: text("title").notNull(),
+  contentMarkdown: text("content_md"),
+  contentJson: jsonb("content_json"),
+  metadata: jsonb("metadata").$type<{
+    builderType?: string;
+    productType?: string;
+    niche?: string;
+    audienceLevel?: string;
+    plan?: string; // plus or pro - which plan generated this
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Usage Logs - Track AI token usage per user per tool
+export const usageLogs = pgTable("usage_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tool: varchar("tool", { length: 100 }).notNull(), // idea_finder, outline_builder, content_writer, etc.
+  tokensUsed: integer("tokens_used").notNull(),
+  model: varchar("model", { length: 50 }), // gpt-4o, gpt-4o-mini, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_usage_logs_user").on(table.userId),
+  index("idx_usage_logs_created_at").on(table.createdAt),
+]);
+
+export const insertArtifactSchema = createInsertSchema(artifacts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUsageLogSchema = createInsertSchema(usageLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Artifact = typeof artifacts.$inferSelect;
+export type InsertArtifact = z.infer<typeof insertArtifactSchema>;
+
+export type UsageLog = typeof usageLogs.$inferSelect;
+export type InsertUsageLog = z.infer<typeof insertUsageLogSchema>;
