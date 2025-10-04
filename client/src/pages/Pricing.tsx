@@ -133,21 +133,21 @@ export default function Pricing() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-start gap-3" data-testid="feature-plus-outlines">
+              <div className="flex items-start gap-3" data-testid="feature-plus-builders">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>AI-powered product outlines</span>
+                <span>Core Builders (Idea, Outline, Content, Offer)</span>
               </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-chapters">
+              <div className="flex items-start gap-3" data-testid="feature-plus-funnel">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Full chapter & lesson writing</span>
+                <span>Basic Funnel & 5-Day Launch Plan</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-export">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <span>Professional PDF/DOCX exports</span>
               </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-strategies">
+              <div className="flex items-start gap-3" data-testid="feature-plus-community">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Basic monetization strategies</span>
+                <span>Community access (read & write)</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-plus-projects">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -211,21 +211,25 @@ export default function Pricing() {
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <span className="font-semibold">Everything in Plus, plus:</span>
               </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-pricing">
+              <div className="flex items-start gap-3" data-testid="feature-pro-advanced">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Advanced pricing strategies (€47-€497 products)</span>
+                <span>Advanced Builders (Deep Research, Step-by-Step Plans)</span>
+              </div>
+              <div className="flex items-start gap-3" data-testid="feature-pro-multiformat">
+                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <span>Multi-format content (Email + Social + Sales Copy)</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-funnels">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Sales funnel templates & automation</span>
+                <span>Advanced Funnel Kit (Opt-in + Sales + Upsell/Downsell)</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-launch">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>30-day launch plans (€10k-50k+ goals)</span>
+                <span>10-Day Launch Plan with automation</span>
               </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-templates">
+              <div className="flex items-start gap-3" data-testid="feature-pro-speed">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Premium revenue-optimized templates</span>
+                <span>Priority AI speed & higher rate limits</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-projects">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -233,11 +237,11 @@ export default function Pricing() {
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-tokens">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Unlimited AI content generation</span>
+                <span>{formatLimit(100000)} AI tokens/month</span>
               </div>
               <div className="flex items-start gap-3" data-testid="feature-pro-support">
                 <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Priority support & €100k+ coaching</span>
+                <span>Priority Community Badge & Priority Support</span>
               </div>
             </div>
 

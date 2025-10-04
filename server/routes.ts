@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateProduct, chatWithCoach } from "./openai";
+import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas } from "./openai";
 import { z } from "zod";
 import { stripe } from "./stripe-config";
 import { 
@@ -281,6 +281,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error writing chapter:", error);
       res.status(500).json({ message: "Failed to generate chapter content" });
+    }
+  });
+
+  // AI Builders - Idea Finder
+  const ideaFinderSchema = z.object({
+    interests: z.string().min(1, "Interests are required"),
+    timeAvailable: z.string().min(1, "Time availability is required"),
+    audienceType: z.string().min(1, "Audience type is required"),
+    experienceLevel: z.string().min(1, "Experience level is required"),
+  });
+
+  app.post("/api/builders/idea-finder", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = ideaFinderSchema.parse(req.body);
+      const result = await generateIdeas(data);
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating ideas:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded. Please add credits to your OpenAI account.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("INVALID_API_KEY")) {
+        return res.status(500).json({ 
+          message: "AI service is temporarily unavailable. Please contact support.",
+          code: "INVALID_API_KEY"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to generate ideas. Please try again." });
     }
   });
 

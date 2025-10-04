@@ -327,6 +327,68 @@ Provide 2-3 suggestions to improve this section.`;
   }
 }
 
+export async function generateIdeas(params: {
+  interests: string;
+  timeAvailable: string;
+  audienceType: string;
+  experienceLevel: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating niche ideas`);
+
+  const systemPrompt = `You are Productify AI, a specialist coach for building and monetizing digital products. Your task is to generate 5 profitable digital product niche ideas.
+
+Return ONLY valid JSON in this exact format:
+{
+  "ideas": [
+    {
+      "title": "Clear, specific niche title",
+      "why": "2-3 sentences explaining why this niche is profitable",
+      "icp": "Ideal Customer Profile description",
+      "painPoints": ["pain point 1", "pain point 2", "pain point 3"],
+      "proofKeywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+      "revenuePotential": "€10k-€100k range",
+      "difficulty": "Easy/Medium/Hard",
+      "timeToMarket": "X days/weeks"
+    }
+  ],
+  "nextSteps": ["action 1", "action 2", "action 3"]
+}`;
+
+  const userPrompt = `Generate 5 profitable digital product niche ideas based on:
+  
+Interests/Experience: ${params.interests}
+Time Available: ${params.timeAvailable}
+Target Audience: ${params.audienceType}
+Experience Level: ${params.experienceLevel}
+
+Focus on niches with proven buyers, low competition, and high demand. Make ideas SPECIFIC and achievable for this experience level.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 3000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Generate ideas failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate ideas"}`);
+  }
+}
+
 export async function generateProduct(params: GenerateProductParams): Promise<string> {
   const { prompt, type, creativity, length, style } = params;
 
