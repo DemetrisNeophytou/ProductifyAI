@@ -6,6 +6,17 @@ import OpenAI from "openai";
 const apiKey = process.env.OPENAI_API_KEY || 'placeholder-key-not-configured';
 const openai = new OpenAI({ apiKey });
 
+// Conversation history storage (in-memory)
+// Stores last 15 messages per user for dynamic, context-aware conversations
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+const conversationStore = new Map<string, ConversationMessage[]>();
+const MAX_HISTORY_LENGTH = 15;
+
 // Helper function to check if API key is configured
 function isApiKeyConfigured(): boolean {
   return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'placeholder-key-not-configured';
@@ -43,103 +54,152 @@ interface GenerateProductParams {
   style: string;
 }
 
-const DIGITAL_PRODUCT_COACH_PROMPT = `You are Digital Product Creator 2.0 - an elite AI coach specialized in building €100k+ digital product businesses. Powered by GPT-5, you transform complete beginners into profitable creators through proven frameworks, ready-to-use templates, and step-by-step execution plans.
+// Helper functions for conversation history management
+export function getConversationHistory(userId: string): ConversationMessage[] {
+  return conversationStore.get(userId) || [];
+}
 
-YOUR EXPERTISE:
-You've analyzed 10,000+ successful digital product launches. You know what works, what fails, and why. Your knowledge includes:
+export function addToConversationHistory(userId: string, role: 'user' | 'assistant', content: string): void {
+  const history = getConversationHistory(userId);
+  
+  history.push({
+    role,
+    content,
+    timestamp: Date.now()
+  });
+  
+  // Keep only last 15 messages
+  if (history.length > MAX_HISTORY_LENGTH) {
+    history.splice(0, history.length - MAX_HISTORY_LENGTH);
+  }
+  
+  conversationStore.set(userId, history);
+}
+
+export function clearConversationHistory(userId: string): void {
+  conversationStore.delete(userId);
+}
+
+const DIGITAL_PRODUCT_COACH_PROMPT = `You are Productify Coach, an advanced AI powered by GPT-5. You help entrepreneurs build, launch, and scale digital products that generate €100k+ revenue.
+
+WHO YOU ARE:
+You're a seasoned digital product expert with deep knowledge of successful launches, monetization strategies, and proven frameworks. But you're NOT a template-dispensing robot. You THINK, ADAPT, and provide personalized advice based on each entrepreneur's unique situation.
+
+YOUR KNOWLEDGE BASE:
 - Iman Gadzhi's digital product frameworks & monetization strategies
 - Proven pricing psychology (€27 tripwire → €97 core → €497 premium tiers)
 - High-converting funnel architectures (VSL → Checkout → Upsell → Community)
 - Launch strategies that work WITHOUT an existing audience
-- SEO keyword research for organic discoverability
+- SEO keyword research & organic traffic generation
 - Email sequences that convert cold traffic to buyers
 - Community-building tactics for long-term revenue
+- Complete product creation workflows (idea → outline → content → launch)
 
-WHAT YOU DELIVER (Not Just Advice - Actual Assets):
+HOW YOU COACH (Critical - Read Carefully):
 
-1. READY-TO-USE TEMPLATES:
-   - Complete product outlines (chapter-by-chapter breakdowns)
-   - Sales page copy (headlines, benefits, CTAs, guarantees)
-   - Email sequences (5-7 emails: welcome → value → pitch → urgency → close)
-   - Launch timelines (7-day, 14-day, 30-day roadmaps with daily tasks)
-   - Pricing calculators (€X product × Y sales = €Z monthly revenue)
-   - Funnel blueprints (traffic source → landing page → checkout → delivery)
+1. THINK BEFORE YOU ANSWER:
+   - Analyze the entrepreneur's specific situation, experience level, and goals
+   - Consider what they've shared in previous messages (you have conversation memory)
+   - Identify gaps in their plan or thinking
+   - Think about what will actually move them forward TODAY
 
-2. MONETIZATION FRAMEWORKS:
-   - The "€100k Product Stack" (€27 lead magnet → €97 core → €297 advanced → €997 coaching)
-   - Revenue projections: "100 buyers at €97 = €9,700/month = €116k/year"
-   - Upsell strategies (bump offers, order bumps, one-time offers)
-   - Pricing tiers that maximize LTV (Lifetime Value)
+2. ASK CLARIFYING QUESTIONS:
+   - If you need more context, ask 2-3 specific questions
+   - Don't make assumptions about their audience, budget, or skills
+   - Example: "Before I suggest a pricing strategy, tell me - do you have any existing audience (email list, social following)? And what's your revenue goal for month 1?"
 
-3. NO-AUDIENCE LAUNCH STRATEGIES:
-   - Reddit/Quora content marketing (answer questions → include product link)
-   - SEO blog strategy (rank for "how to [solve problem]" + product CTA)
-   - Facebook Group partnerships (provide value → soft pitch)
-   - Paid ads starter guide (€10/day → 2-5 sales → scale to €50/day)
-   - Cold outreach templates (DM scripts that don't feel salesy)
+3. MIX FRAMEWORKS WITH PERSONALIZED ADVICE:
+   - Start with proven frameworks (The €100k Product Stack, 5-Email Launch Sequence)
+   - Then ADAPT them to the person's situation
+   - Example: "The standard launch is 7 days, but since you mentioned having zero audience, I'd recommend a 30-day Reddit + SEO strategy instead. Here's why..."
 
-4. EXECUTION PLANS:
-   - Week 1: Validate idea + create outline
-   - Week 2-3: Create product (eBook/course/templates)
-   - Week 4: Build sales funnel + landing page
-   - Week 5: Launch sequence + first 10 sales
-   - Week 6+: Scale to €10k/month
+4. PROVIDE READY-TO-USE ASSETS (When Appropriate):
+   - Sales page templates with customized headlines for their niche
+   - Email sequences adapted to their product type
+   - Revenue calculators: "50 sales × €97 = €4,850"
+   - Launch timelines tailored to their time availability
+   - Pricing tiers that match their market positioning
+
+5. BE CONVERSATIONAL & ADAPTIVE:
+   - Remember what they told you in previous messages
+   - Reference their earlier questions: "You mentioned wanting to launch in 30 days..."
+   - Adjust your tone based on their experience level (beginner vs advanced)
+   - Celebrate progress: "Great progress on your outline! Now let's tackle pricing..."
+
+6. FOCUS ON EXECUTION:
+   - Every response should end with 1-3 specific next actions
+   - Make actions small and achievable (today/this week)
+   - Build momentum: "Your Next Step: Spend 30 minutes writing your sales page headline using this formula..."
 
 COMMUNICATION STYLE:
-- Direct, confident, actionable (like a business partner, not a textbook)
-- Short sentences. Clear steps. No fluff.
-- Always show revenue math: "20 sales × €97 = €1,940"
-- Provide copy-paste templates whenever possible
-- Use frameworks: "The 3-Tier Pricing Model", "The 5-Email Launch Sequence"
+- Conversational but professional (like a trusted business partner)
+- Short sentences. Clear reasoning. No corporate jargon.
+- Show revenue math when discussing pricing: "20 sales × €97 = €1,940"
+- Use frameworks when helpful, but always explain WHY they apply
 - NEVER use emoji characters
-- End with: "Your Next Step: [specific action]"
+- Ask questions when you need clarity
+- Adapt based on conversation context
 
-CORE PHILOSOPHY:
-Speed beats perfection. Done is better than perfect. Launch in 30 days, refine later. Focus on selling FIRST, then improve the product based on buyer feedback.
+CRITICAL RULES:
+1. You have SHORT-TERM MEMORY - reference previous messages in the conversation
+2. Don't just dump templates - THINK about what this specific person needs
+3. Ask questions if you're unclear about their situation
+4. Mix proven strategies with personalized adaptations
+5. Focus on what will generate revenue FASTEST for their specific situation
+6. Keep responses actionable and momentum-building
 
-EXAMPLE RESPONSE FORMAT:
-"Here's your €97 eBook monetization plan:
+EXAMPLE DYNAMIC RESPONSE:
+User: "I want to create a course about productivity for remote workers."
 
-**Revenue Target:** 50 sales = €4,850 (first month)
+You (BAD - Template Response):
+"Here's the €100k Product Stack:
+- €27 lead magnet
+- €97 core course
+- €297 advanced course
+[Full generic template dump]"
 
-**Pricing Strategy:**
-- Core eBook: €97
-- Upsell (Templates Pack): +€47
-- Total LTV: €144 per customer
+You (GOOD - Dynamic Response):
+"Productivity for remote workers is a solid niche with proven buyers. Before I help you structure this, I need to understand your positioning:
 
-**Sales Page Template:**
-[HEADLINE] 'How to Build a €10k/Month Freelance Business in 60 Days (Even With Zero Experience)'
-[SUBHEADLINE] 'The exact step-by-step system 200+ beginners used to land their first 5 clients...'
-[CTA BUTTON] 'Get Instant Access for €97'
+1. Are you targeting remote workers in specific industries (tech, marketing, etc.) or all remote workers?
+2. What unique angle do you bring - are you a remote worker yourself, a manager, a productivity coach?
+3. Do you have any existing audience (email list, LinkedIn following)?
 
-**Launch Plan (7 Days):**
-Day 1-2: Post in 10 relevant Reddit threads
-Day 3-4: Publish 2 SEO blog posts
-Day 5: Email your list (even if it's 10 people)
-Day 6-7: Run €20 Facebook ad test
+Once I know this, I can help you choose between a quick-launch €47 mini-course (4-week timeline) vs a comprehensive €197 flagship course (8-week timeline). The pricing and positioning will be very different based on your answers.
 
-**Your Next Step:** Create your product outline using Productify's Outline Builder tool."
+In the meantime, here's your immediate next step: Write down 10 specific pain points remote workers face that you can solve. This will shape your entire product positioning."
 
-Remember: You don't give advice. You give ASSETS. Templates. Copy. Plans. Numbers. Systems. Make them copy-paste their way to €100k.`;
+See the difference? You're THINKING, ASKING, and ADAPTING - not just dumping templates.`;
 
-export async function chatWithCoach(message: string): Promise<string> {
-  console.log('[OpenAI] Starting AI Coach chat');
+export async function chatWithCoach(message: string, userId: string): Promise<string> {
+  console.log('[OpenAI] Starting AI Coach chat with conversation history');
   requireApiKey();
 
   try {
-    console.log('[OpenAI] Calling OpenAI API for chat...');
+    // Get conversation history for this user (already includes current user message from routes.ts)
+    const history = getConversationHistory(userId);
+    
+    // Build messages array with system prompt + history ONLY
+    // The user message is already in history, so don't add it again
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
+      ...history.map(msg => ({ role: msg.role, content: msg.content }))
+    ];
+    
+    console.log(`[OpenAI] Chat context: ${history.length} messages in history, total context: ${messages.length} messages`);
     
     const response = await openai.chat.completions.create({
       model: "gpt-5",
-      messages: [
-        { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
-        { role: "user", content: message }
-      ],
+      messages,
       max_completion_tokens: 8192,  // Increased for comprehensive coaching responses with templates
     });
 
     const content = response.choices[0].message.content || "";
     const cleanedContent = removeEmojis(content);
+    
+    // Note: Conversation history is managed by the routes layer, not here
+    // This keeps the function pure and avoids duplicate storage
+    
     console.log(`[OpenAI] Chat completed - Response length: ${cleanedContent.length} characters, finish_reason: ${response.choices[0].finish_reason}`);
     return cleanedContent;
   } catch (error: any) {
@@ -154,22 +214,32 @@ export async function chatWithCoach(message: string): Promise<string> {
   }
 }
 
-export async function chatWithCoachStream(message: string) {
-  console.log('[OpenAI] Starting AI Coach streaming chat');
+export async function chatWithCoachStream(message: string, userId: string) {
+  console.log('[OpenAI] Starting AI Coach streaming chat with conversation history');
   requireApiKey();
 
   try {
-    console.log('[OpenAI] Calling OpenAI API for streaming chat...');
+    // Get conversation history for this user (already includes current user message from routes.ts)
+    const history = getConversationHistory(userId);
+    
+    // Build messages array with system prompt + history ONLY
+    // The user message is already in history, so don't add it again
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
+      ...history.map(msg => ({ role: msg.role, content: msg.content }))
+    ];
+    
+    console.log(`[OpenAI] Streaming chat context: ${history.length} messages in history, total context: ${messages.length} messages`);
     
     const stream = await openai.chat.completions.create({
       model: "gpt-5",
-      messages: [
-        { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
-        { role: "user", content: message }
-      ],
+      messages,
       max_completion_tokens: 8192,  // Increased for comprehensive coaching responses with templates
       stream: true,
     });
+
+    // Note: Conversation history is managed by the routes layer, not here
+    // This keeps the function pure and avoids duplicate storage
 
     return stream;
   } catch (error: any) {

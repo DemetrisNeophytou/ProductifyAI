@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Sparkles, User, DollarSign, Target, Rocket, TrendingUp } from "lucide-react";
+import { Send, Sparkles, User, DollarSign, Target, Rocket, TrendingUp, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
@@ -136,6 +136,34 @@ export default function AICoach() {
     }
   };
 
+  const handleClearChat = async () => {
+    try {
+      const response = await fetch("/api/chat/clear", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to clear chat");
+      }
+
+      setMessages([]);
+      toast({
+        title: "Chat Cleared",
+        description: "Starting a fresh conversation with Productify Coach",
+      });
+    } catch (error: any) {
+      console.error("Clear chat error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear chat. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -164,16 +192,30 @@ export default function AICoach() {
   return (
     <div className="flex flex-col h-full">
       <div className="px-6 py-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold" data-testid="heading-coach-title">Productify Coach</h1>
+              <p className="text-sm text-muted-foreground" data-testid="text-coach-subtitle">
+                Specialized AI for Digital Products • Powered by GPT-5
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="heading-coach-title">Productify Coach</h1>
-            <p className="text-sm text-muted-foreground" data-testid="text-coach-subtitle">
-              Specialized AI for Digital Products • Powered by GPT-5
-            </p>
-          </div>
+          {messages.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearChat}
+              data-testid="button-clear-chat"
+              className="gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Clear Chat
+            </Button>
+          )}
         </div>
       </div>
 

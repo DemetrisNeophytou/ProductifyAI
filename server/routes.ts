@@ -171,22 +171,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
+      // Import conversation history helpers
+      const { addToConversationHistory } = await import('./openai');
+      
+      // Store user message ONCE before any AI call
+      addToConversationHistory(userId, 'user', message);
+
       if (stream) {
         try {
           const { chatWithCoachStream } = await import('./openai');
-          const streamResponse = await chatWithCoachStream(message);
+          const streamResponse = await chatWithCoachStream(message, userId);
 
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
           res.setHeader('Connection', 'keep-alive');
 
+          let fullResponse = '';
           try {
             for await (const chunk of streamResponse) {
               const content = chunk.choices[0]?.delta?.content || '';
               if (content) {
+                fullResponse += content;
                 res.write(`data: ${JSON.stringify({ content })}\n\n`);
               }
             }
+            
+            // Store the complete assistant response in conversation history
+            if (fullResponse) {
+              addToConversationHistory(userId, 'assistant', fullResponse);
+            }
+            
             res.write('data: [DONE]\n\n');
             res.end();
           } catch (streamError: any) {
@@ -198,12 +212,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If streaming fails (e.g., organization not verified), fall back to non-streaming
           console.log('[Chat] Streaming failed, falling back to non-streaming mode:', streamInitError.message);
           const { chatWithCoach } = await import('./openai');
-          const response = await chatWithCoach(message);
+          const response = await chatWithCoach(message, userId);
+          
+          // Store assistant response for fallback path
+          addToConversationHistory(userId, 'assistant', response);
+          
           res.json({ message: response });
         }
       } else {
         const { chatWithCoach } = await import('./openai');
-        const response = await chatWithCoach(message);
+        const response = await chatWithCoach(message, userId);
+        
+        // Store assistant response for non-streaming path
+        addToConversationHistory(userId, 'assistant', response);
+        
         res.json({ message: response });
       }
     } catch (error: any) {
@@ -231,6 +253,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: "Failed to get AI response. Please try again." });
+    }
+  });
+
+  // Clear conversation history endpoint
+  app.post("/api/chat/clear", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { clearConversationHistory } = await import('./openai');
+      clearConversationHistory(userId);
+      
+      res.json({ success: true, message: "Conversation history cleared" });
+    } catch (error: any) {
+      console.error("Error clearing conversation:", error);
+      res.status(500).json({ message: "Failed to clear conversation history" });
     }
   });
 
