@@ -133,71 +133,6 @@ export async function chatWithCoachStream(message: string) {
   }
 }
 
-export async function generateOutline(params: {
-  title: string;
-  type: string;
-  description?: string;
-  audience?: string;
-  goal?: string;
-}): Promise<{ sections: Array<{ title: string; description: string; order: number }> }> {
-  console.log(`[OpenAI] Generating outline for: ${params.title}`);
-
-  const systemPrompt = `You are a €100k+ Monetization Coach creating product outlines that SELL.
-
-Your task: Generate a strategic outline designed to transform beginners into successful product creators.
-
-Outline requirements:
-- 5-8 sections that build from "complete beginner" to "ready to launch and earn"
-- Each section must include ACTIONABLE steps (not just theory)
-- Focus on MONETIZATION at every stage (pricing, positioning, sales)
-- Include revenue examples (e.g., "How to price your product for €10k/month")
-- Make customers feel confident they can succeed
-
-Return ONLY a valid JSON array with this exact structure:
-[
-  {
-    "title": "Section Title (action-oriented)",
-    "description": "What this achieves + revenue impact",
-    "order": 1
-  }
-]
-
-CRITICAL: Return ONLY the JSON array, no other text.`;
-
-  const userPrompt = `Create an outline for this ${params.type}:
-
-Title: "${params.title}"
-${params.description ? `Description: ${params.description}` : ''}
-${params.audience ? `Target Audience: ${params.audience}` : ''}
-${params.goal ? `Goal: ${params.goal}` : ''}
-
-Generate a strategic outline with 5-8 sections that will transform the customer.`;
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      max_completion_tokens: 2048,
-    });
-
-    const content = removeEmojis(response.choices[0].message.content || "");
-    
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error("Failed to extract JSON from response");
-    }
-    
-    const sections = JSON.parse(jsonMatch[0]);
-    return { sections };
-  } catch (error: any) {
-    console.error('[OpenAI] Generate outline failed:', error);
-    throw new Error(`AI_OUTLINE_ERROR: ${error?.message || "Failed to generate outline"}`);
-  }
-}
-
 export async function writeChapter(params: {
   title: string;
   type: string;
@@ -398,6 +333,348 @@ Focus on niches with proven buyers, low competition, and high demand. Make ideas
       throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
     }
     throw new Error(`AI_ERROR: ${error?.message || "Failed to generate ideas"}`);
+  }
+}
+
+export async function generateOutline(params: {
+  productType: string;
+  topic: string;
+  targetAudience: string;
+  mainGoal: string;
+  experienceLevel: string;
+  tier?: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating product outline - ${params.productType} (Tier: ${params.tier || 'free'})`);
+
+  const isPro = params.tier === 'pro';
+  const isPlus = params.tier === 'plus';
+  const isFree = !isPro && !isPlus;
+
+  const systemPrompt = `You are Productify AI, a specialist at creating comprehensive digital product outlines. Your task is to create a complete outline for a ${params.productType}.
+
+Return ONLY valid JSON in this exact format:
+{
+  "productTitle": "Compelling title",
+  "subtitle": "One-line description",
+  "chapters": [
+    {
+      "number": 1,
+      "title": "Chapter title",
+      "description": "What this chapter covers",
+      "keyPoints": ["point 1", "point 2", "point 3", "point 4"],
+      "estimatedLength": "X pages/minutes"${isPro ? ',\n      "monetizationTip": "Pro tip for maximizing revenue from this chapter"' : ''}
+    }
+  ],
+  "totalEstimatedPages": "X-Y pages/hours",
+  "recommendedPrice": "€X-€Y",
+  "nextSteps": ["action 1", "action 2", "action 3"]${isPro ? ',\n  "proTips": ["pro tip 1", "pro tip 2", "pro tip 3"]' : ''}
+}`;
+
+  let tierInstructions = '';
+  let chapterCount = '';
+  let maxTokens = 2000;
+
+  if (isPro) {
+    tierInstructions = 'PRO TIER: Include deep research insights, monetization strategies per chapter, and advanced structuring with proTips for revenue optimization.';
+    chapterCount = 'Create 8-12 detailed chapters';
+    maxTokens = 4000;
+  } else if (isPlus) {
+    tierInstructions = 'PLUS TIER: Focus on solid, actionable content with clear structure and value.';
+    chapterCount = 'Create 5-7 solid chapters';
+    maxTokens = 2500;
+  } else {
+    tierInstructions = 'FREE TIER: Create a basic but valuable outline.';
+    chapterCount = 'Create 3-4 essential chapters';
+    maxTokens = 1500;
+  }
+
+  const userPrompt = `Create a comprehensive outline for:
+
+Product Type: ${params.productType}
+Topic: ${params.topic}
+Target Audience: ${params.targetAudience}
+Main Goal: ${params.mainGoal}
+Audience Experience Level: ${params.experienceLevel}
+
+${tierInstructions}
+${chapterCount}.
+
+Make it outcome-focused, structured for easy creation, and optimized for commercial success.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: maxTokens,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Generate outline failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate outline"}`);
+  }
+}
+
+export async function generateContent(params: {
+  chapterTitle: string;
+  mainPoints: string;
+  targetLength: string;
+  tone: string;
+  format: string;
+  tier?: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating content - ${params.chapterTitle} (Tier: ${params.tier || 'free'})`);
+
+  const isPro = params.tier === 'pro';
+  const isPlus = params.tier === 'plus';
+  const targetWords = parseInt(params.targetLength) || 1000;
+
+  const systemPrompt = `You are Productify AI, a specialist content writer for digital products.
+
+Return ONLY valid JSON in this exact format:
+{
+  "content": "Full written content in markdown format",
+  "wordCount": number,
+  "exportFormats": ["PDF", "DOCX"]${isPro ? ',\n  "additionalFormats": {\n    "emailSequence": "3-email sequence to promote this content",\n    "socialPosts": ["post 1", "post 2", "post 3"],\n    "salesCopy": "Sales page copy for this content"\n  }' : ''}
+}`;
+
+  let tierInstructions = '';
+  let maxTokens = 2000;
+
+  if (isPro) {
+    tierInstructions = 'PRO TIER: Create comprehensive content AND additional formats (email sequence, social media posts, and sales copy).';
+    maxTokens = 6000;
+  } else if (isPlus) {
+    tierInstructions = 'PLUS TIER: Focus on high-quality core content with professional depth and value.';
+    maxTokens = 4000;
+  } else {
+    tierInstructions = 'FREE TIER: Create solid foundational content.';
+    maxTokens = 2000;
+  }
+
+  const userPrompt = `Write comprehensive content for:
+
+Title: ${params.chapterTitle}
+Main Points: ${params.mainPoints}
+Target Length: ${targetWords} words
+Tone: ${params.tone}
+Format: ${params.format}
+
+${tierInstructions}
+
+Make it valuable, actionable, and professionally written. Use markdown formatting.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: maxTokens,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Generate content failed:', error);
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate content"}`);
+  }
+}
+
+export async function generateOffer(params: {
+  productName: string;
+  productDescription: string;
+  targetRevenue: string;
+  targetAudience: string;
+  tier?: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating offer - ${params.productName} (Tier: ${params.tier || 'free'})`);
+
+  const isPro = params.tier === 'pro';
+  const isPlus = params.tier === 'plus';
+  
+  const systemPrompt = `You are Productify AI, a monetization strategist specializing in digital product offers.
+
+Return ONLY valid JSON in this exact format:
+{
+  "coreOffer": {
+    "price": "€X",
+    "positioning": "One-line positioning",
+    "valueProposition": "Why customers will buy"
+  },
+  "pricingTiers": [
+    {
+      "name": "Basic/Standard/Premium",
+      "price": "€X",
+      "includes": ["feature 1", "feature 2", "feature 3"],
+      "reasoning": "Why this price works"
+    }
+  ],
+  "bonuses": [
+    {
+      "title": "Bonus name",
+      "value": "€X value",
+      "description": "What it includes"
+    }
+  ],
+  "upsells": [
+    {
+      "product": "Upsell product name",
+      "price": "€X",
+      "why": "Why customers will want this"
+    }
+  ],
+  "nextSteps": ["step 1", "step 2", "step 3"]
+}`;
+
+  let tierInstructions = '';
+  let maxTokens = 2000;
+
+  if (isPro) {
+    tierInstructions = 'PRO TIER: Create comprehensive offer with 3+ pricing tiers, 3-5 strategic bonuses, and 2-3 upsell products with detailed reasoning for each element.';
+    maxTokens = 3500;
+  } else if (isPlus) {
+    tierInstructions = 'PLUS TIER: Create solid offer with 2 pricing tiers, 2-3 bonuses, and 1 upsell opportunity.';
+    maxTokens = 2500;
+  } else {
+    tierInstructions = 'FREE TIER: Create basic offer with 1 core pricing option and essential next steps.';
+    maxTokens = 1500;
+  }
+
+  const userPrompt = `Create a complete monetization strategy for:
+
+Product: ${params.productName}
+Description: ${params.productDescription}
+Target Audience: ${params.targetAudience}
+Revenue Goal: ${params.targetRevenue}
+
+${tierInstructions}
+
+Design pricing, bonuses, and upsells that maximize revenue while delivering massive value.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: maxTokens,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Generate offer failed:', error);
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate offer"}`);
+  }
+}
+
+export async function generateFunnel(params: {
+  productName: string;
+  productPrice: string;
+  hasAudience: string;
+  launchGoal: string;
+  tier?: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating funnel - ${params.productName} (Tier: ${params.tier || 'free'})`);
+
+  const isPro = params.tier === 'pro';
+  const isPlus = params.tier === 'plus';
+  
+  const systemPrompt = `You are Productify AI, a launch strategist specializing in sales funnels and product launches.
+
+Return ONLY valid JSON in this exact format:
+{
+  "funnelStrategy": {
+    "type": "Funnel type name",
+    "overview": "2-3 sentence strategy overview",
+    "expectedConversion": "X% conversion rate"
+  },
+  "funnelStages": [
+    {
+      "stage": "Stage name",
+      "objective": "What this stage achieves",
+      "tactics": ["tactic 1", "tactic 2", "tactic 3"],
+      "metrics": "Key metric to track"
+    }
+  ],
+  "launchRoadmap": [
+    {
+      "day": 1,
+      "activities": ["activity 1", "activity 2"],
+      "goal": "Day goal"
+    }
+  ],
+  "trafficStrategies": [
+    {
+      "channel": "Traffic channel",
+      "approach": "How to use this channel",
+      "timeline": "When to implement"
+    }
+  ],
+  "nextSteps": ["step 1", "step 2", "step 3"]
+}`;
+
+  let tierInstructions = '';
+  let maxTokens = 2500;
+
+  if (isPro) {
+    tierInstructions = 'PRO TIER: Create comprehensive funnel with 4-6 stages, detailed 14-30 day launch roadmap, and 4-5 traffic strategies with specific tactics for each.';
+    maxTokens = 5000;
+  } else if (isPlus) {
+    tierInstructions = 'PLUS TIER: Create solid funnel with 3-4 stages, 7-14 day launch roadmap, and 2-3 core traffic strategies.';
+    maxTokens = 3500;
+  } else {
+    tierInstructions = 'FREE TIER: Create basic funnel with 2-3 essential stages and simple 3-5 day roadmap.';
+    maxTokens = 2000;
+  }
+
+  const userPrompt = `Create a complete funnel and launch plan for:
+
+Product: ${params.productName}
+Price: ${params.productPrice}
+Audience Status: ${params.hasAudience}
+Launch Goal: ${params.launchGoal}
+
+${tierInstructions}
+
+Design a realistic, actionable funnel and day-by-day launch roadmap that gets first sales quickly.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: maxTokens,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    return JSON.parse(content);
+  } catch (error: any) {
+    console.error('[OpenAI] Generate funnel failed:', error);
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate funnel"}`);
   }
 }
 

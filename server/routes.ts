@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas } from "./openai";
+import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas, generateOutline, generateContent, generateOffer, generateFunnel } from "./openai";
 import { z } from "zod";
 import { stripe } from "./stripe-config";
 import { 
@@ -324,6 +324,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: "Failed to generate ideas. Please try again." });
+    }
+  });
+
+  // AI Builders - Outline Builder
+  const outlineBuilderSchema = z.object({
+    productType: z.string().min(1, "Product type is required"),
+    topic: z.string().min(1, "Topic is required"),
+    targetAudience: z.string().min(1, "Target audience is required"),
+    mainGoal: z.string().min(1, "Main goal is required"),
+    experienceLevel: z.string().min(1, "Experience level is required"),
+  });
+
+  app.post("/api/builders/outline", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = outlineBuilderSchema.parse(req.body);
+      
+      // Get subscription tier for Pro features
+      const user = await storage.getUser(userId);
+      const subscriptionAccess = await hasActiveAccess(user);
+      
+      const result = await generateOutline({
+        ...data,
+        tier: subscriptionAccess.tier,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating outline:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded. Please add credits to your OpenAI account.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("INVALID_API_KEY")) {
+        return res.status(500).json({ 
+          message: "AI service is temporarily unavailable. Please contact support.",
+          code: "INVALID_API_KEY"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to generate outline. Please try again." });
+    }
+  });
+
+  // AI Builders - Content Writer
+  const contentWriterSchema = z.object({
+    chapterTitle: z.string().min(1, "Chapter title is required"),
+    mainPoints: z.string().min(1, "Main points are required"),
+    targetLength: z.string().min(1, "Target length is required"),
+    tone: z.string().min(1, "Tone is required"),
+    format: z.string().min(1, "Format is required"),
+  });
+
+  app.post("/api/builders/content", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = contentWriterSchema.parse(req.body);
+      const user = await storage.getUser(userId);
+      const subscriptionAccess = await hasActiveAccess(user);
+      
+      const result = await generateContent({
+        ...data,
+        tier: subscriptionAccess.tier,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating content:", error);
+      res.status(500).json({ message: "Failed to generate content. Please try again." });
+    }
+  });
+
+  // AI Builders - Offer Builder
+  const offerBuilderSchema = z.object({
+    productName: z.string().min(1, "Product name is required"),
+    productDescription: z.string().min(1, "Product description is required"),
+    targetRevenue: z.string().min(1, "Target revenue is required"),
+    targetAudience: z.string().min(1, "Target audience is required"),
+  });
+
+  app.post("/api/builders/offer", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = offerBuilderSchema.parse(req.body);
+      const user = await storage.getUser(userId);
+      const subscriptionAccess = await hasActiveAccess(user);
+      
+      const result = await generateOffer({
+        ...data,
+        tier: subscriptionAccess.tier,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating offer:", error);
+      res.status(500).json({ message: "Failed to generate offer. Please try again." });
+    }
+  });
+
+  // AI Builders - Funnel Planner
+  const funnelPlannerSchema = z.object({
+    productName: z.string().min(1, "Product name is required"),
+    productPrice: z.string().min(1, "Product price is required"),
+    hasAudience: z.string().min(1, "Audience status is required"),
+    launchGoal: z.string().min(1, "Launch goal is required"),
+  });
+
+  app.post("/api/builders/funnel", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = funnelPlannerSchema.parse(req.body);
+      const user = await storage.getUser(userId);
+      const subscriptionAccess = await hasActiveAccess(user);
+      
+      const result = await generateFunnel({
+        ...data,
+        tier: subscriptionAccess.tier,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      console.error("Error generating funnel:", error);
+      res.status(500).json({ message: "Failed to generate funnel. Please try again." });
     }
   });
 
