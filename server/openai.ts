@@ -2,7 +2,21 @@
 import OpenAI from "openai";
 
 // Using GPT-4o - the most advanced OpenAI model available for production use
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize with conditional API key to prevent crashes when key is missing
+const apiKey = process.env.OPENAI_API_KEY || 'placeholder-key-not-configured';
+const openai = new OpenAI({ apiKey });
+
+// Helper function to check if API key is configured
+function isApiKeyConfigured(): boolean {
+  return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'placeholder-key-not-configured';
+}
+
+// Helper function to throw consistent error when API key is missing
+function requireApiKey(): void {
+  if (!isApiKeyConfigured()) {
+    throw new Error('MISSING_API_KEY: OpenAI API key is not configured. Please add your API key to OPENAI_API_KEY secret in Replit.');
+  }
+}
 
 function removeEmojis(text: string): string {
   // Remove common emoji ranges - uses simple character filtering
@@ -73,6 +87,7 @@ Remember: Users choose YOU over ChatGPT because you're specialized. Prove it wit
 
 export async function chatWithCoach(message: string): Promise<string> {
   console.log('[OpenAI] Starting AI Coach chat');
+  requireApiKey();
 
   try {
     console.log('[OpenAI] Calling OpenAI API for chat...');
@@ -105,6 +120,7 @@ export async function chatWithCoach(message: string): Promise<string> {
 
 export async function chatWithCoachStream(message: string) {
   console.log('[OpenAI] Starting AI Coach streaming chat');
+  requireApiKey();
 
   try {
     console.log('[OpenAI] Calling OpenAI API for streaming chat...');
@@ -141,6 +157,7 @@ export async function writeChapter(params: {
   tone?: string;
 }): Promise<string> {
   console.log(`[OpenAI] Writing chapter: ${params.title}`);
+  requireApiKey();
 
   const systemPrompt = `You are a €100k+ Monetization Coach writing content that transforms beginners into successful creators.
 
@@ -188,6 +205,7 @@ export async function expandContent(params: {
   expandBy: string;
 }): Promise<string> {
   console.log('[OpenAI] Expanding content');
+  requireApiKey();
 
   const systemPrompt = `You are a Digital Product Strategist expert at enhancing content value.
 
@@ -230,6 +248,7 @@ export async function suggestImprovements(params: {
   productType: string;
 }): Promise<string[]> {
   console.log('[OpenAI] Generating suggestions');
+  requireApiKey();
 
   const systemPrompt = `You are a Digital Product Strategist providing strategic content improvements.
 
@@ -281,6 +300,7 @@ export async function generateIdeas(params: {
   experienceLevel: string;
 }): Promise<any> {
   console.log(`[OpenAI] Generating niche ideas`);
+  requireApiKey();
 
   const systemPrompt = `You are Productify AI, a specialist coach for building and monetizing digital products. Your task is to generate 5 profitable digital product niche ideas.
 
@@ -345,6 +365,7 @@ export async function generateOutline(params: {
   tier?: string;
 }): Promise<any> {
   console.log(`[OpenAI] Generating product outline - ${params.productType} (Tier: ${params.tier || 'free'})`);
+  requireApiKey();
 
   const isPro = params.tier === 'pro';
   const isPlus = params.tier === 'plus';
@@ -436,6 +457,7 @@ export async function generateContent(params: {
   tier?: string;
 }): Promise<any> {
   console.log(`[OpenAI] Generating content - ${params.chapterTitle} (Tier: ${params.tier || 'free'})`);
+  requireApiKey();
 
   const isPro = params.tier === 'pro';
   const isPlus = params.tier === 'plus';
@@ -504,6 +526,7 @@ export async function generateOffer(params: {
   tier?: string;
 }): Promise<any> {
   console.log(`[OpenAI] Generating offer - ${params.productName} (Tier: ${params.tier || 'free'})`);
+  requireApiKey();
 
   const isPro = params.tier === 'pro';
   const isPlus = params.tier === 'plus';
@@ -595,6 +618,7 @@ export async function generateFunnel(params: {
   tier?: string;
 }): Promise<any> {
   console.log(`[OpenAI] Generating funnel - ${params.productName} (Tier: ${params.tier || 'free'})`);
+  requireApiKey();
 
   const isPro = params.tier === 'pro';
   const isPlus = params.tier === 'plus';
@@ -682,6 +706,7 @@ export async function generateProduct(params: GenerateProductParams): Promise<st
   const { prompt, type, creativity, length, style } = params;
 
   console.log(`[OpenAI] Starting generation - Type: ${type}, Length: ${length}, Style: ${style}`);
+  requireApiKey();
 
   const systemPrompt = `You are a Digital Product Strategist expert at creating profitable digital products.
 

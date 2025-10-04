@@ -34,7 +34,7 @@ Productify AI is a fullstack application built with React, Vite, TypeScript, Tai
 The project architecture emphasizes modularity with clear separation between client and server. The database schema is designed to support complex digital products, brand kits, projects, sections, assets, and versioning. Core tables include `users`, `brand_kits`, `projects`, `sections`, `assets`, `project_versions`, `community_posts`, `community_comments`, and `community_post_likes`. API routes are structured RESTfully, covering authentication, brand kits, projects, sections, assets, versions, and community interactions. Error handling is robust, providing user-friendly toast notifications for various issues.
 
 ## External Dependencies
-- **AI**: OpenAI GPT-5
+- **AI**: OpenAI GPT-4o (requires OPENAI_API_KEY secret)
 - **Database**: PostgreSQL
 - **ORM**: Drizzle ORM
 - **Authentication**: Replit Auth (OpenID Connect)
@@ -45,3 +45,28 @@ The project architecture emphasizes modularity with clear separation between cli
 - **Markdown Processing**: markdown-it
 - **ZIP Archiving**: jszip
 - **Image Assets**: Unsplash API
+
+## Configuration Requirements
+
+### OpenAI API Key Setup
+The platform requires a valid OpenAI API key to enable AI features:
+
+1. **Add API Key**: Configure `OPENAI_API_KEY` in Replit Secrets (Tools → Secrets)
+2. **Get API Key**: Obtain from https://platform.openai.com/api-keys
+3. **Required Access**: The key must have access to GPT-4o model
+4. **Billing**: Ensure OpenAI account has available credits
+
+### Resilient Error Handling
+The application is designed to be resilient:
+- **Graceful Degradation**: App starts successfully even without API key configured
+- **Clear Error Messages**: Users get helpful guidance when API key is missing/invalid
+- **No Crashes**: Missing API key doesn't crash the server - shows friendly error instead
+- **Easy Recovery**: Once API key is added to secrets, all AI features work immediately without code changes
+
+### AI Features Requiring API Key
+- AI Coach (streaming chat assistant)
+- Idea Finder (5 AI-generated product ideas)
+- Outline Builder (tier-based: Free=3-4 chapters, Plus=5-7, Pro=8-12+monetization)
+- Content Writer (tier-based with multi-format support for Pro)
+- Offer Builder (pricing strategy with bonuses/upsells)
+- Funnel & Launch Planner (complete execution roadmap)
