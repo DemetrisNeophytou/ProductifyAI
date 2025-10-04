@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { StatsCard } from "@/components/StatsCard";
 import { 
   Sparkles, 
-  Download, 
-  HardDrive, 
   Plus, 
   FileText, 
   BookOpen, 
@@ -14,15 +11,17 @@ import {
   Lightbulb, 
   DollarSign, 
   Rocket, 
-  Target, 
   TrendingUp,
   LineChart,
   MessageSquare,
-  Copy,
-  Megaphone,
   CheckCircle2,
   Clock,
-  Coins
+  Coins,
+  BarChart3,
+  PenTool,
+  Target,
+  Activity,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -220,6 +219,42 @@ export default function Dashboard() {
     return acc + 5000; // Default €5k potential
   }, 0);
 
+  // Calculate progress through the builder steps based on actual completion
+  const totalSteps = 5; // Idea, Outline, Content, Offer, Launch
+  let completedSteps = 0;
+  
+  // Check actual metadata for completion flags
+  if (projects.length > 0) {
+    const latestProject = projects[0];
+    const metadata = latestProject.metadata as any;
+    
+    // Count completed steps based on metadata
+    if (metadata?.idea) completedSteps++;
+    if (metadata?.outline) completedSteps++;
+    if (metadata?.content) completedSteps++;
+    if (metadata?.offer) completedSteps++;
+    if (metadata?.funnel) completedSteps++;
+  }
+  
+  const progressPercentage = (completedSteps / totalSteps) * 100;
+
+  // Build recent activity from actual project data
+  const recentActivity: Array<{ id: number; action: string; time: string; icon: any }> = [];
+  if (projects.length > 0) {
+    projects.slice(0, 3).forEach((project, index) => {
+      const timeSince = new Date().getTime() - new Date(project.createdAt!).getTime();
+      const hoursAgo = Math.floor(timeSince / (1000 * 60 * 60));
+      const timeStr = hoursAgo < 24 ? `${hoursAgo} hours ago` : `${Math.floor(hoursAgo / 24)} days ago`;
+      
+      recentActivity.push({
+        id: index + 1,
+        action: `Created "${project.title}"`,
+        time: timeStr,
+        icon: Plus
+      });
+    });
+  }
+
   if (authLoading || !isAuthenticated) {
     return (
       <div className="p-8 flex items-center justify-center">
@@ -257,105 +292,194 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Revenue Tracker + Cost Savings */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20" data-testid="card-revenue-tracker">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Revenue Potential</CardTitle>
-                  <Badge variant="outline" className="text-xs">Phase 4: Live Tracking</Badge>
-                </div>
-                <div className="text-3xl font-bold mt-1" data-testid="text-revenue-amount">
-                  €{totalRevenuePotential.toLocaleString()}
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-green-500" />
-              </div>
+      {/* Progress Tracker */}
+      <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" data-testid="card-progress-tracker">
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Your Launch Progress
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {progressPercentage === 100 ? "Ready to launch your product!" : `${Math.round(progressPercentage)}% complete to your first €100k product`}
+              </CardDescription>
             </div>
+            <Badge variant="default" className="text-sm" data-testid="badge-progress">
+              {completedSteps}/{totalSteps} Steps
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-primary h-full transition-all duration-500 rounded-full"
+                style={{ width: `${progressPercentage}%` }}
+                data-testid="progress-bar"
+              />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {(() => {
+                const latestProject = projects.length > 0 ? projects[0] : null;
+                const metadata = latestProject?.metadata as any;
+                
+                return [
+                  { icon: Lightbulb, label: "Idea", complete: !!metadata?.idea },
+                  { icon: ListChecks, label: "Outline", complete: !!metadata?.outline },
+                  { icon: PenTool, label: "Content", complete: !!metadata?.content },
+                  { icon: DollarSign, label: "Offer", complete: !!metadata?.offer },
+                  { icon: Rocket, label: "Launch", complete: !!metadata?.funnel },
+                ];
+              })().map((step, index) => (
+                <div
+                  key={step.label}
+                  className={`flex items-center gap-2 p-2 rounded-lg ${
+                    step.complete ? "bg-green-500/10 border border-green-500/20" : "bg-muted"
+                  }`}
+                  data-testid={`step-${step.label.toLowerCase()}`}
+                >
+                  {step.complete ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <step.icon className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className={`text-xs font-medium ${step.complete ? "text-green-600" : "text-muted-foreground"}`}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Actionable Widgets */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="hover-elevate cursor-pointer bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20" data-testid="card-revenue-action">
+          <Link href="/builders/offer">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    <CardTitle className="text-lg">Generate Offer to Validate Revenue</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Create optimized pricing and offers to maximize your €50k-€100k potential
+                  </CardDescription>
+                </div>
+                <ArrowRight className="h-5 w-5 text-green-500 flex-shrink-0" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                  AI Powered
+                </Badge>
+                <Badge variant="outline">5 min setup</Badge>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover-elevate cursor-pointer bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20" data-testid="card-savings-action">
+          <Link href="/pricing">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Coins className="h-5 w-5 text-purple-500" />
+                    <CardTitle className="text-lg">Save €1,440 vs Typical Tools – Learn Why</CardTitle>
+                  </div>
+                  <CardDescription>
+                    See how Productify AI replaces 7+ expensive tools with one AI platform
+                  </CardDescription>
+                </div>
+                <ArrowRight className="h-5 w-5 text-purple-500 flex-shrink-0" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                  88% Savings
+                </Badge>
+                <Badge variant="outline">Pro: €59.99/3mo</Badge>
+              </div>
+            </CardContent>
+          </Link>
+        </Card>
+      </div>
+
+      {/* Recent Activity + Quick Actions */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card data-testid="card-recent-activity">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Recent Activity
+            </CardTitle>
+            <CardDescription>Your latest actions and updates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  {projects.length} {projects.length === 1 ? 'product' : 'products'} × €50-5k potential
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Real-time tracking activates after payment integration
-              </p>
+            <div className="space-y-3">
+              {projects.length > 0 ? (
+                recentActivity.slice(0, 3).map((activity) => {
+                  const Icon = activity.icon;
+                  return (
+                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover-elevate">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p className="text-sm">No recent activity yet</p>
+                  <p className="text-xs mt-1">Start creating your first product!</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20" data-testid="card-cost-savings">
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20" data-testid="card-quick-actions">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-sm font-medium text-muted-foreground">You Save vs Typical Tool Stack</CardTitle>
-                <div className="text-3xl font-bold mt-1" data-testid="text-savings-amount">
-                  €1,440<span className="text-lg text-muted-foreground">/quarter</span>
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center">
-                <Coins className="h-6 w-6 text-purple-500" />
-              </div>
-            </div>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-primary" />
+              Quick Actions
+            </CardTitle>
+            <CardDescription>Jump into building your next product</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Productify AI Pro:</span>
-                <span className="font-semibold">€59.99/quarter</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Other platforms:</span>
-                <span className="font-semibold line-through text-destructive">€500+/quarter</span>
-              </div>
-              <div className="pt-2 border-t">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="font-medium text-green-600">88% cost reduction</span>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Link href="/onboarding">
+                <Button className="w-full justify-start" data-testid="button-quick-new-product">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Product (90-sec Setup)
+                </Button>
+              </Link>
+              <Link href="/builders/content">
+                <Button variant="outline" className="w-full justify-start" data-testid="button-quick-content">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Generate Content
+                </Button>
+              </Link>
+              <Link href="/analytics">
+                <Button variant="outline" className="w-full justify-start" data-testid="button-quick-analytics">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  View Performance
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions Strip */}
-      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20" data-testid="card-quick-actions">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
-            Quick Actions
-          </CardTitle>
-          <CardDescription>Launch new products or optimize existing ones</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/onboarding">
-              <Button data-testid="button-quick-generate">
-                <Plus className="h-4 w-4 mr-2" />
-                Generate New Product
-              </Button>
-            </Link>
-            <Button variant="outline" disabled data-testid="button-quick-clone">
-              <Copy className="h-4 w-4 mr-2" />
-              Clone Best Seller
-              <Badge variant="secondary" className="ml-2">Soon</Badge>
-            </Button>
-            <Button variant="outline" disabled data-testid="button-quick-promo">
-              <Megaphone className="h-4 w-4 mr-2" />
-              Launch Promo
-              <Badge variant="secondary" className="ml-2">Soon</Badge>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {subscriptionStatus?.isOnTrial && (
         <Card className="border-primary/20 bg-primary/5" data-testid="card-trial-status">
