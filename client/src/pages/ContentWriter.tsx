@@ -61,11 +61,8 @@ export default function ContentWriter() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: ContentWriterForm) => {
-      const response = await apiRequest<ContentResult>('/api/builders/content', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/builders/content', data);
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/content'] });

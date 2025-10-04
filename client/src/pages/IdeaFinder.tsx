@@ -54,11 +54,8 @@ export default function IdeaFinder() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: IdeaFinderForm) => {
-      const response = await apiRequest<IdeaFinderResponse>('/api/builders/idea-finder', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/builders/idea-finder', data);
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/idea-finder'] });

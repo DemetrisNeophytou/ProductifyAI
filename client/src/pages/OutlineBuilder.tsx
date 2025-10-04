@@ -69,11 +69,8 @@ export default function OutlineBuilder() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: OutlineBuilderForm) => {
-      const response = await apiRequest<OutlineResult>('/api/builders/outline', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/builders/outline', data);
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/outline'] });

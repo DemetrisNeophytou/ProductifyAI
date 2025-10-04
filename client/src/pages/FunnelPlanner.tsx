@@ -76,11 +76,8 @@ export default function FunnelPlanner() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: FunnelPlannerForm) => {
-      const response = await apiRequest<FunnelResult>('/api/builders/funnel', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/builders/funnel', data);
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/funnel'] });
