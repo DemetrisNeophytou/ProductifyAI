@@ -84,7 +84,7 @@ export async function askLLM(options: AskLLMOptions): Promise<LLMResponse | Asyn
             { role: 'system', content: system },
             { role: 'user', content: user }
           ],
-          ...(maxTokens && { max_tokens: maxTokens }),
+          ...(maxTokens && { max_completion_tokens: maxTokens }),
           ...(schema && { 
             response_format: { 
               type: 'json_schema', 
