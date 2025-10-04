@@ -29,6 +29,7 @@ import OutlineBuilder from "@/pages/OutlineBuilder";
 import ContentWriter from "@/pages/ContentWriter";
 import OfferBuilder from "@/pages/OfferBuilder";
 import FunnelPlanner from "@/pages/FunnelPlanner";
+import Onboarding from "@/pages/Onboarding";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -67,6 +68,7 @@ function Router() {
         </>
       ) : (
         <>
+          <Route path="/onboarding" component={Onboarding} />
           <Route path="/">
             <DashboardLayout>
               <Dashboard />

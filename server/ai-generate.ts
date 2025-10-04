@@ -231,7 +231,43 @@ router.post('/generate', async (req, res) => {
       temperature: 0.7,
     });
 
-    const content = response.choices?.[0]?.message?.content || '';
+    let content: any = response.choices?.[0]?.message?.content || '';
+    let parsedJson: any = null;
+
+    // If JSON format requested, extract and parse JSON from response
+    if (format === 'json') {
+      // Try code fence first
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        try {
+          parsedJson = JSON.parse(jsonMatch[1]);
+        } catch (e) {
+          console.error('Failed to parse JSON from code fence:', e);
+        }
+      }
+      
+      // If no code fence, try to find JSON object
+      if (!parsedJson) {
+        const objectMatch = content.match(/\{[\s\S]*\}/);
+        if (objectMatch) {
+          try {
+            parsedJson = JSON.parse(objectMatch[0]);
+          } catch (e) {
+            console.error('Failed to parse JSON from object match:', e);
+          }
+        }
+      }
+
+      // Use parsed JSON if available, otherwise keep as string
+      if (parsedJson) {
+        content = parsedJson;
+      }
+    }
+
+    // Safe content length calculation
+    const contentLength = typeof content === 'string' 
+      ? content.length 
+      : JSON.stringify(content).length;
 
     return res.status(200).json({
       ok: true,
@@ -245,7 +281,7 @@ router.post('/generate', async (req, res) => {
       ],
       kpis: [
         `${module} generation completed`,
-        `Content length: ${content.length} characters`,
+        `Content length: ${contentLength} characters`,
         `Response time: <10s`
       ],
       nextActions: [

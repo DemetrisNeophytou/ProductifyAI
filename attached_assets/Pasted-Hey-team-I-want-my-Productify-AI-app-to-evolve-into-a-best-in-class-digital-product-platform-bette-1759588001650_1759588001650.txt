@@ -1,0 +1,50 @@
+Hey team, I want my Productify AI app to evolve into a best-in-class digital product platform, better than Monetise, Gumroad, and The Leap.
+
+Please study the competitive analysis & roadmap I’m attaching. The goal is to integrate the best elements from each competitor, but make them unified and seamless inside my app.
+
+Implementation priorities:
+
+PHASE 1 (Week 1-2):
+- Add 90-second onboarding flow (choose product → AI validates → AI builds offer → publish → get paid).
+- Show live scoring (Pain, Money, Access, Speed).
+- AI generates first idea + 3-tier pricing with revenue math.
+- One-click publish to template store.
+
+PHASE 2 (Week 3-4):
+- Add “AI Mission Control” dashboard with:
+  - Real-time revenue tracker
+  - 7 AI agent cards (Idea Finder, Offer Crafter, Content Writer, Funnel Planner, Launch Manager, AI Coach, Analytics Agent).
+- Quick Actions strip: "Generate New Product", "Clone Best Seller", "Launch Promo".
+- Cost Savings Calculator (compare vs competitors).
+
+PHASE 3 (Week 5-6):
+- Template Library (at least 15 templates: eBooks, courses, sales pages, email sequences).
+- One-click AI enhancements: Polish Copy, Generate Images, SEO Optimize, Add Upsells.
+- Speed Metrics: "Product created in 47 sec", "First sale in 3h".
+
+PHASE 4 (Week 7-8):
+- Payment & checkout integration like Lemon Squeezy:
+  - Global tax compliance
+  - Multi-currency + 20+ payment methods
+  - Instant payouts (PayPal/Stripe)
+  - 0% platform fees → emphasize "keep 100% of revenue".
+
+PHASE 5 (Week 9-10):
+- Social Proof & Results section:
+  - Live revenue counter
+  - Creator spotlights with testimonials + revenue numbers
+  - 10X Guarantee Badge.
+
+PHASE 6:
+- Unique AI Differentiators:
+  - "GPT-5 Powered" Badge
+  - Built-in Iman Gadzhi’s 7 profitability filters
+  - Always-on chat bubble: “Ask me anything about your product”.
+
+IMPORTANT:
+- Keep the app **simple and fast** (no clutter).
+- Prioritize user-first wins in <90 seconds.
+- Make UI visually show cost savings and speed advantages vs competitors.
+- Optimize prompts with High Power Model (GPT-5) for content-heavy tools (Content Writer, Offer Builder, Funnel & Launch, AI Coach).
+
+The goal is: When people see my app, they should say “this is clearly better than Monetise or Gumroad”.
