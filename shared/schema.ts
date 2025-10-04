@@ -37,9 +37,9 @@ export const users = pgTable("users", {
   trialStartDate: timestamp("trial_start_date"),
   trialEndDate: timestamp("trial_end_date"),
   subscriptionPeriodEnd: timestamp("subscription_period_end"),
-  projectsLimit: integer("projects_limit").default(10), // Trial/Plus: 10, Pro: unlimited (-1)
+  projectsLimit: integer("projects_limit").default(3), // Trial: 3, Plus: 10, Pro: unlimited (-1)
   aiTokensUsed: integer("ai_tokens_used").default(0),
-  aiTokensLimit: integer("ai_tokens_limit").default(20000), // Trial/Plus: 20000, Pro: unlimited (-1)
+  aiTokensLimit: integer("ai_tokens_limit").default(5000), // Trial: 5000, Plus: 20000, Pro: unlimited (-1)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
