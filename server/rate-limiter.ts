@@ -9,18 +9,12 @@ interface AuthRequest extends Request {
   };
 }
 
-const getUserKey = (req: Request): string => {
-  const authReq = req as AuthRequest;
-  return authReq.user?.claims?.sub || req.ip || 'anonymous';
-};
-
 export const communityPostLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
   message: 'Too many posts created. Please wait a minute before posting again.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
   skip: (req) => {
     const authReq = req as AuthRequest;
     return !authReq.user?.claims?.sub;
@@ -33,7 +27,6 @@ export const communityCommentLimiter = rateLimit({
   message: 'Too many comments. Please wait a minute before commenting again.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
   skip: (req) => {
     const authReq = req as AuthRequest;
     return !authReq.user?.claims?.sub;
@@ -46,7 +39,6 @@ export const communityLikeLimiter = rateLimit({
   message: 'Too many like actions. Please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
   skip: (req) => {
     const authReq = req as AuthRequest;
     return !authReq.user?.claims?.sub;
@@ -59,7 +51,6 @@ export const aiChatLimiter = rateLimit({
   message: 'Too many AI requests. Please wait a minute to avoid quota limits.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
   skip: (req) => {
     const authReq = req as AuthRequest;
     return !authReq.user?.claims?.sub;
@@ -72,7 +63,6 @@ export const aiGenerationLimiter = rateLimit({
   message: 'Too many generation requests. Please wait a minute.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
   skip: (req) => {
     const authReq = req as AuthRequest;
     return !authReq.user?.claims?.sub;
@@ -85,7 +75,6 @@ export const checkoutLimiter = rateLimit({
   message: 'Too many checkout attempts. Please wait 5 minutes.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
 });
 
 export const generalApiLimiter = rateLimit({
@@ -94,5 +83,4 @@ export const generalApiLimiter = rateLimit({
   message: 'Too many requests. Please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getUserKey,
 });
