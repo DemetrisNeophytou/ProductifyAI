@@ -57,7 +57,7 @@ export async function askLLM(options: AskLLMOptions): Promise<LLMResponse | Asyn
   } = options;
 
   const model = process.env.OPENAI_MODEL || 'gpt-5';
-  const temperature = mode === 'fast' ? 0.2 : 0.6;
+  // Note: GPT-5 only supports temperature=1, so we omit the temperature parameter
 
   let lastError: any;
 
@@ -84,7 +84,6 @@ export async function askLLM(options: AskLLMOptions): Promise<LLMResponse | Asyn
             { role: 'system', content: system },
             { role: 'user', content: user }
           ],
-          temperature,
           ...(maxTokens && { max_tokens: maxTokens }),
           ...(schema && { 
             response_format: { 

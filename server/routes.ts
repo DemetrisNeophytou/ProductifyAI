@@ -986,6 +986,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Enhancement routes
+  app.post("/api/sections/:id/enhance/polish", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      const currentText = (section.content as any)?.text || "";
+      
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Section has no content to polish" });
+      }
+
+      const result = await askLLM({
+        system: "You are an expert copywriter specializing in digital products. Polish the user's content to improve clarity, flow, and professional tone while maintaining their voice. Return ONLY the improved text, no explanations.",
+        user: `Section: ${section.title}\n\nCurrent content:\n${currentText}\n\nPolish this content to be more clear, professional, and engaging.`,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const polishedText = (result as any).content;
+      const updated = await storage.updateSection(req.params.id, { 
+        content: { text: polishedText } 
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error polishing section:", error);
+      res.status(500).json({ message: error?.message || "Failed to polish section" });
+    }
+  });
+
+  app.post("/api/sections/:id/enhance/images", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLMJSON } = await import('./llm-client');
+      const currentText = (section.content as any)?.text || "";
+      
+      const result = await askLLMJSON<{ queries: string[] }>(
+        "You suggest relevant Unsplash search queries for content sections. Return a JSON array of 3-5 search queries that would find great images for the content.",
+        `Section: ${section.title}\n\nContent: ${currentText}\n\nSuggest Unsplash search queries for visuals that would enhance this section.`,
+        {
+          name: "image_suggestions",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              queries: {
+                type: "array",
+                items: { type: "string" },
+                description: "Array of Unsplash search queries"
+              }
+            },
+            required: ["queries"],
+            additionalProperties: false
+          }
+        },
+        'quality'
+      );
+
+      res.json({ suggestions: result.queries || [] });
+    } catch (error: any) {
+      console.error("Error suggesting images:", error);
+      res.status(500).json({ message: error?.message || "Failed to suggest images" });
+    }
+  });
+
+  app.post("/api/sections/:id/enhance/seo", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLMJSON } = await import('./llm-client');
+      const currentText = (section.content as any)?.text || "";
+      
+      const result = await askLLMJSON<{
+        keywords: string[];
+        metaDescription: string;
+        titleSuggestion: string;
+      }>(
+        "You are an SEO expert. Analyze content and suggest SEO improvements including keywords, meta descriptions, and title optimizations.",
+        `Section: ${section.title}\n\nContent: ${currentText}\n\nProvide SEO recommendations.`,
+        {
+          name: "seo_recommendations",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              keywords: {
+                type: "array",
+                items: { type: "string" },
+                description: "Recommended keywords"
+              },
+              metaDescription: {
+                type: "string",
+                description: "Optimized meta description"
+              },
+              titleSuggestion: {
+                type: "string",
+                description: "Optimized title"
+              }
+            },
+            required: ["keywords", "metaDescription", "titleSuggestion"],
+            additionalProperties: false
+          }
+        },
+        'quality'
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error generating SEO recommendations:", error);
+      res.status(500).json({ message: error?.message || "Failed to generate SEO recommendations" });
+    }
+  });
+
+  app.post("/api/sections/:id/enhance/upsells", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLMJSON } = await import('./llm-client');
+      const currentText = (section.content as any)?.text || "";
+      
+      const result = await askLLMJSON<{
+        ideas: Array<{
+          title: string;
+          description: string;
+          type: 'upsell' | 'cross-sell' | 'bundle';
+        }>;
+      }>(
+        "You are a digital product strategist. Suggest complementary products, upsells, and cross-sells based on the content.",
+        `Project: ${project.title}\nSection: ${section.title}\n\nContent: ${currentText}\n\nSuggest 3-5 upsell/cross-sell ideas.`,
+        {
+          name: "upsell_suggestions",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              ideas: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    type: { type: "string", enum: ["upsell", "cross-sell", "bundle"] }
+                  },
+                  required: ["title", "description", "type"],
+                  additionalProperties: false
+                }
+              }
+            },
+            required: ["ideas"],
+            additionalProperties: false
+          }
+        },
+        'quality'
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error generating upsell ideas:", error);
+      res.status(500).json({ message: error?.message || "Failed to generate upsell ideas" });
+    }
+  });
+
   // Asset routes
   app.get("/api/assets", isAuthenticated, async (req: AuthRequest, res) => {
     try {
