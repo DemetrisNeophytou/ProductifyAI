@@ -73,11 +73,8 @@ export default function OfferBuilder() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: OfferBuilderForm) => {
-      const response = await apiRequest<OfferResult>('/api/builders/offer', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/builders/offer', data);
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/builders/offer'] });
