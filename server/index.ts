@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '2mb' })); // Prevents "Method is not a valid HTTP token" error
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {

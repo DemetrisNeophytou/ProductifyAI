@@ -1,0 +1,50 @@
+Goal: Build “Productify”—a Monetise-style, done-with-you AI that creates the product, the funnel, and the launch assets in one place.
+
+Core Modules (MVP)
+	1.	Idea Finder & Positioning
+	•	Inputs: skills/interests, audience (y/n), budget, revenue goal.
+	•	Output: niche shortlist (score 1–10), ICP, positioning statement, offer angle.
+	•	Route: /builders/idea
+	2.	Offer Crafter
+	•	Inputs: niche, result, timeframe, pains.
+	•	Output: 3-tier offer stack (Tripwire €27–37, Core €97, Advanced €297–997), bonuses, guarantee, FAQs, objections.
+	•	Route: /builders/offer
+	3.	Funnel Builder
+	•	Output:
+	•	Landing page copy (hero, bullets, proof, CTA).
+	•	Checkout stack (bump €17–27, upsell €97).
+	•	Lead magnet page + thank-you.
+	•	Exports: Markdown + JSON; optional HTML (Tailwind components).
+	•	Route: /builders/funnel
+	4.	GhostwriterOS (Copy Suite)
+	•	Outputs:
+	•	5-email launch sequence (subject + body, merge tags).
+	•	10 Reddit answers, 10 Quora answers, 20 social hooks.
+	•	Ad variations (5 headlines, 3 primaries).
+	•	Route: /builders/content
+	5.	Launch Planner
+	•	Output: 7-day plan with daily tasks, KPIs, tracking sheet schema (CSV/Notion).
+	•	Route: /builders/launch
+	6.	Asset Generator
+	•	Lead magnet PDF (markdown → PDF via server), Notion Template skeleton export (.zip with .md + images), Social content calendar (.csv).
+	•	Route: /builders/assets
+
+Stretch Features (Phase 2)
+	•	Synthesise AI: upload docs/notes → extract mechanisms → auto-draft mini-course scripts.
+	•	Video Script + Shotlist for VSL/YouTube.
+	•	One-click Gumroad/Stripe product creation via API.
+	•	Notion API push to create the template live.
+
+Tech Stack (assume your current Vite/React + Express or Next.js)
+	•	Frontend: React + Tailwind, Zustand (state), React Router.
+	•	Backend: Node/Express (or Next.js API routes).
+	•	DB: Supabase (auth optional for now; store projects as JSON).
+	•	Email: Resend (for future).
+	•	Payments: Stripe (Phase 2).
+	•	AI: OpenAI API (gpt-4.1-mini for drafts, GPT-4.1/GPT-o3 or “gpt-5-thinking” for high-stakes outputs if enabled in your account).
+
+Secrets (Replit)
+	•	OPENAI_API_KEY
+	•	SUPABASE_URL, SUPABASE_ANON_KEY (if used)
+	•	STRIPE_SECRET_KEY (later)
+	•	RESEND_API_KEY (later)
