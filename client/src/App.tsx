@@ -31,6 +31,7 @@ import OfferBuilder from "@/pages/OfferBuilder";
 import FunnelPlanner from "@/pages/FunnelPlanner";
 import Onboarding from "@/pages/Onboarding";
 import Templates from "@/pages/Templates";
+import AIBuilders from "@/pages/AIBuilders";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -124,6 +125,11 @@ function Router() {
           <Route path="/ai-coach">
             <DashboardLayout>
               <AICoach />
+            </DashboardLayout>
+          </Route>
+          <Route path="/ai-builders">
+            <DashboardLayout>
+              <AIBuilders />
             </DashboardLayout>
           </Route>
           <Route path="/community">
