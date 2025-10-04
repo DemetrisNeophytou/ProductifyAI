@@ -24,6 +24,7 @@ import AICoach from "@/pages/AICoach";
 import Pricing from "@/pages/Pricing";
 import Community from "@/pages/Community";
 import Settings from "@/pages/Settings";
+import IdeaFinder from "@/pages/IdeaFinder";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const style = {
@@ -127,6 +128,43 @@ function Router() {
               <div className="p-8">
                 <h1 className="text-3xl font-bold">Help Center</h1>
                 <p className="text-muted-foreground mt-2">Get help and support</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/builders/idea-finder">
+            <DashboardLayout>
+              <IdeaFinder />
+            </DashboardLayout>
+          </Route>
+          <Route path="/builders/outline">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Product Outline Builder</h1>
+                <p className="text-muted-foreground mt-2">Coming soon - Create detailed product outlines</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/builders/content">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Content Writer</h1>
+                <p className="text-muted-foreground mt-2">Coming soon - Generate engaging content</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/builders/offer">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Offer Builder</h1>
+                <p className="text-muted-foreground mt-2">Coming soon - Create compelling offers</p>
+              </div>
+            </DashboardLayout>
+          </Route>
+          <Route path="/builders/funnel">
+            <DashboardLayout>
+              <div className="p-8">
+                <h1 className="text-3xl font-bold">Funnel & Launch Planner</h1>
+                <p className="text-muted-foreground mt-2">Coming soon - Build high-converting funnels</p>
               </div>
             </DashboardLayout>
           </Route>
