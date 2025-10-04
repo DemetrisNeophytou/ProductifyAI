@@ -9,6 +9,8 @@ import {
   communityPosts,
   communityComments,
   communityPostLikes,
+  aiSessions,
+  aiMessages,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -25,6 +27,10 @@ import {
   type InsertCommunityPost,
   type CommunityComment,
   type InsertCommunityComment,
+  type AiSession,
+  type InsertAiSession,
+  type AiMessage,
+  type InsertAiMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -77,6 +83,17 @@ export interface IStorage {
   createCommunityComment(comment: InsertCommunityComment): Promise<CommunityComment>;
   incrementCommentCount(postId: string): Promise<void>;
   togglePostLike(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }>;
+  
+  // AI Session operations
+  createAiSession(session: InsertAiSession): Promise<AiSession>;
+  getAiSession(id: string): Promise<AiSession | undefined>;
+  getUserAiSessions(userId: string, builderType?: string): Promise<AiSession[]>;
+  updateAiSession(id: string, data: Partial<InsertAiSession>): Promise<AiSession>;
+  deleteAiSession(id: string): Promise<void>;
+  
+  // AI Message operations
+  createAiMessage(message: InsertAiMessage): Promise<AiMessage>;
+  getSessionMessages(sessionId: string): Promise<AiMessage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -492,6 +509,62 @@ export class DatabaseStorage implements IStorage {
       const [post] = await db.select().from(communityPosts).where(eq(communityPosts.id, postId));
       return { liked: true, likesCount: post?.likesCount || 0 };
     }
+  }
+  
+  // AI Session operations
+  async createAiSession(sessionData: InsertAiSession): Promise<AiSession> {
+    const [session] = await db.insert(aiSessions).values(sessionData).returning();
+    return session;
+  }
+  
+  async getAiSession(id: string): Promise<AiSession | undefined> {
+    const [session] = await db.select().from(aiSessions).where(eq(aiSessions.id, id));
+    return session;
+  }
+  
+  async getUserAiSessions(userId: string, builderType?: string): Promise<AiSession[]> {
+    if (builderType) {
+      return await db
+        .select()
+        .from(aiSessions)
+        .where(and(eq(aiSessions.userId, userId), eq(aiSessions.builderType, builderType)))
+        .orderBy(desc(aiSessions.updatedAt));
+    }
+    return await db
+      .select()
+      .from(aiSessions)
+      .where(eq(aiSessions.userId, userId))
+      .orderBy(desc(aiSessions.updatedAt));
+  }
+  
+  async updateAiSession(id: string, data: Partial<InsertAiSession>): Promise<AiSession> {
+    const [session] = await db
+      .update(aiSessions)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(aiSessions.id, id))
+      .returning();
+    return session;
+  }
+  
+  async deleteAiSession(id: string): Promise<void> {
+    await db.delete(aiSessions).where(eq(aiSessions.id, id));
+  }
+  
+  // AI Message operations
+  async createAiMessage(messageData: InsertAiMessage): Promise<AiMessage> {
+    const [message] = await db.insert(aiMessages).values(messageData).returning();
+    return message;
+  }
+  
+  async getSessionMessages(sessionId: string): Promise<AiMessage[]> {
+    return await db
+      .select()
+      .from(aiMessages)
+      .where(eq(aiMessages.sessionId, sessionId))
+      .orderBy(aiMessages.createdAt);
   }
 }
 
