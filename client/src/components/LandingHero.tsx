@@ -20,7 +20,7 @@ export function LandingHero() {
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm mb-6">
           <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-white">10x Faster Than Gumroad • 90-Second Setup • GPT-5 Powered</span>
+          <span className="text-sm font-medium text-white">10x Faster Setup • 90-Second Launch • Enhanced by GPT-5 Precision AI</span>
         </div>
 
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-tight">
@@ -40,7 +40,7 @@ export function LandingHero() {
           <div className="text-white/50">vs</div>
           <div className="text-center">
             <p className="text-3xl font-bold text-white/50 line-through">5-10 Hours</p>
-            <p className="text-sm text-white/50">Gumroad + Tools</p>
+            <p className="text-sm text-white/50">Other platforms (avg)</p>
           </div>
         </div>
         

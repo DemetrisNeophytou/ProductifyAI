@@ -284,7 +284,7 @@ export default function Onboarding() {
               <Sparkles className="h-6 w-6 text-primary" />
               <div>
                 <h1 className="text-xl font-bold" data-testid="heading-onboarding">90-Second Product Setup</h1>
-                <p className="text-xs text-muted-foreground">10x faster than Gumroad, smarter than The Leap</p>
+                <p className="text-xs text-muted-foreground">10x faster setup with AI-powered automation</p>
               </div>
             </div>
             <Badge variant="secondary" data-testid="badge-step">
@@ -375,7 +375,7 @@ export default function Onboarding() {
                 GPT-5 is analyzing your market...
               </h2>
               <p className="text-muted-foreground" data-testid="text-generating">
-                Validating profitable niches with Iman Gadzhi's 7-filter scoring
+                Validating profitable niches with AI-powered 7-step profitability scoring
               </p>
               <Badge variant="outline" className="mt-4">
                 <Target className="h-4 w-4 mr-1" />
@@ -404,8 +404,8 @@ export default function Onboarding() {
             <div className="grid md:grid-cols-2 gap-4 max-w-5xl mx-auto">
               <Card data-testid="card-scoring">
                 <CardHeader>
-                  <CardTitle>Iman Gadzhi Profitability Score</CardTitle>
-                  <CardDescription>7-Filter Framework Analysis</CardDescription>
+                  <CardTitle>AI Profitability Score</CardTitle>
+                  <CardDescription>7-Step Success Framework Analysis</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
@@ -467,7 +467,7 @@ export default function Onboarding() {
               <Card>
                 <CardHeader>
                   <CardTitle>Competitive Advantage</CardTitle>
-                  <CardDescription>Why this beats Gumroad & Monetise</CardDescription>
+                  <CardDescription>Why this beats typical platforms</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-start gap-3">
@@ -480,8 +480,8 @@ export default function Onboarding() {
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
                     <div>
-                      <p className="font-medium">10x Faster Than Competitors</p>
-                      <p className="text-sm text-muted-foreground">Gumroad: 2-3 days • You: 90 seconds</p>
+                      <p className="font-medium">10x Faster Setup</p>
+                      <p className="text-sm text-muted-foreground">Other platforms: 2-3 days • You: 90 seconds</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
