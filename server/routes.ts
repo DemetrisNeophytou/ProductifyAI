@@ -197,10 +197,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (streamInitError: any) {
           // If streaming fails (e.g., organization not verified), fall back to non-streaming
           console.log('[Chat] Streaming failed, falling back to non-streaming mode:', streamInitError.message);
+          const { chatWithCoach } = await import('./openai');
           const response = await chatWithCoach(message);
           res.json({ message: response });
         }
       } else {
+        const { chatWithCoach } = await import('./openai');
         const response = await chatWithCoach(message);
         res.json({ message: response });
       }
