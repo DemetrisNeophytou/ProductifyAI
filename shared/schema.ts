@@ -281,3 +281,56 @@ export type InsertArtifact = z.infer<typeof insertArtifactSchema>;
 
 export type UsageLog = typeof usageLogs.$inferSelect;
 export type InsertUsageLog = z.infer<typeof insertUsageLogSchema>;
+
+// AI Sessions - Interactive chat sessions with AI builders
+export const aiSessions = pgTable("ai_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  builderType: varchar("builder_type", { length: 50 }).notNull(), // product_idea, market_research, content_plan, launch_strategy, scale_blueprint
+  title: text("title").notNull(),
+  status: varchar("status", { length: 20 }).default("active"), // active, completed, archived
+  metadata: jsonb("metadata").$type<{
+    niche?: string;
+    productType?: string;
+    currentStep?: number;
+    totalSteps?: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_sessions_user").on(table.userId),
+  index("idx_ai_sessions_builder").on(table.builderType),
+]);
+
+// AI Messages - Conversation messages within sessions
+export const aiMessages = pgTable("ai_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull().references(() => aiSessions.id, { onDelete: "cascade" }),
+  role: varchar("role", { length: 20 }).notNull(), // user, assistant, system
+  content: text("content").notNull(),
+  metadata: jsonb("metadata").$type<{
+    tokensUsed?: number;
+    model?: string;
+    artifactId?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_messages_session").on(table.sessionId),
+]);
+
+export const insertAiSessionSchema = createInsertSchema(aiSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAiMessageSchema = createInsertSchema(aiMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AiSession = typeof aiSessions.$inferSelect;
+export type InsertAiSession = z.infer<typeof insertAiSessionSchema>;
+
+export type AiMessage = typeof aiMessages.$inferSelect;
+export type InsertAiMessage = z.infer<typeof insertAiMessageSchema>;
