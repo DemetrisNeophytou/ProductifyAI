@@ -63,6 +63,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Health Check
+  app.get("/api/v2/ai/health", async (_req, res) => {
+    try {
+      const { healthCheck } = await import('./llm-client');
+      const status = await healthCheck();
+      res.json(status);
+    } catch (error: any) {
+      res.status(500).json({ 
+        ok: false, 
+        model: process.env.OPENAI_MODEL || 'gpt-5',
+        error: error?.message || 'Health check failed' 
+      });
+    }
+  });
+
   // Projects routes (new structure)
   app.get("/api/projects", isAuthenticated, async (req: AuthRequest, res) => {
     try {
