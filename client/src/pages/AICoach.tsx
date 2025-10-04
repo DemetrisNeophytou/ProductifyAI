@@ -111,10 +111,6 @@ export default function AICoach() {
           title: isConfigError ? "Service Unavailable" : "Connection Error",
           description: error.message || "Unable to reach Productify Coach. Please try again in a moment.",
           variant: "destructive",
-          action: isConfigError ? undefined : {
-            label: "Retry",
-            onClick: () => handleStreamingChat(userMessage),
-          } as any,
         });
       }
       
@@ -157,7 +153,7 @@ export default function AICoach() {
           <div>
             <h1 className="text-2xl font-bold" data-testid="heading-coach-title">Productify Coach</h1>
             <p className="text-sm text-muted-foreground" data-testid="text-coach-subtitle">
-              Specialized AI for Digital Products • Powered by GPT-4o
+              Specialized AI for Digital Products • Powered by GPT-5
             </p>
           </div>
         </div>
@@ -176,7 +172,7 @@ export default function AICoach() {
                   Not generic ChatGPT. A specialized AI built exclusively for digital product creators.
                 </p>
                 <p className="text-xs text-muted-foreground max-w-md mb-6 font-semibold" data-testid="text-powered-by">
-                  Powered by GPT-4o
+                  Powered by GPT-5
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl w-full">
                   <Card 
@@ -303,7 +299,7 @@ export default function AICoach() {
           </Button>
         </form>
         <p className="text-xs text-muted-foreground mt-2" data-testid="text-input-hint">
-          Press Enter to send • Powered by GPT-4o for specialized digital product guidance
+          Press Enter to send • Powered by GPT-5 for ultra-fast, specialized guidance
         </p>
       </div>
     </div>
