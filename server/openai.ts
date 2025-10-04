@@ -88,7 +88,6 @@ export async function chatWithCoach(message: string): Promise<string> {
         { role: "user", content: message }
       ],
       max_completion_tokens: 2048,
-      temperature: 0.3,
     });
 
     const content = response.choices[0].message.content || "";
@@ -121,7 +120,6 @@ export async function chatWithCoachStream(message: string) {
         { role: "user", content: message }
       ],
       max_completion_tokens: 2048,
-      temperature: 0.3,
       stream: true,
     });
 
@@ -326,13 +324,24 @@ Focus on niches with proven buyers, low competition, and high demand. Make ideas
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      max_completion_tokens: 3000,
-      temperature: 0.7,
+      max_completion_tokens: 4096,  // Increased for 5 detailed ideas
       response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content || "{}";
-    return JSON.parse(content);
+    console.log('[OpenAI] Ideas response length:', content.length, 'characters');
+    console.log('[OpenAI] Ideas response preview:', content.substring(0, 200));
+    
+    const parsed = JSON.parse(content);
+    
+    // Validate response structure
+    if (!parsed.ideas || !Array.isArray(parsed.ideas) || parsed.ideas.length === 0) {
+      console.error('[OpenAI] Invalid ideas response structure:', JSON.stringify(parsed));
+      throw new Error("AI_ERROR: AI returned invalid response format. Please try again.");
+    }
+    
+    console.log('[OpenAI] Successfully generated', parsed.ideas.length, 'ideas');
+    return parsed;
   } catch (error: any) {
     console.error('[OpenAI] Generate ideas failed:', error);
     if (error?.status === 429 || error?.code === 'insufficient_quota') {
@@ -340,6 +349,9 @@ Focus on niches with proven buyers, low competition, and high demand. Make ideas
     }
     if (error?.status === 401) {
       throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    if (error?.message?.startsWith("AI_ERROR:")) {
+      throw error;  // Re-throw our custom validation errors
     }
     throw new Error(`AI_ERROR: ${error?.message || "Failed to generate ideas"}`);
   }
@@ -419,7 +431,6 @@ Make it outcome-focused, structured for easy creation, and optimized for commerc
         { role: "user", content: userPrompt }
       ],
       max_completion_tokens: maxTokens,
-      temperature: 0.7,
       response_format: { type: "json_object" },
     });
 
@@ -495,7 +506,6 @@ Make it valuable, actionable, and professionally written. Use markdown formattin
         { role: "user", content: userPrompt }
       ],
       max_completion_tokens: maxTokens,
-      temperature: 0.7,
       response_format: { type: "json_object" },
     });
 
@@ -587,7 +597,6 @@ Design pricing, bonuses, and upsells that maximize revenue while delivering mass
         { role: "user", content: userPrompt }
       ],
       max_completion_tokens: maxTokens,
-      temperature: 0.7,
       response_format: { type: "json_object" },
     });
 
@@ -679,7 +688,6 @@ Design a realistic, actionable funnel and day-by-day launch roadmap that gets fi
         { role: "user", content: userPrompt }
       ],
       max_completion_tokens: maxTokens,
-      temperature: 0.7,
       response_format: { type: "json_object" },
     });
 
@@ -717,9 +725,8 @@ Deliver professional content that drives customer success and creator revenue.`;
   try {
     console.log('[OpenAI] Calling OpenAI API...');
     
-    // Map creativity (0-1) to temperature (0-2), clamped for safety
-    const temperature = Math.min(2, Math.max(0, creativity * 2));
-    console.log(`[OpenAI] Using temperature: ${temperature} (from creativity: ${creativity})`);
+    // Note: GPT-5 only supports default temperature (1), ignoring creativity parameter
+    console.log(`[OpenAI] Using GPT-5 with default temperature (creativity parameter ignored)`);
     
     const response = await openai.chat.completions.create({
       model: "gpt-5", // Using GPT-5 for ultra-fast, specialized responses
@@ -728,7 +735,6 @@ Deliver professional content that drives customer success and creator revenue.`;
         { role: "user", content: prompt }
       ],
       max_completion_tokens: Math.min(8192, Math.ceil(length * 1.5)),
-      temperature: temperature,
     });
 
     const content = response.choices[0].message.content || "";

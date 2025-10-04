@@ -50,53 +50,71 @@ export default function AICoach() {
         throw new Error(error.message || "Failed to get AI response");
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      // Check if response is streaming (SSE) or regular JSON
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType?.includes('text/event-stream')) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
 
-      if (!reader) {
-        throw new Error("No response stream available");
-      }
+        if (!reader) {
+          throw new Error("No response stream available");
+        }
 
-      let accumulatedContent = "";
+        let accumulatedContent = "";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            
-            if (data === '[DONE]') {
-              break;
-            }
-
-            try {
-              const parsed = JSON.parse(data);
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
               
-              if (parsed.error) {
-                throw new Error(parsed.error);
+              if (data === '[DONE]') {
+                break;
               }
 
-              if (parsed.content) {
-                accumulatedContent += parsed.content;
+              try {
+                const parsed = JSON.parse(data);
                 
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === assistantMessageId
-                      ? { ...msg, content: accumulatedContent }
-                      : msg
-                  )
-                );
+                if (parsed.error) {
+                  throw new Error(parsed.error);
+                }
+
+                if (parsed.content) {
+                  accumulatedContent += parsed.content;
+                  
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMessageId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                    )
+                  );
+                }
+              } catch (parseError) {
               }
-            } catch (parseError) {
             }
           }
         }
+      } else {
+        // Handle regular JSON response (fallback when streaming not available)
+        const data = await response.json();
+        const responseMessage = data.message || "";
+        
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: responseMessage }
+              : msg
+          )
+        );
       }
 
       setIsLoading(false);
