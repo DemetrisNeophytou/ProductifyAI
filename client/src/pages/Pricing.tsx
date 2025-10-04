@@ -101,11 +101,17 @@ export default function Pricing() {
 
       {!isOnTrial && subscriptionStatus?.tier && (
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+            <span className="text-sm font-semibold text-primary">Specialized AI • Not Generic ChatGPT</span>
+          </div>
           <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
-            Choose Your Plan
+            Invest in the Right Tool
           </h1>
-          <p className="text-lg text-muted-foreground" data-testid="text-current-plan">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2" data-testid="text-current-plan">
             Current plan: <strong className="text-foreground capitalize">{subscriptionStatus.tier}</strong>
+          </p>
+          <p className="text-sm text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-tagline">
+            The quality of your tools determines the quality of your outcomes. Choose specialized.
           </p>
         </div>
       )}
