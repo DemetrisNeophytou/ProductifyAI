@@ -359,7 +359,7 @@ export default function AICoach() {
           </Button>
         </form>
         <p className="text-xs text-muted-foreground mt-2" data-testid="text-input-hint">
-          Press Enter to send • Powered by GPT-5 for ultra-fast, specialized guidance
+          Press Enter to send • For brand safety, I won't reference competitor names • Powered by GPT-5
         </p>
       </div>
     </div>
