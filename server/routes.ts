@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas, generateOutline, generateContent, generateOffer, generateFunnel } from "./openai";
+import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas, generateOutline, generateContent, generateOffer, generateFunnel, generateTheme, generateAIImage } from "./openai";
 import aiGenerateRouter from "./ai-generate";
 import nichesRouter from "./niches";
 import { z } from "zod";
@@ -96,6 +96,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
+    }
+  });
+
+  // Phase 3: Smart Project Search
+  app.get("/api/projects/search", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { q: query, type, tag, from, to, status, starred, limit, offset } = req.query;
+      
+      const results = await storage.searchProjects({
+        userId,
+        query: query as string | undefined,
+        type: type as string | undefined,
+        tag: tag as string | undefined,
+        from: from as string | undefined,
+        to: to as string | undefined,
+        status: status as string | undefined,
+        starred: starred === 'true' ? true : starred === 'false' ? false : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching projects:", error);
+      res.status(500).json({ message: "Failed to search projects" });
     }
   });
 
@@ -1049,6 +1079,211 @@ Be systematic, growth-focused, and results-oriented.`
     } catch (error: any) {
       console.error("Error deleting AI session:", error);
       res.status(500).json({ message: "Failed to delete session" });
+    }
+  });
+
+  // Phase 3: AI Re-Styling
+  app.post("/api/ai/restyle", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const usageCount = await storage.getUserAiUsageToday(userId, 'ai_restyle');
+      const tier = user.subscriptionTier || 'trial';
+      
+      if (tier === 'trial' || tier === 'plus') {
+        const limit = 3;
+        if (usageCount >= limit) {
+          return res.status(429).json({ 
+            message: `Daily AI Re-Style limit reached (${limit}/day). Upgrade to Pro for unlimited re-styles.`,
+            limit,
+            used: usageCount
+          });
+        }
+      }
+
+      const { projectId, mood, prompt } = req.body;
+      if (!projectId || !mood) {
+        return res.status(400).json({ message: "Project ID and mood are required" });
+      }
+
+      const theme = await generateTheme({ mood, prompt });
+      
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.updateProject(projectId, {
+        metadata: {
+          ...project.metadata,
+          theme,
+        }
+      });
+
+      await storage.createProjectEvent({
+        projectId,
+        userId,
+        type: 'ai_restyle',
+        meta: { themeApplied: mood }
+      });
+
+      res.json(theme);
+    } catch (error: any) {
+      console.error("Error generating theme:", error);
+      res.status(500).json({ message: error.message || "Failed to generate theme" });
+    }
+  });
+
+  // Phase 3: AI Image Generation
+  app.post("/api/ai/image", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const usageCount = await storage.getUserAiUsageToday(userId, 'ai_image');
+      const tier = user.subscriptionTier || 'trial';
+      
+      let limit = 200;
+      if (tier === 'trial' || tier === 'plus') {
+        limit = 10;
+      }
+      
+      if (usageCount >= limit) {
+        return res.status(429).json({ 
+          message: `Daily AI Image limit reached (${limit}/day). ${tier === 'plus' ? 'Upgrade to Pro for more images.' : 'Upgrade for more images.'}`,
+          limit,
+          used: usageCount
+        });
+      }
+
+      const { prompt, size, styleHint, projectId, pageId, blockId } = req.body;
+      if (!prompt || !projectId) {
+        return res.status(400).json({ message: "Prompt and project ID are required" });
+      }
+
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const result = await generateAIImage({ prompt, size, styleHint });
+      
+      const asset = await storage.createAsset({
+        userId,
+        projectId,
+        type: 'image',
+        url: result.url,
+        filename: `ai-generated-${Date.now()}.png`,
+        metadata: {
+          source: 'openai',
+          license: 'free_commercial',
+          blockId,
+          aiPrompt: prompt,
+        }
+      });
+
+      await storage.createProjectEvent({
+        projectId,
+        userId,
+        type: 'ai_image',
+        meta: { imagePrompt: prompt }
+      });
+
+      res.json({ ...result, assetId: asset.id });
+    } catch (error: any) {
+      console.error("Error generating image:", error);
+      res.status(500).json({ message: error.message || "Failed to generate image" });
+    }
+  });
+
+  // Phase 3: Analytics Event Tracking
+  app.post("/api/analytics/event", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId, type, meta } = req.body;
+      if (!projectId || !type) {
+        return res.status(400).json({ message: "Project ID and event type are required" });
+      }
+
+      const project = await storage.getProject(projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const event = await storage.createProjectEvent({
+        projectId,
+        userId,
+        type,
+        meta: meta || {}
+      });
+
+      res.json(event);
+    } catch (error) {
+      console.error("Error tracking event:", error);
+      res.status(500).json({ message: "Failed to track event" });
+    }
+  });
+
+  // Phase 3: Analytics Summary
+  app.get("/api/analytics/summary", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId } = req.query;
+
+      if (projectId) {
+        const project = await storage.getProject(projectId as string);
+        if (!project || project.userId !== userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const summary = await storage.getProjectAnalyticsSummary(projectId as string);
+        res.json(summary);
+      } else {
+        const events = await storage.getUserProjectEvents(userId, 1000);
+        
+        const summary = {
+          totalEvents: events.length,
+          views: events.filter(e => e.type === 'view').length,
+          exports: events.filter(e => e.type.startsWith('export_')).length,
+          aiUsage: events.filter(e => e.type.startsWith('ai_')).length,
+        };
+        
+        res.json(summary);
+      }
+    } catch (error) {
+      console.error("Error fetching analytics summary:", error);
+      res.status(500).json({ message: "Failed to fetch analytics summary" });
     }
   });
 
