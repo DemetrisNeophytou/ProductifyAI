@@ -17,6 +17,14 @@ Transformed the Templates page into a professional Canva-style browsing experien
 - **Trending Templates**: Curated section highlighting popular and high-performing templates
 - **New Templates**: Showcase of recently added templates
 
+**Template Preview & AI Auto-Generation**
+- **Preview Modal**: Click any template to see detailed preview with sections, stats, and structure
+- **Use This Template**: One-click AI generation that creates complete product with pre-filled content
+- **AI Content Generation**: GPT-4 powered generation of 300-500 words per section
+- **Instant Editor Access**: Automatically opens Canva-style editor after generation
+- **Smart Fallbacks**: Graceful degradation when API key is missing or AI generation fails
+- **Template-to-Editor Flow**: Seamless experience from browsing → preview → AI generation → editing
+
 **Template Catalog**
 - 18 professionally curated templates across 6 categories
 - Rich metadata: categories, tags, icons, tier requirements (Free/Plus/Pro)
