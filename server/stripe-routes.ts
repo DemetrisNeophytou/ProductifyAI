@@ -13,10 +13,12 @@ interface AuthRequest extends Request {
   };
 }
 
-// Stripe Price IDs - Update these with your actual Stripe price IDs
+// Stripe Price IDs
 const PRICE_IDS = {
-  plus_monthly: process.env.STRIPE_PLUS_MONTHLY_PRICE_ID || 'price_plus_monthly',
-  pro_quarterly: process.env.STRIPE_PRO_QUARTERLY_PRICE_ID || 'price_pro_quarterly',
+  plus_monthly: 'price_1SEEtkAggnQzW8UqG-tur2sN4',
+  plus_quarterly: 'price_1SEEyOAggnQzW8UqaCk-Qj1Ci',
+  pro_monthly: 'price_1SEF9RAggnQzW8Uqw-U63D90S',
+  pro_quarterly: 'price_1SEF9zAggnQzW8Uq7lcO-JB8Q',
 };
 
 export function registerStripeRoutes(app: Express) {
@@ -43,6 +45,10 @@ export function registerStripeRoutes(app: Express) {
       let priceId = '';
       if (plan === 'plus' && billingPeriod === 'monthly') {
         priceId = PRICE_IDS.plus_monthly;
+      } else if (plan === 'plus' && billingPeriod === 'quarterly') {
+        priceId = PRICE_IDS.plus_quarterly;
+      } else if (plan === 'pro' && billingPeriod === 'monthly') {
+        priceId = PRICE_IDS.pro_monthly;
       } else if (plan === 'pro' && billingPeriod === 'quarterly') {
         priceId = PRICE_IDS.pro_quarterly;
       } else {
