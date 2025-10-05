@@ -864,3 +864,35 @@ export const insertVideoProjectSchema = createInsertSchema(videoProjects).omit({
 
 export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = z.infer<typeof insertVideoProjectSchema>;
+
+// Agent Jobs table - tracks all agent executions
+export const agentJobs = pgTable("agent_jobs", {
+  id: varchar("id").primaryKey(), // jobId (UUID)
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: varchar("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  agentName: varchar("agent_name", { length: 50 }).notNull(), // 'content_writer', 'image_agent', etc.
+  status: varchar("status", { length: 20 }).default("queued").notNull(), // 'queued', 'running', 'succeeded', 'failed', 'cancelled'
+  input: jsonb("input").notNull(), // Agent-specific input
+  output: jsonb("output"), // Agent-specific output
+  estimatedCredits: integer("estimated_credits"),
+  consumedCredits: integer("consumed_credits"),
+  idempotencyKey: varchar("idempotency_key", { length: 255 }), // Prevent double charging
+  error: jsonb("error").$type<{ code: string; message: string; hint?: string }>(),
+  steps: jsonb("steps").$type<Array<{ at: string; message: string }>>().default(sql`'[]'::jsonb`),
+  retryCount: integer("retry_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_agent_jobs_user").on(table.userId),
+  index("idx_agent_jobs_status").on(table.status),
+  index("idx_agent_jobs_idempotency").on(table.idempotencyKey),
+]);
+
+export const insertAgentJobSchema = createInsertSchema(agentJobs).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AgentJob = typeof agentJobs.$inferSelect;
+export type InsertAgentJob = z.infer<typeof insertAgentJobSchema>;

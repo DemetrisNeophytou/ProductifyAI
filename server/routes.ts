@@ -3755,7 +3755,7 @@ Be systematic, growth-focused, and results-oriented.`
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { fonts, colors } = req.body;
+      const { fonts, colors, logoUrl } = req.body;
       if (!fonts || !colors) {
         return res.status(400).json({ message: "Fonts and colors required" });
       }
@@ -3764,6 +3764,7 @@ Be systematic, growth-focused, and results-oriented.`
         userId,
         fonts,
         colors,
+        logoUrl,
       });
 
       if (!validation.success) {
