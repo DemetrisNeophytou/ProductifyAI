@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Template routes
-  app.get("/api/templates", isAuthenticated, async (req: AuthRequest, res) => {
+  app.get("/api/templates/user-data", isAuthenticated, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
