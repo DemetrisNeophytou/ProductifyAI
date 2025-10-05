@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, FileText, ListChecks, Sparkles, ArrowRight, GraduationCap, Wand2, Mail, Share2, Globe, Loader2 } from "lucide-react";
+import { BookOpen, FileText, ListChecks, Sparkles, ArrowRight, GraduationCap, Wand2, Mail, Share2, Globe, Loader2, Magnet, Layout } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -21,34 +21,34 @@ const projectTypes = [
     icon: BookOpen,
   },
   {
+    id: "course",
+    name: "Course",
+    description: "Build a structured learning experience",
+    icon: GraduationCap,
+  },
+  {
+    id: "checklist",
+    name: "Checklist",
+    description: "Step-by-step action checklist",
+    icon: ListChecks,
+  },
+  {
+    id: "leadmagnet",
+    name: "Lead Magnet",
+    description: "High-value content to grow your list",
+    icon: Magnet,
+  },
+  {
     id: "workbook",
     name: "Workbook",
     description: "Interactive worksheets and exercises",
     icon: FileText,
   },
   {
-    id: "course",
-    name: "Course Script",
-    description: "Build a structured learning experience",
-    icon: GraduationCap,
-  },
-  {
-    id: "landing",
-    name: "Landing Page",
-    description: "High-converting landing page content",
-    icon: Globe,
-  },
-  {
-    id: "emails",
-    name: "Email Sequence",
-    description: "5-part email nurture sequence",
-    icon: Mail,
-  },
-  {
-    id: "social",
-    name: "Social Media Pack",
-    description: "10 ready-to-post social media content pieces",
-    icon: Share2,
+    id: "template",
+    name: "Template",
+    description: "Customizable design template",
+    icon: Layout,
   },
 ];
 

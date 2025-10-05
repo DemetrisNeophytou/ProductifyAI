@@ -13,6 +13,10 @@ import { ExportDialog } from "@/components/ExportDialog";
 import { AIRestyleModal } from "@/components/AIRestyleModal";
 import { AIImageModal } from "@/components/AIImageModal";
 import { EditorSidePanel } from "@/components/EditorSidePanel";
+import { AssetPicker } from "@/components/AssetPicker";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RichTextEditor from "@/components/RichTextEditor";
 import {
   GripVertical,
@@ -77,6 +81,9 @@ export default function CanvaEditor() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showRestyleModal, setShowRestyleModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const [brandColors, setBrandColors] = useState({
     primary: "#8B5CF6",
@@ -85,6 +92,13 @@ export default function CanvaEditor() {
   const [brandFonts, setBrandFonts] = useState({
     heading: "Inter",
     body: "Georgia",
+  });
+
+  const [projectSettings, setProjectSettings] = useState({
+    pageSize: "A4",
+    margins: "normal",
+    dpi: "300",
+    exportFont: "Inter",
   });
 
   const { data: project } = useQuery<Project & { sections?: Section[] }>({
@@ -490,7 +504,12 @@ export default function CanvaEditor() {
             <Button variant="ghost" size="icon" data-testid="button-preview">
               <Eye className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" data-testid="button-settings">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowSettingsModal(true)}
+              data-testid="button-settings"
+            >
               <Settings className="h-4 w-4" />
             </Button>
           </div>
@@ -679,11 +698,21 @@ export default function CanvaEditor() {
                 <div>
                   <h3 className="font-semibold mb-3">Images</h3>
                   <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-regenerate-image">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      onClick={() => setShowImagePicker(true)}
+                      data-testid="button-regenerate-image"
+                    >
                       <ImageIcon className="h-4 w-4 mr-2" />
-                      Regenerate Image
+                      Search Stock Photos
                     </Button>
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-upload-image">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start" 
+                      onClick={() => setShowUploadDialog(true)}
+                      data-testid="button-upload-image"
+                    >
                       <Upload className="h-4 w-4 mr-2" />
                       Upload Image
                     </Button>
@@ -734,7 +763,29 @@ export default function CanvaEditor() {
                         data-testid="input-brand-body-font"
                       />
                     </div>
-                    <Button className="w-full" data-testid="button-apply-brand">
+                    <Button 
+                      className="w-full" 
+                      onClick={async () => {
+                        try {
+                          await apiRequest("PUT", "/api/brand-kit", {
+                            fonts: brandFonts,
+                            colors: [brandColors.primary, brandColors.secondary],
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["/api/brand-kit"] });
+                          toast({ 
+                            title: "Brand kit applied", 
+                            description: "Your brand kit has been saved and applied to the editor" 
+                          });
+                        } catch (error) {
+                          toast({ 
+                            title: "Error", 
+                            description: "Failed to apply brand kit",
+                            variant: "destructive" 
+                          });
+                        }
+                      }}
+                      data-testid="button-apply-brand"
+                    >
                       Apply Brand Kit
                     </Button>
                   </div>
@@ -742,30 +793,7 @@ export default function CanvaEditor() {
               </TabsContent>
 
               <TabsContent value="ai" className="p-4 space-y-4 m-0">
-                <div>
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    AI Suggestions
-                  </h3>
-                  <div className="space-y-3">
-                    <Card className="p-3">
-                      <p className="text-sm text-muted-foreground">
-                        Try adding a compelling introduction to hook your readers
-                      </p>
-                      <Button size="sm" variant="ghost" className="px-0 mt-1">
-                        Apply suggestion
-                      </Button>
-                    </Card>
-                    <Card className="p-3">
-                      <p className="text-sm text-muted-foreground">
-                        Consider adding more examples to illustrate your points
-                      </p>
-                      <Button size="sm" variant="ghost" className="px-0 mt-1">
-                        Apply suggestion
-                      </Button>
-                    </Card>
-                  </div>
-                </div>
+                <AISuggestionsTab projectId={id!} selectedSection={selectedSection} />
               </TabsContent>
             </ScrollArea>
           </Tabs>
@@ -862,6 +890,220 @@ export default function CanvaEditor() {
           }
         }}
       />
+
+      <AssetPicker
+        open={showImagePicker}
+        onOpenChange={setShowImagePicker}
+        onSelect={async (asset) => {
+          try {
+            await apiRequest("POST", `/api/projects/${id}/sections`, {
+              projectId: id,
+              title: "Image",
+              type: "image",
+              content: { html: `<img src="${asset.url}" alt="${asset.alt || 'Inserted image'}" style="max-width: 100%;" />` },
+              order: localSections.length,
+            });
+            queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+            toast({ title: "Image added", description: "Image has been inserted into your document" });
+          } catch (error) {
+            toast({ 
+              title: "Error", 
+              description: "Failed to insert image",
+              variant: "destructive" 
+            });
+          }
+        }}
+        title="Select Image"
+        description="Choose an image from your library or search free stock photos"
+      />
+
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent data-testid="dialog-upload-image">
+          <DialogHeader>
+            <DialogTitle>Upload Image</DialogTitle>
+            <DialogDescription>Upload an image from your device</DialogDescription>
+          </DialogHeader>
+          <Input 
+            type="file" 
+            accept="image/*" 
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              
+              const formData = new FormData();
+              formData.append('file', file);
+              formData.append('projectId', id!);
+              
+              try {
+                const response = await fetch('/api/assets/upload', {
+                  method: 'POST',
+                  body: formData,
+                });
+                const data = await response.json();
+                
+                await apiRequest("POST", `/api/projects/${id}/sections`, {
+                  projectId: id,
+                  title: "Image",
+                  type: "image",
+                  content: { html: `<img src="${data.url}" alt="${file.name}" style="max-width: 100%;" />` },
+                  order: localSections.length,
+                });
+                
+                queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+                toast({ title: "Image uploaded", description: "Image has been added to your document" });
+                setShowUploadDialog(false);
+              } catch (error) {
+                toast({ 
+                  title: "Error", 
+                  description: "Failed to upload image",
+                  variant: "destructive" 
+                });
+              }
+            }}
+            data-testid="input-upload-file"
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="sm:max-w-[500px]" data-testid="dialog-settings">
+          <DialogHeader>
+            <DialogTitle>Export Settings</DialogTitle>
+            <DialogDescription>Configure how your content will be exported</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Page Size</Label>
+              <Select 
+                value={projectSettings.pageSize} 
+                onValueChange={(value) => setProjectSettings({...projectSettings, pageSize: value})}
+              >
+                <SelectTrigger data-testid="select-page-size">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A4">A4 (210 × 297 mm)</SelectItem>
+                  <SelectItem value="Letter">Letter (8.5 × 11 in)</SelectItem>
+                  <SelectItem value="Legal">Legal (8.5 × 14 in)</SelectItem>
+                  <SelectItem value="A5">A5 (148 × 210 mm)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Margins</Label>
+              <Select 
+                value={projectSettings.margins} 
+                onValueChange={(value) => setProjectSettings({...projectSettings, margins: value})}
+              >
+                <SelectTrigger data-testid="select-margins">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="narrow">Narrow (0.5 in)</SelectItem>
+                  <SelectItem value="normal">Normal (1 in)</SelectItem>
+                  <SelectItem value="wide">Wide (1.5 in)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Export Quality (DPI)</Label>
+              <Select 
+                value={projectSettings.dpi} 
+                onValueChange={(value) => setProjectSettings({...projectSettings, dpi: value})}
+              >
+                <SelectTrigger data-testid="select-dpi">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="150">150 DPI (Web)</SelectItem>
+                  <SelectItem value="300">300 DPI (Print)</SelectItem>
+                  <SelectItem value="600">600 DPI (High Quality)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Export Font</Label>
+              <Input 
+                value={projectSettings.exportFont} 
+                onChange={(e) => setProjectSettings({...projectSettings, exportFont: e.target.value})}
+                placeholder="Inter, Arial, sans-serif"
+                data-testid="input-export-font"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => {
+              toast({ title: "Settings saved", description: "Export settings have been updated" });
+              setShowSettingsModal(false);
+            }} data-testid="button-save-settings">
+              Save Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function AISuggestionsTab({ projectId, selectedSection }: { projectId: string; selectedSection: Section | undefined }) {
+  const { data: suggestions, isLoading } = useQuery<Array<{ id: string; suggestion: string; type: string }>>({
+    queryKey: ["/api/ai/suggestions", projectId, selectedSection?.id],
+    enabled: !!projectId && !!selectedSection,
+  });
+
+  const applySuggestionMutation = useMutation({
+    mutationFn: async (suggestionId: string) => {
+      return await apiRequest("POST", `/api/ai/suggestions/${suggestionId}/apply`, {
+        projectId,
+        sectionId: selectedSection?.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
+      toast({ title: "Suggestion applied", description: "Content has been updated with the suggestion" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to apply suggestion",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  return (
+    <div>
+      <h3 className="font-semibold mb-3 flex items-center gap-2">
+        <Sparkles className="h-4 w-4" />
+        AI Suggestions
+      </h3>
+      {!selectedSection ? (
+        <p className="text-sm text-muted-foreground">Select a section to see AI suggestions</p>
+      ) : isLoading ? (
+        <div className="text-sm text-muted-foreground">Loading suggestions...</div>
+      ) : !suggestions || suggestions.length === 0 ? (
+        <div className="text-sm text-muted-foreground">No suggestions available for this section</div>
+      ) : (
+        <div className="space-y-3">
+          {suggestions.map((suggestion) => (
+            <Card key={suggestion.id} className="p-3">
+              <p className="text-sm text-muted-foreground">{suggestion.suggestion}</p>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="px-0 mt-1"
+                onClick={() => applySuggestionMutation.mutate(suggestion.id)}
+                disabled={applySuggestionMutation.isPending}
+                data-testid={`button-apply-suggestion-${suggestion.id}`}
+              >
+                {applySuggestionMutation.isPending ? 'Applying...' : 'Apply suggestion'}
+              </Button>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
