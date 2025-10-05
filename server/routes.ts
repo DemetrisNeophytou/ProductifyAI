@@ -1041,6 +1041,235 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // AI-powered full ebook generation
+  const generateFullEbookSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    niche: z.string().min(1, "Niche is required"),
+    audience: z.string().min(1, "Audience is required"),
+    tone: z.string().min(1, "Tone is required"),
+    type: z.string().default("ebook"),
+  });
+
+  app.post("/api/projects/generate-full", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = generateFullEbookSchema.parse(req.body);
+      console.log('[API] Starting full ebook generation for user:', userId);
+
+      // Import AI functions
+      const { generateCompleteEbook, generateEbookImage } = await import('./openai');
+      
+      // Step 1: Generate complete ebook content
+      console.log('[API] Generating ebook content...');
+      const ebookData = await generateCompleteEbook({
+        title: data.title,
+        niche: data.niche,
+        audience: data.audience,
+        tone: data.tone,
+      });
+
+      // Step 2: Create project in database
+      console.log('[API] Creating project in database...');
+      const project = await storage.createProject({
+        userId,
+        type: data.type,
+        title: ebookData.title || data.title,
+        status: "draft",
+        metadata: {
+          niche: data.niche,
+          audience: data.audience,
+          tone: data.tone,
+        },
+      });
+
+      // Helper function to convert markdown to TipTap JSON
+      const markdownToTipTap = (markdown: string) => {
+        const lines = markdown.split('\n');
+        const content = lines.map(line => {
+          if (line.trim() === '') {
+            return { type: 'paragraph', content: [{ type: 'text', text: '' }] };
+          }
+          // Basic markdown conversion - headings
+          if (line.startsWith('### ')) {
+            return { 
+              type: 'heading', 
+              attrs: { level: 3 },
+              content: [{ type: 'text', text: line.replace('### ', '') }] 
+            };
+          }
+          if (line.startsWith('## ')) {
+            return { 
+              type: 'heading', 
+              attrs: { level: 2 },
+              content: [{ type: 'text', text: line.replace('## ', '') }] 
+            };
+          }
+          if (line.startsWith('# ')) {
+            return { 
+              type: 'heading', 
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: line.replace('# ', '') }] 
+            };
+          }
+          // Bullet points
+          if (line.trim().startsWith('- ')) {
+            return {
+              type: 'bulletList',
+              content: [{
+                type: 'listItem',
+                content: [{
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: line.trim().replace(/^- /, '') }]
+                }]
+              }]
+            };
+          }
+          // Regular paragraph
+          return { 
+            type: 'paragraph', 
+            content: [{ type: 'text', text: line }] 
+          };
+        });
+        
+        return { type: 'doc', content };
+      };
+
+      // Step 3: Generate cover image and save it as an asset
+      console.log('[API] Generating cover image...');
+      let coverImageUrl = '';
+      try {
+        coverImageUrl = await generateEbookImage({
+          prompt: ebookData.coverImagePrompt,
+          type: 'cover',
+        });
+        
+        // Save cover image as asset
+        if (coverImageUrl) {
+          await storage.createAsset({
+            userId,
+            projectId: project.id,
+            type: 'cover',
+            url: coverImageUrl,
+            filename: `${project.title}-cover.png`,
+            metadata: { width: 1024, height: 1024, mimeType: 'image/png' },
+          });
+          
+          // Update project with cover image
+          await storage.updateProject(project.id, { coverImageUrl });
+        }
+      } catch (imgError) {
+        console.error('[API] Cover image generation failed:', imgError);
+        // Continue without cover image - non-blocking
+      }
+
+      // Step 4: Create introduction section
+      console.log('[API] Creating introduction section...');
+      let introImageUrl = '';
+      try {
+        introImageUrl = await generateEbookImage({
+          prompt: ebookData.introduction.imagePrompt,
+          type: 'section',
+        });
+      } catch (imgError) {
+        console.error('[API] Introduction image generation failed:', imgError);
+      }
+
+      await storage.createSection({
+        projectId: project.id,
+        type: 'intro',
+        title: 'Introduction',
+        content: markdownToTipTap(ebookData.introduction.content + (introImageUrl ? `\n\n![Introduction](${introImageUrl})` : '')),
+        order: 0,
+      });
+
+      // Step 5: Create chapter sections with images
+      console.log('[API] Creating chapters...');
+      for (let i = 0; i < ebookData.chapters.length; i++) {
+        const chapter = ebookData.chapters[i];
+        let chapterImageUrl = '';
+        
+        try {
+          chapterImageUrl = await generateEbookImage({
+            prompt: chapter.imagePrompt,
+            type: 'chapter',
+          });
+        } catch (imgError) {
+          console.error(`[API] Chapter ${i + 1} image generation failed:`, imgError);
+        }
+
+        await storage.createSection({
+          projectId: project.id,
+          type: 'chapter',
+          title: chapter.title,
+          content: markdownToTipTap(
+            `## ${chapter.headline}\n\n${chapter.content}` + 
+            (chapterImageUrl ? `\n\n![${chapter.title}](${chapterImageUrl})` : '')
+          ),
+          order: i + 1,
+        });
+      }
+
+      // Step 6: Create summary section
+      console.log('[API] Creating summary section...');
+      let summaryImageUrl = '';
+      try {
+        summaryImageUrl = await generateEbookImage({
+          prompt: ebookData.summary.imagePrompt,
+          type: 'section',
+        });
+      } catch (imgError) {
+        console.error('[API] Summary image generation failed:', imgError);
+      }
+
+      await storage.createSection({
+        projectId: project.id,
+        type: 'summary',
+        title: 'Summary',
+        content: markdownToTipTap(ebookData.summary.content + (summaryImageUrl ? `\n\n![Summary](${summaryImageUrl})` : '')),
+        order: ebookData.chapters.length + 1,
+      });
+
+      console.log('[API] Full ebook generation completed successfully');
+      
+      // Return the complete project
+      const sections = await storage.getProjectSections(project.id);
+      res.json({ 
+        ...project, 
+        sections,
+        generated: {
+          subtitle: ebookData.subtitle,
+          chaptersCount: ebookData.chapters.length,
+        }
+      });
+    } catch (error: any) {
+      console.error("Error generating full ebook:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded. Please add credits to your OpenAI account.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("INVALID_API_KEY") || error?.message?.startsWith("MISSING_API_KEY")) {
+        return res.status(500).json({ 
+          message: "AI service is temporarily unavailable. Please contact support.",
+          code: "INVALID_API_KEY"
+        });
+      }
+      
+      if (error?.name === 'ZodError') {
+        return res.status(400).json({ message: error.errors[0]?.message || "Validation error" });
+      }
+      
+      res.status(500).json({ message: "Failed to generate ebook. Please try again." });
+    }
+  });
+
   app.get("/api/projects/:id", isAuthenticated, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
