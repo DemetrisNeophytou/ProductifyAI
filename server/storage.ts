@@ -20,6 +20,7 @@ import {
   referralCodes,
   referralConversions,
   analyticsEvents,
+  projectEvents,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -58,9 +59,11 @@ import {
   type InsertReferralConversion,
   type AnalyticsEvent,
   type InsertAnalyticsEvent,
+  type ProjectEvent,
+  type InsertProjectEvent,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, or, like, gte, lte, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // User operations - Required for Replit Auth
@@ -177,6 +180,31 @@ export interface IStorage {
   getUserTemplateFavorites(userId: string): Promise<string[]>;
   createTemplateUsage(usage: InsertTemplateUsage): Promise<TemplateUsage>;
   getUserRecentTemplateUsage(userId: string, limit?: number): Promise<TemplateUsage[]>;
+  
+  // Phase 3: Project Events & Analytics operations
+  createProjectEvent(event: InsertProjectEvent): Promise<ProjectEvent>;
+  getProjectEvents(projectId: string, limit?: number): Promise<ProjectEvent[]>;
+  getUserProjectEvents(userId: string, limit?: number): Promise<ProjectEvent[]>;
+  getProjectAnalyticsSummary(projectId: string): Promise<{
+    views: number;
+    exports: Record<string, number>;
+    aiUsage: Record<string, number>;
+  }>;
+  getUserAiUsageToday(userId: string, eventType: string): Promise<number>;
+  
+  // Phase 3: Smart Search operations
+  searchProjects(params: {
+    userId: string;
+    query?: string;
+    type?: string;
+    tag?: string;
+    from?: string;
+    to?: string;
+    status?: string;
+    starred?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Project[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -987,6 +1015,140 @@ export class DatabaseStorage implements IStorage {
       .where(eq(templateUsage.userId, userId))
       .orderBy(desc(templateUsage.createdAt))
       .limit(limit);
+  }
+  
+  // Phase 3: Project Events & Analytics operations
+  async createProjectEvent(eventData: InsertProjectEvent): Promise<ProjectEvent> {
+    const [event] = await db.insert(projectEvents).values(eventData).returning();
+    return event;
+  }
+  
+  async getProjectEvents(projectId: string, limit: number = 100): Promise<ProjectEvent[]> {
+    return await db
+      .select()
+      .from(projectEvents)
+      .where(eq(projectEvents.projectId, projectId))
+      .orderBy(desc(projectEvents.createdAt))
+      .limit(limit);
+  }
+  
+  async getUserProjectEvents(userId: string, limit: number = 100): Promise<ProjectEvent[]> {
+    return await db
+      .select()
+      .from(projectEvents)
+      .where(eq(projectEvents.userId, userId))
+      .orderBy(desc(projectEvents.createdAt))
+      .limit(limit);
+  }
+  
+  async getProjectAnalyticsSummary(projectId: string): Promise<{
+    views: number;
+    exports: Record<string, number>;
+    aiUsage: Record<string, number>;
+  }> {
+    const events = await db
+      .select()
+      .from(projectEvents)
+      .where(eq(projectEvents.projectId, projectId));
+    
+    const views = events.filter(e => e.type === 'view').length;
+    
+    const exports: Record<string, number> = {};
+    events.filter(e => e.type.startsWith('export_')).forEach(e => {
+      const format = e.type.replace('export_', '');
+      exports[format] = (exports[format] || 0) + 1;
+    });
+    
+    const aiUsage: Record<string, number> = {};
+    events.filter(e => e.type.startsWith('ai_')).forEach(e => {
+      aiUsage[e.type] = (aiUsage[e.type] || 0) + 1;
+    });
+    
+    return { views, exports, aiUsage };
+  }
+  
+  async getUserAiUsageToday(userId: string, eventType: string): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const events = await db
+      .select()
+      .from(projectEvents)
+      .where(
+        and(
+          eq(projectEvents.userId, userId),
+          eq(projectEvents.type, eventType),
+          gte(projectEvents.createdAt, today)
+        )
+      );
+    
+    return events.length;
+  }
+  
+  // Phase 3: Smart Search operations
+  async searchProjects(params: {
+    userId: string;
+    query?: string;
+    type?: string;
+    tag?: string;
+    from?: string;
+    to?: string;
+    status?: string;
+    starred?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<Project[]> {
+    const conditions = [eq(projects.userId, params.userId)];
+    
+    if (params.type) {
+      conditions.push(eq(projects.type, params.type));
+    }
+    
+    if (params.status) {
+      conditions.push(eq(projects.status, params.status));
+    }
+    
+    if (params.starred !== undefined) {
+      conditions.push(
+        sql`${projects.metadata}->>'starred' = ${params.starred.toString()}`
+      );
+    }
+    
+    if (params.from) {
+      conditions.push(gte(projects.createdAt, new Date(params.from)));
+    }
+    
+    if (params.to) {
+      conditions.push(lte(projects.createdAt, new Date(params.to)));
+    }
+    
+    if (params.tag) {
+      conditions.push(
+        sql`${projects.metadata}->'tags' ? ${params.tag}`
+      );
+    }
+    
+    if (params.query) {
+      conditions.push(
+        or(
+          ilike(projects.title, `%${params.query}%`),
+          sql`${projects.metadata}->>'niche' ILIKE ${`%${params.query}%`}`
+        )
+      );
+    }
+    
+    const limit = params.limit || 50;
+    const offset = params.offset || 0;
+    
+    const results = await db
+      .select()
+      .from(projects)
+      .where(and(...conditions))
+      .orderBy(desc(projects.updatedAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return results;
   }
 }
 

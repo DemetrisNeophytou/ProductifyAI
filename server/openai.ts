@@ -1201,3 +1201,118 @@ Create fresh, compelling content that adds value and drives transformation.`;
     throw new Error(`AI_ERROR: ${error?.message || "Failed to regenerate section"}`);
   }
 }
+
+// Phase 3: Generate theme from mood and prompt
+export async function generateTheme(params: {
+  mood: string;
+  prompt?: string;
+}): Promise<{
+  fonts: { heading: string; body: string };
+  colors: string[];
+  spacingScale: number;
+  imageStyle: string;
+}> {
+  console.log(`[OpenAI] Generating theme - Mood: ${params.mood}`);
+  requireApiKey();
+
+  const systemPrompt = `You are a design system assistant. Produce a cohesive theme for a digital product document.
+
+Return ONLY valid JSON in this exact format:
+{
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
+  },
+  "colors": ["#6D28D9", "#19161d", "#F9FAFB", "#10B981"],
+  "spacingScale": 1.0,
+  "imageStyle": "clean high-contrast editorial, no text"
+}
+
+RULES:
+- fonts.heading and fonts.body must be web-safe font names
+- colors array must have exactly 4 hex color codes (primary, dark, light, accent)
+- spacingScale must be between 0.8 and 1.2
+- imageStyle must be <= 12 words and specify NO TEXT in images
+- Ensure colors work well together and match the mood
+- NEVER use emoji characters`;
+
+  const moodPrompt = params.prompt 
+    ? `Mood: ${params.mood}. User notes: ${params.prompt}`
+    : `Mood: ${params.mood}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: moodPrompt }
+      ],
+      max_completion_tokens: 500,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    const theme = JSON.parse(content);
+    
+    if (!theme.fonts?.heading || !theme.fonts?.body || !theme.colors || !Array.isArray(theme.colors) || theme.colors.length !== 4) {
+      throw new Error("AI_ERROR: Invalid theme structure");
+    }
+    
+    console.log(`[OpenAI] Theme generated successfully`);
+    return theme;
+  } catch (error: any) {
+    console.error('[OpenAI] Theme generation failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate theme"}`);
+  }
+}
+
+// Phase 3: Generate image using DALL-E
+export async function generateAIImage(params: {
+  prompt: string;
+  size?: string;
+  styleHint?: string;
+}): Promise<{ url: string; source: string; license: string }> {
+  console.log(`[OpenAI] Generating image with DALL-E`);
+  requireApiKey();
+
+  const enhancedPrompt = params.styleHint 
+    ? `${params.prompt}, ${params.styleHint}, no text, no words, no letters`
+    : `${params.prompt}, no text, no words, no letters`;
+
+  try {
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: enhancedPrompt,
+      size: (params.size as any) || "1024x1024",
+      quality: "standard",
+      n: 1,
+    });
+
+    const imageUrl = response.data[0]?.url;
+    if (!imageUrl) {
+      throw new Error("No image URL returned from DALL-E");
+    }
+
+    console.log(`[OpenAI] Image generated successfully`);
+    return {
+      url: imageUrl,
+      source: "openai",
+      license: "free_commercial"
+    };
+  } catch (error: any) {
+    console.error('[OpenAI] Image generation failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_IMAGE_ERROR: ${error?.message || "Failed to generate image"}`);
+  }
+}
