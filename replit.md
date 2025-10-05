@@ -5,6 +5,40 @@ Productify AI is an AI-powered digital product creation platform designed to hel
 
 ## Recent Changes (October 2025)
 
+### Canva-Style Template Browsing System (October 5, 2025)
+Transformed the Templates page into a professional Canva-style browsing experience with AI-powered discovery:
+
+**Template Discovery Features**
+- **For You Section**: AI-powered personalized recommendations based on user's project history and usage patterns
+- **Horizontal Scrolling Categories**: Smooth category navigation (Health & Wellness, Business, Marketing, Education, Lifestyle, Social Media)
+- **Smart Search**: Real-time template search with filtering across titles, descriptions, and tags
+- **Favorites System**: Star/unstar templates with persistent favorites tracking across sessions
+- **Recently Used**: Automatic tracking of template usage history for quick access
+- **Trending Templates**: Curated section highlighting popular and high-performing templates
+- **New Templates**: Showcase of recently added templates
+
+**Template Catalog**
+- 18 professionally curated templates across 6 categories
+- Rich metadata: categories, tags, icons, tier requirements (Free/Plus/Pro)
+- Template types: eBooks, online courses, checklists, lead magnets, workbooks, templates
+- Preview data with structured sections and content
+
+**Backend Infrastructure**
+- Database schema: `templateFavorites` and `templateUsage` tables for tracking
+- API routes: GET templates, recommendations, favorites toggle, usage tracking
+- AI-powered recommendations: Analyzes user project types and recent usage to suggest relevant templates
+- Curated fallback system ensures quality recommendations for new users
+
+**Technical Implementation**
+- TanStack Query for efficient data fetching and caching
+- Optimistic updates for instant favorite toggling
+- Real-time search filtering with debouncing
+- Horizontal scroll navigation with smooth animations
+- Grid layout with hover interactions and visual feedback
+
+**Routes**
+- `/templates` - Canva-style template browsing page
+
 ### Canva-Style Interactive Editor (October 5, 2025)
 Built a professional Canva-style editor for digital products (ebooks, workbooks, courses, landing pages) with the following features:
 
