@@ -5,11 +5,65 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Download, FileText, Globe, File } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Section } from "@shared/schema";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFTextField, PDFCheckBox } from "pdf-lib";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import MarkdownIt from "markdown-it";
 
 const md = new MarkdownIt();
+
+// Helper to extract text content from TipTap JSON
+function extractTextFromContent(content: any): string {
+  if (!content) return "";
+  
+  if (typeof content === 'string') return content;
+  
+  // Handle TipTap JSON structure
+  if (content.type === 'doc' && content.content) {
+    return content.content
+      .map((node: any) => extractTextFromNode(node))
+      .filter(Boolean)
+      .join('\n\n');
+  }
+  
+  // Fallback for old format
+  if (content.text) return content.text;
+  
+  return "";
+}
+
+function extractTextFromNode(node: any): string {
+  if (!node) return "";
+  
+  if (node.type === 'text') {
+    return node.text || "";
+  }
+  
+  if (node.type === 'paragraph' && node.content) {
+    return node.content.map((n: any) => extractTextFromNode(n)).join('');
+  }
+  
+  if (node.type === 'heading' && node.content) {
+    return node.content.map((n: any) => extractTextFromNode(n)).join('');
+  }
+  
+  if (node.type === 'bulletList' && node.content) {
+    return node.content.map((item: any) => '• ' + extractTextFromNode(item)).join('\n');
+  }
+  
+  if (node.type === 'orderedList' && node.content) {
+    return node.content.map((item: any, i: number) => `${i + 1}. ` + extractTextFromNode(item)).join('\n');
+  }
+  
+  if (node.type === 'listItem' && node.content) {
+    return node.content.map((n: any) => extractTextFromNode(n)).join('');
+  }
+  
+  if (node.content) {
+    return node.content.map((n: any) => extractTextFromNode(n)).join(' ');
+  }
+  
+  return "";
+}
 
 interface ExportDialogProps {
   open: boolean;
@@ -25,9 +79,11 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
   const exportToPDF = async () => {
     try {
       setExporting(true);
+      const isWorkbook = project.type === 'workbook';
       const pdfDoc = await PDFDocument.create();
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const form = pdfDoc.getForm();
 
       let page = pdfDoc.addPage([612, 792]);
       let y = 750;
@@ -58,15 +114,93 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
         });
         y -= 30;
 
-        const content = (section.content as any)?.text || "";
-        const words = content.split(" ");
-        let line = "";
+        const content = extractTextFromContent(section.content);
+        const blockType = (section as any).type || 'text';
+        
+        // Handle different block types
+        if (isWorkbook && (blockType === 'task' || blockType === 'exercise')) {
+          // Add fillable text field for workbook exercises
+          const lines = content.split('\n');
+          for (const line of lines) {
+            if (y < 80) {
+              page = pdfDoc.addPage([612, 792]);
+              y = 750;
+            }
+            
+            page.drawText(line, {
+              x: 50,
+              y,
+              size: 12,
+              font,
+              color: rgb(0, 0, 0),
+            });
+            y -= 25;
+            
+            // Add fillable field
+            const textField = form.createTextField(`answer_${section.id}_${y}`);
+            textField.addToPage(page, {
+              x: 50,
+              y: y - 5,
+              width: 500,
+              height: 20,
+            });
+            y -= 35;
+          }
+        } else if (isWorkbook && blockType === 'checkbox') {
+          // Add checkboxes for checklist items
+          const lines = content.split('\n').filter(Boolean);
+          for (const line of lines) {
+            if (y < 50) {
+              page = pdfDoc.addPage([612, 792]);
+              y = 750;
+            }
+            
+            const checkBox = form.createCheckBox(`check_${section.id}_${y}`);
+            checkBox.addToPage(page, {
+              x: 50,
+              y: y - 12,
+              width: 15,
+              height: 15,
+            });
+            
+            page.drawText(line.replace(/^[•\-\*]\s*/, ''), {
+              x: 75,
+              y,
+              size: 12,
+              font,
+              color: rgb(0, 0, 0),
+            });
+            y -= 25;
+          }
+        } else {
+          // Regular text content
+          const words = content.split(" ");
+          let line = "";
 
-        for (const word of words) {
-          const testLine = line + word + " ";
-          const width = font.widthOfTextAtSize(testLine, 12);
+          for (const word of words) {
+            const testLine = line + word + " ";
+            const width = font.widthOfTextAtSize(testLine, 12);
 
-          if (width > 500) {
+            if (width > 500) {
+              if (y < 50) {
+                page = pdfDoc.addPage([612, 792]);
+                y = 750;
+              }
+              page.drawText(line, {
+                x: 50,
+                y,
+                size: 12,
+                font,
+                color: rgb(0, 0, 0),
+              });
+              line = word + " ";
+              y -= 20;
+            } else {
+              line = testLine;
+            }
+          }
+
+          if (line) {
             if (y < 50) {
               page = pdfDoc.addPage([612, 792]);
               y = 750;
@@ -78,26 +212,8 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
               font,
               color: rgb(0, 0, 0),
             });
-            line = word + " ";
-            y -= 20;
-          } else {
-            line = testLine;
+            y -= 30;
           }
-        }
-
-        if (line) {
-          if (y < 50) {
-            page = pdfDoc.addPage([612, 792]);
-            y = 750;
-          }
-          page.drawText(line, {
-            x: 50,
-            y,
-            size: 12,
-            font,
-            color: rgb(0, 0, 0),
-          });
-          y -= 30;
         }
       }
 
@@ -106,10 +222,10 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${project.title}.pdf`;
+      a.download = `${project.title}${isWorkbook ? '_fillable' : ''}.pdf`;
       a.click();
 
-      toast({ title: "PDF exported successfully" });
+      toast({ title: `PDF exported successfully${isWorkbook ? ' (fillable)' : ''}` });
     } catch (error) {
       toast({ title: "Export failed", variant: "destructive" });
     } finally {
@@ -121,8 +237,8 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
   const exportToDOCX = async () => {
     try {
       setExporting(true);
-
-      const children = [
+      
+      const children: Paragraph[] = [
         new Paragraph({
           text: project.title,
           heading: HeadingLevel.TITLE,
@@ -137,7 +253,7 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
           })
         );
 
-        const content = (section.content as any)?.text || "";
+        const content = extractTextFromContent(section.content);
         children.push(
           new Paragraph({
             children: [new TextRun(content)],
@@ -192,7 +308,7 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
 `;
 
       for (const section of sections) {
-        const content = (section.content as any)?.text || "";
+        const content = extractTextFromContent(section.content);
         html += `
   <h2>${section.title}</h2>
   <p>${content.replace(/\n/g, "<br>")}</p>
