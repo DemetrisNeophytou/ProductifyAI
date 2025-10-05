@@ -14,7 +14,14 @@ import {
   Copy,
   FileText,
   ChevronLeft,
+  Download,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Page } from "@shared/schema";
 import BlockEditor from "./BlockEditor";
 
@@ -236,6 +243,38 @@ export default function ProjectPages() {
     duplicatePageMutation.mutate(pageId);
   };
 
+  const handleExport = async (format: "pdf" | "html") => {
+    try {
+      const url = `/api/projects/${projectId}/export/blocks/${format}`;
+      const response = await fetch(url, {
+        credentials: "include",
+      });
+      
+      if (!response.ok) throw new Error("Export failed");
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `project.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast({
+        title: "Export successful",
+        description: `Your project has been exported as ${format.toUpperCase()}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: "Failed to export the project. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -376,6 +415,29 @@ export default function ProjectPages() {
 
       {/* Block Editor Area */}
       <div className="flex-1 flex flex-col">
+        {selectedPageId && (
+          <div className="border-b px-4 py-2 flex items-center justify-end gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" data-testid="button-export">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("pdf")} data-testid="button-export-pdf">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("html")} data-testid="button-export-html">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as HTML
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+        
         {selectedPageId ? (
           <BlockEditor key={selectedPageId} projectId={projectId!} pageId={selectedPageId} />
         ) : (

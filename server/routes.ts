@@ -1821,6 +1821,100 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // Blocks-based export routes
+  app.get("/api/projects/:id/export/blocks/pdf", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const pages = await storage.getProjectPages(project.id);
+      const pagesWithBlocks = await Promise.all(
+        pages.map(async (page) => {
+          const blocks = await storage.getPageBlocks(page.id);
+          return { ...page, blocks };
+        })
+      );
+      
+      const brandKit = await storage.getBrandKit(userId);
+      const { generateBlocksPDF } = await import('./blocks-pdf-export');
+      
+      const pdfBytes = await generateBlocksPDF({
+        projectTitle: project.title,
+        pages: pagesWithBlocks,
+        brandKit: brandKit ? {
+          primaryColor: brandKit.primaryColor || undefined,
+          secondaryColor: brandKit.secondaryColor || undefined,
+        } : undefined
+      });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${project.title}.pdf"`);
+      res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+      console.error("Error generating blocks PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  app.get("/api/projects/:id/export/blocks/html", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const pages = await storage.getProjectPages(project.id);
+      const pagesWithBlocks = await Promise.all(
+        pages.map(async (page) => {
+          const blocks = await storage.getPageBlocks(page.id);
+          return { ...page, blocks };
+        })
+      );
+      
+      const brandKit = await storage.getBrandKit(userId);
+      const { generateBlocksHTML } = await import('./blocks-html-export');
+      
+      const html = generateBlocksHTML({
+        projectTitle: project.title,
+        pages: pagesWithBlocks,
+        brandKit: brandKit ? {
+          primaryColor: brandKit.primaryColor || undefined,
+          secondaryColor: brandKit.secondaryColor || undefined,
+          logo: brandKit.logo || undefined,
+          fonts: brandKit.fonts ? {
+            heading: (brandKit.fonts as any).heading || undefined,
+            body: (brandKit.fonts as any).body || undefined,
+          } : undefined,
+        } : undefined
+      });
+
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Content-Disposition', `attachment; filename="${project.title}.html"`);
+      res.send(html);
+    } catch (error) {
+      console.error("Error generating blocks HTML:", error);
+      res.status(500).json({ message: "Failed to generate HTML" });
+    }
+  });
+
   // Section routes
   app.get("/api/projects/:projectId/sections", isAuthenticated, async (req: AuthRequest, res) => {
     try {
