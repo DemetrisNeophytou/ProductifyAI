@@ -8,21 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Palette, Type, Mic, Upload, Save } from "lucide-react";
+import { Palette, Type, Mic, Upload, Save, Loader2 } from "lucide-react";
 import type { BrandKit as BrandKitType } from "@shared/schema";
 
-const fontOptions = [
-  { value: "Inter", label: "Inter" },
-  { value: "Roboto", label: "Roboto" },
-  { value: "Open Sans", label: "Open Sans" },
-  { value: "Lato", label: "Lato" },
-  { value: "Montserrat", label: "Montserrat" },
-  { value: "Poppins", label: "Poppins" },
-  { value: "Raleway", label: "Raleway" },
-  { value: "Merriweather", label: "Merriweather" },
-  { value: "Playfair Display", label: "Playfair Display" },
-  { value: "Georgia", label: "Georgia" },
-];
+interface GoogleFont {
+  family: string;
+  category: string;
+  variants: string[];
+}
 
 const toneOptions = [
   { value: "professional", label: "Professional", description: "Formal, authoritative, business-oriented" },
@@ -39,6 +32,17 @@ export default function BrandKit() {
   const { data: brandKit, isLoading } = useQuery<BrandKitType>({
     queryKey: ["/api/brand-kit"],
   });
+
+  const { data: googleFontsData, isLoading: isFontsLoading } = useQuery<{ items: GoogleFont[]; source: string }>({
+    queryKey: ["/api/fonts/google"],
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+  });
+
+  const fontOptions = googleFontsData?.items.map((font) => ({
+    value: font.family,
+    label: font.family,
+    category: font.category,
+  })) || [];
 
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#8B5CF6");
@@ -98,10 +102,13 @@ export default function BrandKit() {
     saveMutation.mutate();
   };
 
-  if (isLoading) {
+  if (isLoading || isFontsLoading) {
     return (
-      <div className="p-8">
-        <div className="text-muted-foreground">Loading brand kit...</div>
+      <div className="p-8 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+          <div className="text-muted-foreground">Loading brand kit...</div>
+        </div>
       </div>
     );
   }

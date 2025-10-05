@@ -3176,6 +3176,89 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // Google Fonts API - fetch available fonts
+  app.get("/api/fonts/google", async (_req, res) => {
+    try {
+      const apiKey = process.env.GOOGLE_FONTS_API_KEY;
+      
+      // Curated list of popular fonts (fallback if no API key)
+      const fallbackFonts = [
+        { family: "Inter", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+        { family: "Roboto", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Open Sans", category: "sans-serif", variants: ["regular", "600", "700"] },
+        { family: "Lato", category: "sans-serif", variants: ["regular", "700"] },
+        { family: "Montserrat", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+        { family: "Poppins", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+        { family: "Raleway", category: "sans-serif", variants: ["regular", "600", "700"] },
+        { family: "Nunito", category: "sans-serif", variants: ["regular", "600", "700"] },
+        { family: "Playfair Display", category: "serif", variants: ["regular", "700"] },
+        { family: "Merriweather", category: "serif", variants: ["regular", "700"] },
+        { family: "Source Sans Pro", category: "sans-serif", variants: ["regular", "600", "700"] },
+        { family: "PT Sans", category: "sans-serif", variants: ["regular", "700"] },
+        { family: "Oswald", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Noto Sans", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Ubuntu", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Quicksand", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Roboto Condensed", category: "sans-serif", variants: ["regular", "700"] },
+        { family: "Mukta", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Rubik", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Work Sans", category: "sans-serif", variants: ["regular", "500", "600"] },
+      ];
+
+      if (!apiKey) {
+        // Return fallback fonts if no API key
+        return res.json({
+          items: fallbackFonts,
+          kind: "webfonts#webfontList",
+          source: "fallback"
+        });
+      }
+
+      // Fetch from Google Fonts API
+      const apiUrl = `https://www.googleapis.com/webfonts/v1/webfonts?key=${apiKey}&sort=popularity`;
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        console.error("Google Fonts API error:", response.statusText);
+        // Fall back to curated list if API fails
+        return res.json({
+          items: fallbackFonts,
+          kind: "webfonts#webfontList",
+          source: "fallback"
+        });
+      }
+
+      const data = await response.json();
+      
+      // Return the full list from the API, limited to first 100 most popular
+      const limitedFonts = data.items.slice(0, 100);
+      
+      res.json({
+        ...data,
+        items: limitedFonts,
+        source: "api"
+      });
+    } catch (error) {
+      console.error("Error fetching Google Fonts:", error);
+      
+      // Fallback response on error
+      const fallbackFonts = [
+        { family: "Inter", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+        { family: "Roboto", category: "sans-serif", variants: ["regular", "500", "700"] },
+        { family: "Open Sans", category: "sans-serif", variants: ["regular", "600", "700"] },
+        { family: "Lato", category: "sans-serif", variants: ["regular", "700"] },
+        { family: "Montserrat", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+        { family: "Poppins", category: "sans-serif", variants: ["regular", "500", "600", "700"] },
+      ];
+      
+      res.json({
+        items: fallbackFonts,
+        kind: "webfonts#webfontList",
+        source: "fallback"
+      });
+    }
+  });
+
   // Stripe subscription routes
   app.get("/api/subscription/status", isAuthenticated, async (req: AuthRequest, res) => {
     try {
