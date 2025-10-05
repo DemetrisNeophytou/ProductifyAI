@@ -464,3 +464,36 @@ export type InsertReferralConversion = z.infer<typeof insertReferralConversionSc
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+// User Niches - Store AI-generated niche ideas with scores
+export const userNiches = pgTable("user_niches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  painScore: integer("pain_score").notNull(), // 1-10
+  moneyScore: integer("money_score").notNull(), // 1-10
+  speedScore: integer("speed_score").notNull(), // 1-10
+  competitionLevel: varchar("competition_level", { length: 20 }).notNull(), // low, medium, high
+  suggestedOffer: text("suggested_offer"),
+  aiInsights: text("ai_insights"), // Extra AI suggestions for improvement
+  inputs: jsonb("inputs").$type<{
+    interests?: string;
+    timeAvailable?: string;
+    audienceType?: string;
+    experienceLevel?: string;
+  }>(), // Store the original inputs used to generate this niche
+  saved: integer("saved").default(0), // 0 or 1, whether user saved this niche
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_user_niches_user").on(table.userId),
+  index("idx_user_niches_saved").on(table.saved),
+]);
+
+export const insertUserNicheSchema = createInsertSchema(userNiches).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserNiche = typeof userNiches.$inferSelect;
+export type InsertUserNiche = z.infer<typeof insertUserNicheSchema>;
