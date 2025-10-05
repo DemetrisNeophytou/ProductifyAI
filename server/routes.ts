@@ -18,6 +18,8 @@ import {
 import type { SubscriptionTier, SubscriptionStatus } from "./stripe-config";
 import { registerStripeRoutes } from "./stripe-routes";
 import { registerGrowthRoutes } from "./growth-routes";
+import { registerAiAgentRoutes } from "./ai-agents";
+import { registerVideoBuilderRoutes } from "./video-builder";
 import {
   insertBrandKitSchema,
   insertProjectSchema,
@@ -3784,6 +3786,12 @@ Be systematic, growth-focused, and results-oriented.`
   
   // Register growth tools routes (testimonials, referrals, analytics)
   registerGrowthRoutes(app);
+
+  // Phase 5: AI Agents
+  registerAiAgentRoutes(app);
+
+  // Phase 5: Video Builder
+  registerVideoBuilderRoutes(app);
 
   const httpServer = createServer(app);
   return httpServer;

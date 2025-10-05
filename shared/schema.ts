@@ -40,6 +40,7 @@ export const users = pgTable("users", {
   projectsLimit: integer("projects_limit").default(3), // Trial: 3, Plus: 10, Pro: unlimited (-1)
   aiTokensUsed: integer("ai_tokens_used").default(0),
   aiTokensLimit: integer("ai_tokens_limit").default(5000), // Trial: 5000, Plus: 20000, Pro: unlimited (-1)
+  credits: integer("credits").default(100), // AI action credits - Trial: 100, Plus: 500, Pro: 2000
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -718,3 +719,158 @@ export const insertUserNicheSchema = createInsertSchema(userNiches).omit({
 
 export type UserNiche = typeof userNiches.$inferSelect;
 export type InsertUserNiche = z.infer<typeof insertUserNicheSchema>;
+
+// Feature Flags - Control feature availability
+export const featureFlags = pgTable("feature_flags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 100 }).notNull().unique(), // e.g., "FEATURE_AGENTS", "FEATURE_VIDEO_BUILDER"
+  enabled: integer("enabled").default(0).notNull(), // 0 = disabled, 1 = enabled
+  description: text("description"),
+  metadata: jsonb("metadata").$type<{
+    beta?: boolean;
+    allowedTiers?: string[]; // ['plus', 'pro']
+    maxUsagePerDay?: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+
+// Credit History - Track credit usage and refills
+export const creditHistory = pgTable("credit_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // Positive for refills, negative for usage
+  type: varchar("type", { length: 50 }).notNull(), // 'refill', 'ai_agent', 'video_builder', 'image_gen', etc.
+  description: text("description"),
+  metadata: jsonb("metadata").$type<{
+    agentType?: string;
+    taskId?: string;
+    featureName?: string;
+  }>(),
+  balanceAfter: integer("balance_after").notNull(), // Credit balance after this transaction
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_credit_history_user").on(table.userId),
+  index("idx_credit_history_created").on(table.createdAt),
+]);
+
+export const insertCreditHistorySchema = createInsertSchema(creditHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type CreditHistory = typeof creditHistory.$inferSelect;
+export type InsertCreditHistory = z.infer<typeof insertCreditHistorySchema>;
+
+// Feature Usage Log - Track feature usage for cost control
+export const featureUsageLog = pgTable("feature_usage_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  featureName: varchar("feature_name", { length: 100 }).notNull(), // 'ai_agent_builder', 'video_builder', etc.
+  tokenCount: integer("token_count").default(0), // AI tokens used
+  creditsCost: integer("credits_cost").default(0), // Credits deducted
+  metadata: jsonb("metadata").$type<{
+    agentType?: string;
+    promptLength?: number;
+    responseLength?: number;
+    videoId?: string;
+    videoDuration?: number;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_feature_usage_user").on(table.userId),
+  index("idx_feature_usage_feature").on(table.featureName),
+  index("idx_feature_usage_created").on(table.createdAt),
+]);
+
+export const insertFeatureUsageLogSchema = createInsertSchema(featureUsageLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FeatureUsageLog = typeof featureUsageLog.$inferSelect;
+export type InsertFeatureUsageLog = z.infer<typeof insertFeatureUsageLogSchema>;
+
+// AI Agent Sessions - Track AI agent conversations
+export const aiAgentSessions = pgTable("ai_agent_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  agentType: varchar("agent_type", { length: 50 }).notNull(), // 'builder', 'design', 'content'
+  title: text("title"),
+  messages: jsonb("messages").$type<Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+  }>>().default(sql`'[]'::jsonb`),
+  status: varchar("status", { length: 20 }).default("active"), // 'active', 'completed', 'archived'
+  creditsUsed: integer("credits_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_agent_sessions_user").on(table.userId),
+  index("idx_ai_agent_sessions_type").on(table.agentType),
+]);
+
+export const insertAiAgentSessionSchema = createInsertSchema(aiAgentSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AiAgentSession = typeof aiAgentSessions.$inferSelect;
+export type InsertAiAgentSession = z.infer<typeof insertAiAgentSessionSchema>;
+
+// Video Projects - Track video builder projects
+export const videoProjects = pgTable("video_projects", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  prompt: text("prompt").notNull(), // Original text prompt
+  script: jsonb("script").$type<Array<{
+    text: string;
+    duration: number;
+    clipQuery?: string;
+  }>>(),
+  clips: jsonb("clips").$type<Array<{
+    url: string;
+    source: 'pexels' | 'pixabay';
+    attribution?: string;
+    duration: number;
+  }>>(),
+  captions: jsonb("captions").$type<Array<{
+    text: string;
+    startTime: number;
+    endTime: number;
+  }>>(),
+  music: jsonb("music").$type<{
+    url?: string;
+    volume?: number;
+  }>(),
+  status: varchar("status", { length: 20 }).default("draft"), // 'draft', 'processing', 'completed', 'failed'
+  outputUrl: text("output_url"), // Final MP4 URL
+  duration: integer("duration"), // Total duration in seconds
+  creditsUsed: integer("credits_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_video_projects_user").on(table.userId),
+  index("idx_video_projects_status").on(table.status),
+]);
+
+export const insertVideoProjectSchema = createInsertSchema(videoProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type VideoProject = typeof videoProjects.$inferSelect;
+export type InsertVideoProject = z.infer<typeof insertVideoProjectSchema>;

@@ -80,9 +80,16 @@ async function upsertUser(
     userData.trialEndDate = trialEndDate;
     userData.projectsLimit = 3;
     userData.aiTokensLimit = 5000;
+    userData.credits = 100; // Phase 5: Grant initial credits
   }
 
   await storage.upsertUser(userData);
+
+  // Phase 5: Grant initial credits for new users (creates credit history entry)
+  if (isNewUser) {
+    const { grantInitialCredits } = await import('./seed-phase5');
+    await grantInitialCredits(claims["sub"]);
+  }
 }
 
 export async function setupAuth(app: Express) {
