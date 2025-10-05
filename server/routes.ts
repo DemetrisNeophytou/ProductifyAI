@@ -2391,147 +2391,216 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
-  // Unsplash integration routes
-  app.get("/api/unsplash/search", isAuthenticated, async (req: AuthRequest, res) => {
+  // Pexels integration routes (100% free for commercial use, no attribution required)
+  app.get("/api/pexels/search", isAuthenticated, async (req: AuthRequest, res) => {
     try {
-      const { query, page = "1", per_page = "12" } = req.query;
+      const { query, page = "1", per_page = "12", orientation = "" } = req.query;
       
       if (!query || typeof query !== "string") {
         return res.status(400).json({ message: "Search query is required" });
       }
 
-      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-      if (!accessKey) {
-        return res.status(500).json({ message: "Unsplash API key not configured" });
+      const apiKey = process.env.PEXELS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "Pexels API key not configured" });
       }
 
-      const searchUrl = new URL("https://api.unsplash.com/search/photos");
+      const searchUrl = new URL("https://api.pexels.com/v1/search");
       searchUrl.searchParams.set("query", query);
       searchUrl.searchParams.set("page", page.toString());
       searchUrl.searchParams.set("per_page", per_page.toString());
+      if (orientation && typeof orientation === "string") {
+        searchUrl.searchParams.set("orientation", orientation);
+      }
 
       const response = await fetch(searchUrl.toString(), {
         headers: {
-          Authorization: `Client-ID ${accessKey}`,
+          Authorization: apiKey,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`Unsplash API error: ${response.statusText}`);
+        throw new Error(`Pexels API error: ${response.statusText}`);
       }
 
       const data = await response.json();
       res.json(data);
     } catch (error) {
-      console.error("Error searching Unsplash:", error);
-      res.status(500).json({ message: "Failed to search Unsplash" });
+      console.error("Error searching Pexels:", error);
+      res.status(500).json({ message: "Failed to search Pexels" });
     }
   });
 
-  app.post("/api/unsplash/import", isAuthenticated, async (req: AuthRequest, res) => {
+  app.post("/api/pexels/import", isAuthenticated, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Validate request body
       const { z } = await import("zod");
-      const unsplashImportSchema = z.object({
-        unsplashId: z.string().min(1),
+      const pexelsImportSchema = z.object({
+        pexelsId: z.number().positive().int(),
         url: z.string().url(),
-        width: z.number().positive().int().or(z.string().transform((v) => {
-          const num = Number(v);
-          if (!Number.isFinite(num) || num <= 0 || !Number.isInteger(num)) {
-            throw new Error('Width must be a positive integer');
-          }
-          return num;
-        })),
-        height: z.number().positive().int().or(z.string().transform((v) => {
-          const num = Number(v);
-          if (!Number.isFinite(num) || num <= 0 || !Number.isInteger(num)) {
-            throw new Error('Height must be a positive integer');
-          }
-          return num;
-        })),
+        width: z.number().positive().int(),
+        height: z.number().positive().int(),
         photographer: z.string(),
         photographerUrl: z.string().url(),
-        download_location: z.string().url().optional(),
+        alt: z.string().optional(),
       });
 
-      const validation = unsplashImportSchema.safeParse(req.body);
+      const validation = pexelsImportSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ message: "Invalid request data", errors: validation.error.errors });
       }
 
-      const { unsplashId, url, width, height, photographer, photographerUrl, download_location } = validation.data;
+      const { pexelsId, url, width, height, photographer, photographerUrl, alt } = validation.data;
 
-      // Strict URL validation helper (prevent SSRF)
-      const isValidUnsplashHostname = (hostname: string): boolean => {
-        return hostname === 'unsplash.com' || hostname.endsWith('.unsplash.com');
+      const isValidPexelsHostname = (hostname: string): boolean => {
+        return hostname === 'pexels.com' || hostname.endsWith('.pexels.com') || 
+               hostname === 'images.pexels.com';
       };
       
-      // Validate image URL
       const imageUrl = new URL(url);
-      if (imageUrl.protocol !== 'https:' || !isValidUnsplashHostname(imageUrl.hostname)) {
-        return res.status(400).json({ message: "Invalid image URL - must be HTTPS from Unsplash" });
+      if (imageUrl.protocol !== 'https:' || !isValidPexelsHostname(imageUrl.hostname)) {
+        return res.status(400).json({ message: "Invalid image URL - must be HTTPS from Pexels" });
       }
 
-      // Validate photographer URL (prevent SSRF via metadata)
       const photographerUrlParsed = new URL(photographerUrl);
-      if (photographerUrlParsed.protocol !== 'https:' || !isValidUnsplashHostname(photographerUrlParsed.hostname)) {
-        return res.status(400).json({ message: "Invalid photographer URL - must be HTTPS from Unsplash" });
+      if (photographerUrlParsed.protocol !== 'https:' || !isValidPexelsHostname(photographerUrlParsed.hostname)) {
+        return res.status(400).json({ message: "Invalid photographer URL - must be HTTPS from Pexels" });
       }
 
-      // Trigger download endpoint (required by Unsplash API guidelines)
-      // Only if download_location is provided and is from Unsplash API domain
-      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-      if (accessKey && download_location) {
-        try {
-          const downloadUrl = new URL(download_location);
-          // Strict validation: must be HTTPS from Unsplash domain (exact or subdomain)
-          if (downloadUrl.protocol !== 'https:' || !isValidUnsplashHostname(downloadUrl.hostname)) {
-            console.warn("Invalid download_location - must be HTTPS from Unsplash API, skipping trigger");
-          } else {
-            const downloadResponse = await fetch(download_location, {
-              headers: {
-                Authorization: `Client-ID ${accessKey}`,
-              },
-            });
-            if (!downloadResponse.ok) {
-              console.error("Failed to trigger Unsplash download:", downloadResponse.statusText);
-              // Log but don't fail the import - Unsplash download trigger is best-effort
-            }
-          }
-        } catch (err) {
-          console.error("Failed to trigger Unsplash download:", err);
-          // Log but don't fail the import
-        }
-      }
-
-      // Create asset record
       const asset = await storage.createAsset({
         userId,
         projectId: null,
         type: "image",
         url,
-        filename: `unsplash-${unsplashId}.jpg`,
+        filename: `pexels-${pexelsId}.jpg`,
         metadata: {
           size: 0,
           mimeType: "image/jpeg",
           width: Number(width),
           height: Number(height),
-          unsplash: {
-            id: unsplashId,
+          source: "pexels",
+          license: "free_commercial",
+          pexels: {
+            id: pexelsId,
             photographer,
             photographerUrl,
+            alt: alt || "",
           },
         } as any,
       });
 
       res.json(asset);
     } catch (error) {
-      console.error("Error importing Unsplash image:", error);
+      console.error("Error importing Pexels image:", error);
+      res.status(500).json({ message: "Failed to import image" });
+    }
+  });
+
+  app.get("/api/pixabay/search", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const { query, page = "1", per_page = "12", orientation = "" } = req.query;
+      
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      const apiKey = process.env.PIXABAY_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ message: "Pixabay API key not configured" });
+      }
+
+      const searchUrl = new URL("https://pixabay.com/api/");
+      searchUrl.searchParams.set("key", apiKey);
+      searchUrl.searchParams.set("q", query);
+      searchUrl.searchParams.set("page", page.toString());
+      searchUrl.searchParams.set("per_page", per_page.toString());
+      searchUrl.searchParams.set("image_type", "photo");
+      if (orientation && typeof orientation === "string" && orientation !== "all") {
+        searchUrl.searchParams.set("orientation", orientation);
+      }
+
+      const response = await fetch(searchUrl.toString());
+
+      if (!response.ok) {
+        throw new Error(`Pixabay API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error searching Pixabay:", error);
+      res.status(500).json({ message: "Failed to search Pixabay" });
+    }
+  });
+
+  app.post("/api/pixabay/import", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { z } = await import("zod");
+      const pixabayImportSchema = z.object({
+        pixabayId: z.number().positive().int(),
+        url: z.string().url(),
+        width: z.number().positive().int(),
+        height: z.number().positive().int(),
+        user: z.string(),
+        userUrl: z.string().url(),
+        tags: z.string().optional(),
+      });
+
+      const validation = pixabayImportSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid request data", errors: validation.error.errors });
+      }
+
+      const { pixabayId, url, width, height, user, userUrl, tags } = validation.data;
+
+      const isValidPixabayHostname = (hostname: string): boolean => {
+        return hostname === 'pixabay.com' || hostname.endsWith('.pixabay.com');
+      };
+      
+      const imageUrl = new URL(url);
+      if (imageUrl.protocol !== 'https:' || !isValidPixabayHostname(imageUrl.hostname)) {
+        return res.status(400).json({ message: "Invalid image URL - must be HTTPS from Pixabay" });
+      }
+
+      const userUrlParsed = new URL(userUrl);
+      if (userUrlParsed.protocol !== 'https:' || !isValidPixabayHostname(userUrlParsed.hostname)) {
+        return res.status(400).json({ message: "Invalid user URL - must be HTTPS from Pixabay" });
+      }
+
+      const asset = await storage.createAsset({
+        userId,
+        projectId: null,
+        type: "image",
+        url,
+        filename: `pixabay-${pixabayId}.jpg`,
+        metadata: {
+          size: 0,
+          mimeType: "image/jpeg",
+          width: Number(width),
+          height: Number(height),
+          source: "pixabay",
+          license: "free_commercial",
+          pixabay: {
+            id: pixabayId,
+            user,
+            userUrl,
+            tags: tags || "",
+          },
+        } as any,
+      });
+
+      res.json(asset);
+    } catch (error) {
+      console.error("Error importing Pixabay image:", error);
       res.status(500).json({ message: "Failed to import image" });
     }
   });
