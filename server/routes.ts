@@ -1041,7 +1041,107 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
-  // AI-powered full ebook generation
+  // AI Autopilot: Auto-generate complete digital products (all 6 types)
+  const generateProductSchema = z.object({
+    type: z.enum(['ebook', 'workbook', 'course', 'landing', 'emails', 'social']),
+    topic: z.string().min(1, "Topic is required"),
+    audience: z.string().min(1, "Audience is required"),
+    tone: z.string().min(1, "Tone is required"),
+    goal: z.string().min(1, "Goal is required"),
+  });
+
+  app.post("/api/projects/auto-generate", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const data = generateProductSchema.parse(req.body);
+      console.log(`[API] Starting auto-generation for ${data.type} - User: ${userId}`);
+
+      const { generateCompleteProduct } = await import('./openai');
+      
+      console.log('[API] Generating complete product with AI...');
+      const productData = await generateCompleteProduct({
+        type: data.type,
+        topic: data.topic,
+        audience: data.audience,
+        tone: data.tone,
+        goal: data.goal,
+      });
+
+      console.log('[API] Creating project in database...');
+      const project = await storage.createProject({
+        userId,
+        type: data.type,
+        title: productData.title || data.topic,
+        status: "draft",
+        metadata: {
+          audience: data.audience,
+          tone: data.tone,
+          goal: data.goal,
+          wordCount: productData.metadata?.wordCount || 0,
+          imageCount: productData.metadata?.imageCount || 0,
+          version: 1,
+        },
+        brand: productData.brand || {
+          primary: "#7c3bed",
+          secondary: "#19161d",
+          font: "Inter",
+          logoUrl: null,
+        },
+        outline: productData.outline || [],
+      });
+
+      console.log('[API] Creating content blocks...');
+      for (const block of productData.blocks || []) {
+        await storage.createSection({
+          projectId: project.id,
+          sectionId: block.sectionId,
+          type: block.type || 'text',
+          title: block.sectionId ? productData.outline.find((s: any) => s.id === block.sectionId)?.title || 'Untitled' : 'Untitled',
+          content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: block.content || '' }] }] },
+          imagePrompt: block.imagePrompt,
+          order: productData.blocks.indexOf(block),
+        });
+      }
+
+      console.log(`[API] Auto-generation complete - Project ${project.id} created with ${productData.blocks?.length || 0} blocks`);
+      res.json({
+        success: true,
+        project,
+        message: `Your ${data.type} has been generated successfully!`,
+      });
+    } catch (error: any) {
+      console.error("[API] Auto-generation failed:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded. Please check your OpenAI account or contact support.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("INVALID_API_KEY")) {
+        return res.status(500).json({ 
+          message: "AI service temporarily unavailable. Please contact support.",
+          code: "INVALID_API_KEY"
+        });
+      }
+      
+      if (error?.message?.startsWith("AI_ERROR")) {
+        return res.status(500).json({ 
+          message: error.message.replace("AI_ERROR: ", ""),
+          code: "AI_ERROR"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to generate product. Please try again." });
+    }
+  });
+
+  // AI-powered full ebook generation (legacy endpoint - kept for backwards compatibility)
   const generateFullEbookSchema = z.object({
     title: z.string().min(1, "Title is required"),
     niche: z.string().min(1, "Niche is required"),
@@ -1324,6 +1424,112 @@ Be systematic, growth-focused, and results-oriented.`
     } catch (error) {
       console.error("Error duplicating project:", error);
       res.status(500).json({ message: "Failed to duplicate project" });
+    }
+  });
+
+  // Regenerate section with new AI content
+  const regenerateSectionSchema = z.object({
+    sectionId: z.string(),
+  });
+
+  app.post("/api/projects/:id/regenerate-section", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const project = await storage.getProject(req.params.id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { sectionId } = regenerateSectionSchema.parse(req.body);
+      const section = await storage.getSection(sectionId);
+      if (!section || section.projectId !== project.id) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+
+      console.log(`[API] Regenerating section ${sectionId} for project ${project.id}`);
+      const { regenerateSection } = await import('./openai');
+      
+      const regenerated = await regenerateSection({
+        sectionTitle: section.title,
+        productType: project.type,
+        audience: project.metadata?.audience || 'general audience',
+        tone: project.metadata?.tone || 'professional',
+        context: `This is part of a ${project.type} titled "${project.title}"`,
+      });
+
+      await storage.updateSection(sectionId, {
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: regenerated.content }] }] },
+        imagePrompt: regenerated.imagePrompt,
+      });
+
+      const updated = await storage.getSection(sectionId);
+      res.json({ success: true, section: updated });
+    } catch (error: any) {
+      console.error("[API] Section regeneration failed:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI quota exceeded.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("AI_ERROR")) {
+        return res.status(500).json({ 
+          message: error.message.replace("AI_ERROR: ", ""),
+          code: "AI_ERROR"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to regenerate section" });
+    }
+  });
+
+  // Generate image from prompt using DALL-E 3
+  const generateImageSchema = z.object({
+    prompt: z.string().min(1, "Prompt is required"),
+    type: z.enum(['cover', 'section', 'chapter']).default('section'),
+  });
+
+  app.post("/api/images/generate", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { prompt, type } = generateImageSchema.parse(req.body);
+      console.log(`[API] Generating ${type} image for user ${userId}`);
+
+      const { generateEbookImage } = await import('./openai');
+      const imageUrl = await generateEbookImage({ prompt, type });
+
+      res.json({ success: true, imageUrl });
+    } catch (error: any) {
+      console.error("[API] Image generation failed:", error);
+      
+      if (error?.message?.startsWith("QUOTA_EXCEEDED")) {
+        return res.status(429).json({ 
+          message: "AI image quota exceeded.",
+          code: "QUOTA_EXCEEDED"
+        });
+      }
+      
+      if (error?.message?.startsWith("AI_IMAGE_ERROR")) {
+        return res.status(500).json({ 
+          message: error.message.replace("AI_IMAGE_ERROR: ", ""),
+          code: "AI_IMAGE_ERROR"
+        });
+      }
+      
+      res.status(500).json({ message: "Failed to generate image" });
     }
   });
 
