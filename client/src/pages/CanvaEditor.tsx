@@ -32,6 +32,15 @@ import {
   List,
   Quote,
   MessageSquare,
+  CheckSquare,
+  BookOpen,
+  Target,
+  Video,
+  Presentation,
+  Rocket,
+  Award,
+  DollarSign,
+  HelpCircle,
 } from "lucide-react";
 import type { Project, Section } from "@shared/schema";
 
@@ -42,6 +51,18 @@ const blockTemplates = [
   { type: "quote", icon: Quote, title: "Quote", placeholder: "Inspirational quote..." },
   { type: "image", icon: ImageIcon, title: "Image", placeholder: "Image placeholder..." },
   { type: "cta", icon: MessageSquare, title: "Call to Action", placeholder: "Add your CTA..." },
+  { type: "task", icon: CheckSquare, title: "Task/Exercise", placeholder: "Add an actionable task..." },
+  { type: "checkbox", icon: CheckSquare, title: "Checklist", placeholder: "Add checklist items..." },
+  { type: "exercise", icon: BookOpen, title: "Exercise", placeholder: "Add a reflective exercise..." },
+  { type: "lesson", icon: BookOpen, title: "Lesson", placeholder: "Module lesson content..." },
+  { type: "objective", icon: Target, title: "Learning Objective", placeholder: "Learning objective..." },
+  { type: "script", icon: Video, title: "Video Script", placeholder: "Video script content..." },
+  { type: "slide_prompt", icon: Presentation, title: "Slide Prompt", placeholder: "Describe slide visuals..." },
+  { type: "hero", icon: Rocket, title: "Hero Section", placeholder: "Hero headline and subheadline..." },
+  { type: "proof", icon: Award, title: "Social Proof", placeholder: "Testimonial or credibility element..." },
+  { type: "benefits", icon: List, title: "Benefits", placeholder: "Key benefits..." },
+  { type: "offer", icon: DollarSign, title: "Offer/Pricing", placeholder: "Product pricing details..." },
+  { type: "faq", icon: HelpCircle, title: "FAQ", placeholder: "Question and answer..." },
 ];
 
 export default function CanvaEditor() {

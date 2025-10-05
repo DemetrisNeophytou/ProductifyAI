@@ -219,26 +219,44 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
     }
   };
 
-  const exportOptions = [
-    {
-      format: "PDF",
-      icon: File,
-      description: "Professional document format",
-      action: exportToPDF,
-    },
-    {
-      format: "DOCX",
-      icon: FileText,
-      description: "Microsoft Word document",
-      action: exportToDOCX,
-    },
-    {
-      format: "HTML",
-      icon: Globe,
-      description: "Web page format",
-      action: exportToHTML,
-    },
-  ];
+  const getExportOptions = () => {
+    const productType = project.type || 'ebook';
+    
+    const allOptions = {
+      pdf: {
+        format: "PDF",
+        icon: File,
+        description: "Professional document format",
+        action: exportToPDF,
+      },
+      docx: {
+        format: "DOCX",
+        icon: FileText,
+        description: "Microsoft Word document",
+        action: exportToDOCX,
+      },
+      html: {
+        format: "HTML",
+        icon: Globe,
+        description: "Web page format",
+        action: exportToHTML,
+      },
+    };
+
+    const formatsByType: Record<string, string[]> = {
+      ebook: ['pdf', 'docx', 'html'],
+      workbook: ['pdf', 'docx'],
+      course: ['docx'],
+      landing: ['html', 'pdf'],
+      emails: ['html', 'docx'],
+      social: ['html', 'docx'],
+    };
+
+    const formats = formatsByType[productType] || ['pdf', 'docx', 'html'];
+    return formats.map(format => allOptions[format as keyof typeof allOptions]);
+  };
+
+  const exportOptions = getExportOptions();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
