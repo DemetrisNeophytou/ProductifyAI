@@ -24,6 +24,7 @@ import Dashboard from "@/pages/Dashboard";
 import NewProject from "@/pages/NewProject";
 import ProjectEditor from "@/pages/ProjectEditor";
 import CanvaEditor from "@/pages/CanvaEditor";
+import ProjectPages from "@/pages/ProjectPages";
 import WizardCreateProduct from "@/pages/WizardCreateProduct";
 import Products from "@/pages/Products";
 import BrandKit from "@/pages/BrandKit";
@@ -140,6 +141,9 @@ function Router() {
             <DashboardLayout>
               <NewProject />
             </DashboardLayout>
+          </Route>
+          <Route path="/projects/:projectId/pages">
+            {(params) => <ProjectPages />}
           </Route>
           <Route path="/projects/:id">
             {(params) => (

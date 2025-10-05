@@ -48,8 +48,12 @@ const blockTypeConfig = {
   table: { icon: Table, label: "Table" },
 };
 
-export default function BlockEditor() {
-  const { projectId, pageId } = useParams<{ projectId: string; pageId: string }>();
+interface BlockEditorProps {
+  projectId: string;
+  pageId: string;
+}
+
+export default function BlockEditor({ projectId, pageId }: BlockEditorProps) {
   const { toast } = useToast();
   const [showBlockSelector, setShowBlockSelector] = useState(false);
 
@@ -76,10 +80,27 @@ export default function BlockEditor() {
 
   const updateBlockMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Block> }) => {
-      return await apiRequest("PATCH", `/api/blocks/${id}`, data);
+      const res = await apiRequest("PATCH", `/api/blocks/${id}`, data);
+      return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
+      const previousBlocks = queryClient.getQueryData<Block[]>(["/api/pages", pageId, "blocks"]);
+      
+      queryClient.setQueryData<Block[]>(
+        ["/api/pages", pageId, "blocks"],
+        (old = []) => old.map(block => block.id === id ? { ...block, ...data } : block)
+      );
+      
+      return { previousBlocks };
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(["/api/pages", pageId, "blocks"], context?.previousBlocks);
+      toast({
+        title: "Error updating block",
+        description: "Failed to update the block. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -87,11 +108,29 @@ export default function BlockEditor() {
     mutationFn: async (blockId: string) => {
       return await apiRequest("DELETE", `/api/blocks/${blockId}`);
     },
+    onMutate: async (blockId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
+      const previousBlocks = queryClient.getQueryData<Block[]>(["/api/pages", pageId, "blocks"]);
+      
+      queryClient.setQueryData<Block[]>(
+        ["/api/pages", pageId, "blocks"],
+        (old = []) => old.filter(b => b.id !== blockId)
+      );
+      
+      return { previousBlocks };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
       toast({
         title: "Block deleted",
         description: "The block has been removed from your page.",
+      });
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(["/api/pages", pageId, "blocks"], context?.previousBlocks);
+      toast({
+        title: "Error deleting block",
+        description: "Failed to delete the block. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -101,18 +140,54 @@ export default function BlockEditor() {
       const order = localBlocks.length;
       const defaultContent = getDefaultContent(blockType);
       
-      return await apiRequest("POST", `/api/pages/${pageId}/blocks`, {
+      const res = await apiRequest("POST", `/api/pages/${pageId}/blocks`, {
         type: blockType,
         content: defaultContent,
         order,
       });
+      return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
+    onMutate: async (blockType: BlockType) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/pages", pageId, "blocks"] });
+      const previousBlocks = queryClient.getQueryData<Block[]>(["/api/pages", pageId, "blocks"]);
+      const defaultContent = getDefaultContent(blockType);
+      
+      const tempBlock: Block = {
+        id: `temp-${Date.now()}`,
+        pageId: pageId!,
+        projectId: projectId!,
+        type: blockType,
+        content: defaultContent,
+        order: localBlocks.length,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        settings: null,
+      };
+      
+      queryClient.setQueryData<Block[]>(
+        ["/api/pages", pageId, "blocks"],
+        (old = []) => [...old, tempBlock]
+      );
+      
+      return { previousBlocks, tempBlock };
+    },
+    onSuccess: (newBlock: Block, _variables, context) => {
+      queryClient.setQueryData<Block[]>(
+        ["/api/pages", pageId, "blocks"],
+        (old = []) => old.map(b => b.id === context?.tempBlock.id ? newBlock : b)
+      );
       setShowBlockSelector(false);
       toast({
         title: "Block added",
         description: "Your new block has been added to the page.",
+      });
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(["/api/pages", pageId, "blocks"], context?.previousBlocks);
+      toast({
+        title: "Error adding block",
+        description: "Failed to add the block. Please try again.",
+        variant: "destructive",
       });
     },
   });
