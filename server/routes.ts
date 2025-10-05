@@ -3515,6 +3515,187 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // Photo search routes (Pexels + Pixabay fallback)
+  app.get("/api/photos/search", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const { q, orientation, color, page = "1" } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query required" });
+      }
+
+      const perPage = 20;
+      const pageNum = parseInt(page as string, 10);
+
+      async function searchPexels() {
+        const pexelsKey = process.env.PEXELS_API_KEY;
+        if (!pexelsKey) return null;
+
+        const params = new URLSearchParams({
+          query: q,
+          per_page: perPage.toString(),
+          page: pageNum.toString(),
+        });
+
+        if (orientation && orientation !== 'all') {
+          params.append('orientation', orientation as string);
+        }
+        if (color && color !== 'all') {
+          params.append('color', color as string);
+        }
+
+        const response = await fetch(`https://api.pexels.com/v1/search?${params}`, {
+          headers: { Authorization: pexelsKey },
+        });
+
+        if (!response.ok) return null;
+        const data = await response.json();
+
+        return data.photos?.map((photo: any) => ({
+          id: `pexels-${photo.id}`,
+          src: photo.src.medium,
+          photographer: photo.photographer,
+          url: photo.url,
+          alt: photo.alt || q,
+          source: 'pexels' as const,
+        }));
+      }
+
+      async function searchPixabay() {
+        const pixabayKey = process.env.PIXABAY_API_KEY;
+        if (!pixabayKey) return null;
+
+        const params = new URLSearchParams({
+          key: pixabayKey,
+          q,
+          per_page: perPage.toString(),
+          page: pageNum.toString(),
+          image_type: 'photo',
+        });
+
+        if (orientation && orientation !== 'all') {
+          params.append('orientation', orientation === 'landscape' ? 'horizontal' : orientation as string);
+        }
+        if (color && color !== 'all') {
+          params.append('colors', color as string);
+        }
+
+        const response = await fetch(`https://pixabay.com/api/?${params}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+
+        return data.hits?.map((photo: any) => ({
+          id: `pixabay-${photo.id}`,
+          src: photo.webformatURL,
+          photographer: photo.user,
+          url: photo.pageURL,
+          alt: photo.tags || q,
+          source: 'pixabay' as const,
+        }));
+      }
+
+      let photos = await searchPexels();
+      if (!photos || photos.length === 0) {
+        photos = await searchPixabay();
+      }
+
+      res.json(photos || []);
+    } catch (error) {
+      console.error("Error searching photos:", error);
+      res.status(500).json({ message: "Failed to search photos" });
+    }
+  });
+
+  app.post("/api/photos/insert", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId, src, source } = req.body;
+      if (!projectId || !src || !source) {
+        return res.status(400).json({ message: "Project ID, source URL, and source required" });
+      }
+
+      const validation = insertAssetSchema.safeParse({
+        userId,
+        projectId,
+        type: 'image',
+        url: src,
+        metadata: {
+          source,
+          license: 'free_commercial',
+        },
+      });
+
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid asset data", errors: validation.error });
+      }
+
+      const asset = await storage.createAsset(validation.data);
+      res.json(asset);
+    } catch (error) {
+      console.error("Error inserting photo:", error);
+      res.status(500).json({ message: "Failed to insert photo" });
+    }
+  });
+
+  // Brand Kit routes
+  app.get("/api/brand-kit", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const brandKit = await storage.getBrandKit(userId);
+      if (!brandKit) {
+        const defaultBrandKit = {
+          userId,
+          colors: ["#8B5CF6", "#EC4899", "#F59E0B"],
+          fonts: { heading: "Inter", body: "Open Sans" },
+        };
+        const created = await storage.upsertBrandKit(defaultBrandKit);
+        return res.json(created);
+      }
+
+      res.json(brandKit);
+    } catch (error) {
+      console.error("Error fetching brand kit:", error);
+      res.status(500).json({ message: "Failed to fetch brand kit" });
+    }
+  });
+
+  app.put("/api/brand-kit", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { fonts, colors } = req.body;
+      if (!fonts || !colors) {
+        return res.status(400).json({ message: "Fonts and colors required" });
+      }
+
+      const validation = insertBrandKitSchema.safeParse({
+        userId,
+        fonts,
+        colors,
+      });
+
+      if (!validation.success) {
+        return res.status(400).json({ message: "Invalid brand kit data", errors: validation.error });
+      }
+
+      const brandKit = await storage.upsertBrandKit(validation.data);
+      res.json(brandKit);
+    } catch (error) {
+      console.error("Error updating brand kit:", error);
+      res.status(500).json({ message: "Failed to update brand kit" });
+    }
+  });
+
   // Register Stripe payment and subscription routes
   registerStripeRoutes(app);
   

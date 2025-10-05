@@ -273,6 +273,7 @@ export class DatabaseStorage implements IStorage {
           logoUrl: brandKitData.logoUrl,
           primaryColor: brandKitData.primaryColor,
           secondaryColor: brandKitData.secondaryColor,
+          colors: brandKitData.colors,
           fonts: brandKitData.fonts,
           toneOfVoice: brandKitData.toneOfVoice,
           updatedAt: new Date(),
