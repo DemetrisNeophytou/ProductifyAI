@@ -96,6 +96,13 @@ export function registerStripeRoutes(app: Express) {
           plan,
           billingPeriod,
         },
+        subscription_data: {
+          metadata: {
+            userId,
+            plan,
+            billingPeriod,
+          },
+        },
       });
 
       res.json({ sessionId: session.id, url: session.url });
