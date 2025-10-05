@@ -189,7 +189,24 @@ export default function Pricing() {
                     Processing...
                   </>
                 ) : (
-                  'Get Started - €24.99/month'
+                  'Monthly - €24.99/month'
+                )}
+              </Button>
+              <Button 
+                className="w-full" 
+                size="lg"
+                variant="outline"
+                disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('plus', 'quarterly')}
+                data-testid="button-plus-quarterly"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  '3-Month - €59.99/quarter'
                 )}
               </Button>
             </div>
@@ -215,10 +232,10 @@ export default function Pricing() {
           <CardContent className="space-y-6">
             <div>
               <div className="text-4xl font-bold mb-2" data-testid="text-pro-price">
-                €59.99<span className="text-lg font-normal text-muted-foreground">/3 months</span>
+                €49.99<span className="text-lg font-normal text-muted-foreground">/month</span>
               </div>
-              <p className="text-sm text-muted-foreground" data-testid="text-plus-billing">
-                Save 20% • Only €19.99/month
+              <p className="text-sm text-muted-foreground" data-testid="text-pro-billing">
+                Full access to all Pro features
               </p>
             </div>
 
@@ -266,6 +283,23 @@ export default function Pricing() {
                 className="w-full" 
                 size="lg"
                 disabled={checkoutMutation.isPending}
+                onClick={() => handleSubscribe('pro', 'monthly')}
+                data-testid="button-pro-monthly"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Monthly - €49.99/month'
+                )}
+              </Button>
+              <Button 
+                className="w-full" 
+                size="lg"
+                variant="outline"
+                disabled={checkoutMutation.isPending}
                 onClick={() => handleSubscribe('pro', 'quarterly')}
                 data-testid="button-pro-quarterly"
               >
@@ -275,7 +309,7 @@ export default function Pricing() {
                     Processing...
                   </>
                 ) : (
-                  'Get Started - €59.99/3 months'
+                  '3-Month - €119.99/quarter'
                 )}
               </Button>
             </div>
