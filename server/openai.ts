@@ -838,3 +838,138 @@ Deliver professional content that drives customer success and creator revenue.`;
     throw new Error(`AI_GENERATION_ERROR: ${error?.message || "Failed to generate content"}`);
   }
 }
+
+// Generate complete ebook with all sections and image prompts
+export async function generateCompleteEbook(params: {
+  title: string;
+  niche: string;
+  audience: string;
+  tone: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating complete ebook - ${params.title}`);
+  requireApiKey();
+
+  const systemPrompt = `You are an expert digital product creator. Generate a complete ebook with all sections ready for publishing.
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "Final ebook title",
+  "subtitle": "Compelling subtitle",
+  "introduction": {
+    "content": "Full introduction text (200-300 words) in markdown format",
+    "imagePrompt": "DALL-E prompt for introduction image"
+  },
+  "chapters": [
+    {
+      "number": 1,
+      "title": "Chapter title",
+      "headline": "Compelling headline for this chapter",
+      "content": "Full chapter content (300-400 words) in markdown format with headings, bullet points, and actionable steps",
+      "imagePrompt": "DALL-E prompt for chapter image"
+    }
+  ],
+  "summary": {
+    "content": "Complete summary section (150-200 words) in markdown format",
+    "imagePrompt": "DALL-E prompt for summary image"
+  },
+  "coverImagePrompt": "DALL-E prompt for ebook cover image"
+}
+
+IMPORTANT:
+- Create EXACTLY 5 chapters
+- Each chapter should be 300-400 words of actionable, valuable content
+- Use markdown formatting (headings, bold, italic, lists, etc.)
+- Image prompts should be detailed and professional for DALL-E 3
+- Focus on transformation and results
+- Make it compelling and ready to sell
+- NEVER use emoji characters in content`;
+
+  const userPrompt = `Generate a complete ebook based on:
+
+Title: ${params.title}
+Niche: ${params.niche}
+Target Audience: ${params.audience}
+Tone: ${params.tone}
+
+Create a comprehensive, professional ebook with:
+- A compelling introduction that hooks the reader
+- 5 detailed chapters with actionable content
+- A powerful summary that reinforces key takeaways
+- Professional image prompts for cover, introduction, each chapter, and summary
+
+Make it valuable enough that people would pay €47-€97 for it.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 8192,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    const ebook = JSON.parse(content);
+    
+    // Validate structure
+    if (!ebook.chapters || !Array.isArray(ebook.chapters) || ebook.chapters.length !== 5) {
+      console.error('[OpenAI] Invalid ebook structure - missing or incorrect chapters');
+      throw new Error("AI_ERROR: Generated ebook has invalid structure");
+    }
+    
+    console.log(`[OpenAI] Complete ebook generated successfully with ${ebook.chapters.length} chapters`);
+    return ebook;
+  } catch (error: any) {
+    console.error('[OpenAI] Generate complete ebook failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    if (error?.message?.startsWith("AI_ERROR:")) {
+      throw error;
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate complete ebook"}`);
+  }
+}
+
+// Generate image using DALL-E 3
+export async function generateEbookImage(params: {
+  prompt: string;
+  type: 'cover' | 'chapter' | 'section';
+}): Promise<string> {
+  console.log(`[OpenAI] Generating ${params.type} image with DALL-E 3`);
+  requireApiKey();
+
+  try {
+    const enhancedPrompt = `${params.prompt}. Professional, high-quality digital product style. Clean, modern design. No text overlays.`;
+    
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: enhancedPrompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+    });
+
+    const imageUrl = response.data[0].url;
+    if (!imageUrl) {
+      throw new Error("No image URL returned from DALL-E");
+    }
+
+    console.log(`[OpenAI] Image generated successfully`);
+    return imageUrl;
+  } catch (error: any) {
+    console.error('[OpenAI] Image generation failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_IMAGE_ERROR: ${error?.message || "Failed to generate image"}`);
+  }
+}
