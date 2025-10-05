@@ -13,16 +13,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Loader2 } from "lucide-react";
-import { useAgentRunner } from "@/hooks/useAgentRunner";
-import { useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 
 interface AIContentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   blockId: string;
-  projectId?: string;
+  projectId: string;
   onSuccess?: (newText: string) => void;
 }
 
@@ -34,58 +32,54 @@ export function AIContentModal({
   onSuccess,
 }: AIContentModalProps) {
   const { toast } = useToast();
-  const [operation, setOperation] = useState<"polish" | "improve" | "shorten" | "expand" | "translate">("improve");
+  const [operation, setOperation] = useState<"polish" | "shorten" | "expand" | "translate">("polish");
   const [tone, setTone] = useState<string>("professional");
   const [targetLang, setTargetLang] = useState<string>("es");
 
-  const { runAgent, jobStatus, isRunning, clearActiveJob } = useAgentRunner();
-
-  useEffect(() => {
-    if (jobStatus?.status === "succeeded" && jobStatus.output) {
-      const newText = jobStatus.output.newText;
-      
-      toast({
-        title: "Content enhanced successfully",
-        description: `Your content has been ${operation}ed.`,
+  const enhanceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/ai/content", {
+        projectId,
+        blockId,
+        op: operation,
+        tone: operation !== "translate" ? tone : undefined,
+        targetLang: operation === "translate" ? targetLang : undefined,
       });
-
-      if (onSuccess && newText) {
-        onSuccess(newText);
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to enhance content");
       }
       
-      clearActiveJob();
-      onOpenChange(false);
-    }
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Content enhanced!",
+        description: `Your content has been ${operation}ed successfully.`,
+      });
 
-    if (jobStatus?.status === "failed") {
+      if (onSuccess && data.newText) {
+        onSuccess(data.newText);
+      }
+
+      // Invalidate section queries to refresh the content
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
+      
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
       toast({
         title: "Enhancement failed",
-        description: jobStatus.error?.message || "Failed to enhance content",
+        description: error.message || "Failed to enhance content. Please try again.",
         variant: "destructive",
       });
-      clearActiveJob();
-    }
-  }, [jobStatus, operation, toast, onSuccess, clearActiveJob, onOpenChange]);
+    },
+  });
 
-  const handleEnhance = async () => {
-    try {
-      await runAgent({
-        agentName: "content_writer",
-        input: {
-          blockId,
-          operation,
-          tone: operation === "translate" ? undefined : tone,
-          targetLang: operation === "translate" ? targetLang : undefined,
-        },
-        projectId,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to start enhancement",
-        variant: "destructive",
-      });
-    }
+  const handleEnhance = () => {
+    enhanceMutation.mutate();
   };
 
   return (
@@ -105,12 +99,6 @@ export function AIContentModal({
           <div className="space-y-3">
             <Label>Enhancement Type</Label>
             <RadioGroup value={operation} onValueChange={(v) => setOperation(v as any)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="improve" id="improve" data-testid="radio-improve" />
-                <Label htmlFor="improve" className="font-normal cursor-pointer">
-                  Improve - Enhance clarity and quality
-                </Label>
-              </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="polish" id="polish" data-testid="radio-polish" />
                 <Label htmlFor="polish" className="font-normal cursor-pointer">
@@ -174,43 +162,23 @@ export function AIContentModal({
               </Select>
             </div>
           )}
-
-          {jobStatus?.steps && jobStatus.steps.length > 0 && (
-            <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1">
-              <p className="font-medium mb-2">Progress:</p>
-              {jobStatus.steps.map((step, index) => (
-                <div key={index} className="flex items-start gap-2 text-muted-foreground">
-                  <span className="text-xs">{new Date(step.at).toLocaleTimeString()}</span>
-                  <span>{step.message}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {jobStatus?.estimatedCredits && (
-            <div className="bg-primary/10 p-3 rounded-lg text-sm">
-              <p className="text-muted-foreground">
-                Estimated cost: <span className="font-medium text-foreground">{jobStatus.estimatedCredits} credits</span>
-              </p>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isRunning}
+            disabled={enhanceMutation.isPending}
             data-testid="button-cancel-enhance"
           >
             Cancel
           </Button>
           <Button
             onClick={handleEnhance}
-            disabled={isRunning}
+            disabled={enhanceMutation.isPending}
             data-testid="button-enhance"
           >
-            {isRunning ? (
+            {enhanceMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Processing...
