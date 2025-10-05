@@ -23,16 +23,17 @@ import {
 } from "lucide-react";
 import type { TemplateMetadata } from "@shared/template-catalog";
 
-const TYPE_ICONS = {
+import { GraduationCap } from "lucide-react";
+
+const TYPE_ICONS: Record<string, any> = {
   ebook: BookOpen,
   course: GraduationCap,
   checklist: ListChecks,
   workbook: FileText,
   guide: FileText,
   leadmagnet: Zap,
+  template: FileText,
 };
-
-import { GraduationCap } from "lucide-react";
 
 interface TemplatePreviewModalProps {
   template: TemplateMetadata | null;
