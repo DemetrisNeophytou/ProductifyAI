@@ -108,8 +108,28 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       setExporting(true);
       const isWorkbook = project.type === 'workbook';
       const pdfDoc = await PDFDocument.create();
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      // Note: pdf-lib only supports standard fonts. Custom font embedding would require
+      // fetching and embedding font files, which adds significant complexity.
+      // Using closest standard font match based on brand kit font family.
+      const getBestStandardFont = (fontName?: string): StandardFonts => {
+        if (!fontName) return StandardFonts.Helvetica;
+        const lower = fontName.toLowerCase();
+        if (lower.includes('serif') || lower.includes('georgia') || lower.includes('playfair')) {
+          return StandardFonts.TimesRoman;
+        }
+        if (lower.includes('mono') || lower.includes('courier')) {
+          return StandardFonts.Courier;
+        }
+        return StandardFonts.Helvetica; // Default sans-serif
+      };
+      
+      const font = await pdfDoc.embedFont(getBestStandardFont(brandKit?.fonts?.body));
+      const boldFont = await pdfDoc.embedFont(
+        brandKit?.fonts?.heading?.toLowerCase().includes('serif') 
+          ? StandardFonts.TimesRomanBold 
+          : StandardFonts.HelveticaBold
+      );
       const form = pdfDoc.getForm();
 
       let page = pdfDoc.addPage([612, 792]);
@@ -306,9 +326,23 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
     try {
       setExporting(true);
       
+      // Apply brand kit fonts and colors with proper fallbacks
+      const headingFont = brandKit?.fonts?.heading || 'Calibri';
+      const bodyFont = brandKit?.fonts?.body || 'Calibri';
+      const primaryColor = (brandKit?.primaryColor || '#8B5CF6').replace('#', '');
+      const secondaryColor = (brandKit?.secondaryColor || '#EC4899').replace('#', '');
+      
       const children: Paragraph[] = [
         new Paragraph({
-          text: project.title,
+          children: [
+            new TextRun({
+              text: project.title,
+              font: headingFont,
+              size: 48,
+              bold: true,
+              color: primaryColor,
+            }),
+          ],
           heading: HeadingLevel.TITLE,
         }),
       ];
@@ -316,15 +350,35 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       for (const section of sections) {
         children.push(
           new Paragraph({
-            text: section.title,
+            children: [
+              new TextRun({
+                text: section.title,
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: secondaryColor,
+              }),
+            ],
             heading: HeadingLevel.HEADING_1,
+            spacing: {
+              before: 400,
+              after: 200,
+            },
           })
         );
 
         const content = extractTextFromContent(section.content);
         children.push(
           new Paragraph({
-            children: [new TextRun(content)],
+            children: [new TextRun({
+              text: content,
+              font: bodyFont,
+              size: 24,
+            })],
+            spacing: {
+              before: 200,
+              after: 200,
+            },
           })
         );
       }
