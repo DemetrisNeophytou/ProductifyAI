@@ -83,10 +83,18 @@ export default function Templates() {
     staleTime: 60000,
   });
 
+  const { data: userData } = useQuery<{
+    favorites: string[];
+    recentlyUsed: string[];
+  }>({
+    queryKey: ["/api/templates/user-data"],
+    staleTime: 30000,
+  });
+
   // Use API data with fallback to local catalog
   const apiTemplates = templateData?.templates || [];
-  const favorites: string[] = [];
-  const recentlyUsed: string[] = [];
+  const favorites: string[] = userData?.favorites || [];
+  const recentlyUsed: string[] = userData?.recentlyUsed || [];
   const recommendedIds: string[] = [];
   
   // Determine which templates to display
@@ -108,6 +116,7 @@ export default function Templates() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/templates/user-data"] });
       toast({
         title: "Updated!",
         description: "Template favorites updated.",
@@ -199,27 +208,83 @@ export default function Templates() {
     return (
       <Card 
         key={template.id} 
-        className="hover-elevate cursor-pointer h-full flex flex-col group relative" 
+        className="hover-elevate cursor-pointer h-full flex flex-col group relative overflow-hidden" 
         data-testid={`card-template-${template.id}`}
         onClick={() => setPreviewTemplate(template)}
       >
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavoriteMutation.mutate(template.id);
-          }}
-          data-testid={`button-favorite-${template.id}`}
-        >
-          <Star className={`h-4 w-4 ${isFavorited ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-        </Button>
+        {/* Thumbnail Preview */}
+        {template.thumbnailUrl || template.previewImage ? (
+          <div className="relative h-48 w-full bg-muted overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <Icon className="h-16 w-16 text-primary/40" />
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavoriteMutation.mutate(template.id);
+              }}
+              data-testid={`button-favorite-${template.id}`}
+            >
+              <Star className={`h-4 w-4 ${isFavorited ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+            </Button>
+            {(template.isTrending || template.isNew) && (
+              <div className="absolute top-2 left-2 flex gap-1">
+                {template.isTrending && (
+                  <Badge className="text-xs bg-orange-500 text-white">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Trending
+                  </Badge>
+                )}
+                {template.isNew && (
+                  <Badge className="text-xs bg-green-500 text-white">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    New
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative h-48 w-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+            <Icon className="h-16 w-16 text-primary/60" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavoriteMutation.mutate(template.id);
+              }}
+              data-testid={`button-favorite-${template.id}`}
+            >
+              <Star className={`h-4 w-4 ${isFavorited ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+            </Button>
+            {(template.isTrending || template.isNew) && (
+              <div className="absolute top-2 left-2 flex gap-1">
+                {template.isTrending && (
+                  <Badge className="text-xs bg-orange-500 text-white">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Trending
+                  </Badge>
+                )}
+                {template.isNew && (
+                  <Badge className="text-xs bg-green-500 text-white">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    New
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         
         <CardHeader className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-3">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Icon className="h-6 w-6 text-primary" />
+            <div className="flex-1">
+              <CardTitle className="text-lg mb-1">{template.title}</CardTitle>
             </div>
             <div className="flex flex-col gap-1 items-end">
               <Badge variant="outline" className="text-xs">
@@ -229,27 +294,6 @@ export default function Templates() {
               <Badge variant="outline" className={`text-xs ${getTierBadgeColor(template.tier)}`}>
                 {template.tier}
               </Badge>
-            </div>
-          </div>
-          <div className="flex items-start gap-2">
-            <div className="flex-1">
-              <CardTitle className="text-lg mb-2">{template.title}</CardTitle>
-              {(template.isTrending || template.isNew) && (
-                <div className="flex gap-1 mb-2">
-                  {template.isTrending && (
-                    <Badge className="text-xs bg-orange-500/10 text-orange-600 border-orange-500/20">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      Trending
-                    </Badge>
-                  )}
-                  {template.isNew && (
-                    <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      New
-                    </Badge>
-                  )}
-                </div>
-              )}
             </div>
           </div>
           <CardDescription className="text-sm line-clamp-2">
