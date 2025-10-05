@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { CommandBar } from "@/components/CommandBar";
 import { FloatingAICoach } from "@/components/FloatingAICoach";
 import { BottomNav } from "@/components/BottomNav";
+import { SmartSearch } from "@/components/SmartSearch";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -73,7 +74,10 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between gap-4 px-6 py-3 border-b sticky top-0 z-40 bg-background">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <SmartSearch />
+            </div>
             <div className="flex items-center gap-3">
               <Link href="/pricing">
                 <Button variant="outline" size="default" data-testid="button-upgrade">
