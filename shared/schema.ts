@@ -94,6 +94,14 @@ export const projects = pgTable("projects", {
     wordCount?: number;
     imageCount?: number;
     version?: number;
+    theme?: {
+      fonts?: { heading: string; body: string };
+      colors?: string[];
+      spacingScale?: number;
+      imageStyle?: string;
+    };
+    starred?: boolean;
+    tags?: string[];
   }>(),
   brand: jsonb("brand").$type<{
     primary?: string;
@@ -244,6 +252,10 @@ export const assets = pgTable("assets", {
     mimeType?: string;
     width?: number;
     height?: number;
+    source?: 'upload' | 'pexels' | 'pixabay' | 'openai' | 'replicate';
+    license?: string;
+    blockId?: string;
+    aiPrompt?: string;
   }>(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -602,6 +614,26 @@ export const analyticsEvents = pgTable("analytics_events", {
   index("idx_analytics_events_created").on(table.createdAt),
 ]);
 
+// Project Events - Track project-specific analytics (Phase 3)
+export const projectEvents = pgTable("project_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // view, export_pdf, export_png, export_html, ai_text, ai_image, ai_restyle
+  meta: jsonb("meta").$type<{
+    exportFormat?: string;
+    aiAction?: string;
+    imagePrompt?: string;
+    themeApplied?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_project_events_project").on(table.projectId),
+  index("idx_project_events_user").on(table.userId),
+  index("idx_project_events_type").on(table.type),
+  index("idx_project_events_created").on(table.createdAt),
+]);
+
 // Zod schemas
 export const insertPaymentHistorySchema = createInsertSchema(paymentHistory).omit({
   id: true,
@@ -628,6 +660,11 @@ export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).om
   createdAt: true,
 });
 
+export const insertProjectEventSchema = createInsertSchema(projectEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export type InsertPaymentHistory = z.infer<typeof insertPaymentHistorySchema>;
@@ -643,6 +680,9 @@ export type InsertReferralConversion = z.infer<typeof insertReferralConversionSc
 
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+export type ProjectEvent = typeof projectEvents.$inferSelect;
+export type InsertProjectEvent = z.infer<typeof insertProjectEventSchema>;
 
 // User Niches - Store AI-generated niche ideas with scores
 export const userNiches = pgTable("user_niches", {
