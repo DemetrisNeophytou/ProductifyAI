@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Save, Palette, Loader2 } from "lucide-react";
+import { Save, Palette, Loader2, Image as ImageIcon } from "lucide-react";
 
 interface GoogleFont {
   family: string;
@@ -34,6 +34,7 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
   const [headingFont, setHeadingFont] = useState(currentBrandKit?.fonts.heading || "Inter");
   const [bodyFont, setBodyFont] = useState(currentBrandKit?.fonts.body || "Open Sans");
   const [colors, setColors] = useState<string[]>(currentBrandKit?.colors || defaultColors);
+  const [logoUrl, setLogoUrl] = useState<string>("");
 
   const { data: googleFontsData, isLoading: isFontsLoading } = useQuery<{ items: GoogleFont[]; source: string }>({
     queryKey: ["/api/fonts/google"],
@@ -96,6 +97,34 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
 
   return (
     <div className="space-y-6">
+      <div className="space-y-3">
+        <Label htmlFor="logo-url">Brand Logo (Optional)</Label>
+        <Input
+          id="logo-url"
+          type="url"
+          placeholder="https://example.com/logo.png"
+          value={logoUrl}
+          onChange={(e) => setLogoUrl(e.target.value)}
+          data-testid="input-logo-url"
+        />
+        {logoUrl && (
+          <Card className="p-4">
+            <p className="text-xs text-muted-foreground mb-2">Logo Preview:</p>
+            <div className="flex items-center justify-center bg-muted rounded-lg p-4">
+              <img
+                src={logoUrl}
+                alt="Brand logo"
+                className="max-h-20 max-w-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+                data-testid="preview-logo"
+              />
+            </div>
+          </Card>
+        )}
+      </div>
+
       <div className="space-y-4">
         <div>
           <Label htmlFor="heading-font">Heading Font</Label>
