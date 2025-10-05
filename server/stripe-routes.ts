@@ -165,13 +165,14 @@ export function registerStripeRoutes(app: Express) {
           
           if (userId && session.subscription) {
             const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+            const currentPeriodEnd = (subscription as any).current_period_end;
             
             await storage.updateUser(userId, {
               stripeSubscriptionId: subscription.id,
               stripePriceId: subscription.items.data[0].price.id,
               subscriptionTier: session.metadata?.plan as any,
               subscriptionStatus: 'active',
-              subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
+              subscriptionPeriodEnd: new Date(currentPeriodEnd * 1000),
               projectsLimit: session.metadata?.plan === 'pro' ? -1 : 10,
               aiTokensLimit: session.metadata?.plan === 'pro' ? -1 : 20000,
             });
@@ -208,7 +209,8 @@ export function registerStripeRoutes(app: Express) {
 
         case 'invoice.payment_succeeded': {
           const invoice = event.data.object as Stripe.Invoice;
-          const subscription = invoice.subscription ? await stripe.subscriptions.retrieve(invoice.subscription as string) : null;
+          const invoiceData = invoice as any;
+          const subscription = invoiceData.subscription ? await stripe.subscriptions.retrieve(invoiceData.subscription as string) : null;
           
           if (subscription && subscription.metadata?.userId) {
             const userId = subscription.metadata.userId;
@@ -216,7 +218,7 @@ export function registerStripeRoutes(app: Express) {
             await storage.createPaymentHistory({
               userId,
               stripeInvoiceId: invoice.id,
-              stripePaymentIntentId: invoice.payment_intent as string || null,
+              stripePaymentIntentId: invoiceData.payment_intent as string || null,
               amount: invoice.amount_paid,
               currency: invoice.currency,
               status: 'succeeded',
@@ -234,11 +236,12 @@ export function registerStripeRoutes(app: Express) {
         case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
           const userId = subscription.metadata?.userId;
+          const currentPeriodEnd = (subscription as any).current_period_end;
           
           if (userId) {
             await storage.updateUser(userId, {
               subscriptionStatus: subscription.status === 'active' ? 'active' : subscription.status as any,
-              subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
+              subscriptionPeriodEnd: new Date(currentPeriodEnd * 1000),
             });
           }
           break;
