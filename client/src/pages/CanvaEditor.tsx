@@ -279,6 +279,74 @@ export default function CanvaEditor() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undoStack, redoStack, dirtyFlags, localSections]);
 
+  const improveMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/improve`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+      toast({ title: "Content improved successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to improve content", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const shortenMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/shorten`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+      toast({ title: "Content shortened successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to shorten content", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const expandMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/expand`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+      toast({ title: "Content expanded successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to expand content", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const polishMutation = useMutation({
+    mutationFn: async (sectionId: string) => {
+      return await apiRequest("POST", `/api/sections/${sectionId}/enhance/polish`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+      toast({ title: "Content polished successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to polish content", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
   const selectedSection = localSections.find((s) => s.id === selectedSectionId);
 
   if (!project || isLoading) {
@@ -490,24 +558,52 @@ export default function CanvaEditor() {
               <TabsContent value="edit" className="p-4 space-y-4 m-0">
                 <div>
                   <h3 className="font-semibold mb-3">AI Tools</h3>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-ai-polish">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      Polish Content
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-ai-improve">
-                      <Wand2 className="h-4 w-4 mr-2" />
-                      Improve Writing
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-ai-shorten">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Make Shorter
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start" data-testid="button-ai-expand">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Expand Content
-                    </Button>
-                  </div>
+                  {selectedSection ? (
+                    <div className="space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        onClick={() => polishMutation.mutate(selectedSection.id)}
+                        disabled={polishMutation.isPending}
+                        data-testid="button-ai-polish"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {polishMutation.isPending ? 'Polishing...' : 'Polish Content'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        onClick={() => improveMutation.mutate(selectedSection.id)}
+                        disabled={improveMutation.isPending}
+                        data-testid="button-ai-improve"
+                      >
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        {improveMutation.isPending ? 'Improving...' : 'Improve Writing'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        onClick={() => shortenMutation.mutate(selectedSection.id)}
+                        disabled={shortenMutation.isPending}
+                        data-testid="button-ai-shorten"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        {shortenMutation.isPending ? 'Shortening...' : 'Make Shorter'}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start" 
+                        onClick={() => expandMutation.mutate(selectedSection.id)}
+                        disabled={expandMutation.isPending}
+                        data-testid="button-ai-expand"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        {expandMutation.isPending ? 'Expanding...' : 'Expand Content'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Select a section to use AI tools</p>
+                  )}
                 </div>
               </TabsContent>
 
