@@ -753,7 +753,10 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
     const formatsByType: Record<string, string[]> = {
       ebook: ['pdf', 'docx', 'html', 'png', 'jpg'],
       workbook: ['pdf', 'docx', 'png', 'jpg'],
-      course: ['docx', 'pdf', 'png'],
+      course: ['html', 'docx', 'pdf', 'png'],
+      checklist: ['pdf', 'png', 'jpg'],
+      leadmagnet: ['pdf', 'docx', 'png', 'jpg'],
+      template: ['pdf', 'png', 'jpg', 'html'],
       landing: ['html', 'pdf', 'png', 'jpg'],
       emails: ['html', 'docx', 'png'],
       social: ['png', 'jpg', 'html', 'pdf'],

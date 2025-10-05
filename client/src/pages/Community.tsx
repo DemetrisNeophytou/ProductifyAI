@@ -56,7 +56,7 @@ export default function Community() {
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
-  const [newPostCategory, setNewPostCategory] = useState("");
+  const [newPostCategory, setNewPostCategory] = useState("General");
   const [commentContent, setCommentContent] = useState("");
 
   const { data: posts = [], isLoading } = useQuery<CommunityPost[]>({
@@ -77,7 +77,7 @@ export default function Community() {
       setIsCreateDialogOpen(false);
       setNewPostTitle("");
       setNewPostContent("");
-      setNewPostCategory("");
+      setNewPostCategory("General");
       toast({ title: "Post created successfully!" });
     },
     onError: (error: Error) => {
