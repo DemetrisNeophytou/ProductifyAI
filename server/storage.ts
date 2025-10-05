@@ -26,6 +26,7 @@ import {
   featureUsageLog,
   aiAgentSessions,
   videoProjects,
+  agentJobs,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -76,6 +77,8 @@ import {
   type InsertAiAgentSession,
   type VideoProject,
   type InsertVideoProject,
+  type AgentJob,
+  type InsertAgentJob,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, or, like, gte, lte, ilike } from "drizzle-orm";
@@ -256,6 +259,13 @@ export interface IStorage {
   getUserVideoProjects(userId: string): Promise<VideoProject[]>;
   updateVideoProject(id: string, data: Partial<InsertVideoProject>): Promise<VideoProject>;
   deleteVideoProject(id: string): Promise<void>;
+  
+  // Agent Job operations
+  createAgentJob(job: InsertAgentJob): Promise<AgentJob>;
+  getAgentJob(id: string): Promise<AgentJob | undefined>;
+  getUserAgentJobs(userId: string, limit?: number): Promise<AgentJob[]>;
+  updateAgentJob(id: string, data: Partial<InsertAgentJob>): Promise<AgentJob>;
+  deleteAgentJob(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1428,6 +1438,39 @@ export class DatabaseStorage implements IStorage {
   
   async deleteVideoProject(id: string): Promise<void> {
     await db.delete(videoProjects).where(eq(videoProjects.id, id));
+  }
+  
+  // Agent Job operations
+  async createAgentJob(job: InsertAgentJob): Promise<AgentJob> {
+    const result = await db.insert(agentJobs).values(job).returning();
+    return result[0]!;
+  }
+  
+  async getAgentJob(id: string): Promise<AgentJob | undefined> {
+    const result = await db.select().from(agentJobs).where(eq(agentJobs.id, id));
+    return result[0];
+  }
+  
+  async getUserAgentJobs(userId: string, limit: number = 50): Promise<AgentJob[]> {
+    return await db
+      .select()
+      .from(agentJobs)
+      .where(eq(agentJobs.userId, userId))
+      .orderBy(desc(agentJobs.createdAt))
+      .limit(limit);
+  }
+  
+  async updateAgentJob(id: string, data: Partial<InsertAgentJob>): Promise<AgentJob> {
+    const result = await db
+      .update(agentJobs)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(agentJobs.id, id))
+      .returning();
+    return result[0]!;
+  }
+  
+  async deleteAgentJob(id: string): Promise<void> {
+    await db.delete(agentJobs).where(eq(agentJobs.id, id));
   }
 }
 
