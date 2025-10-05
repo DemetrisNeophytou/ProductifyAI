@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExportDialog } from "@/components/ExportDialog";
+import { AIRestyleModal } from "@/components/AIRestyleModal";
+import { AIImageModal } from "@/components/AIImageModal";
 import RichTextEditor from "@/components/RichTextEditor";
 import {
   GripVertical,
@@ -72,6 +74,8 @@ export default function CanvaEditor() {
   const queryClient = useQueryClient();
   
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showRestyleModal, setShowRestyleModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [activeTab, setActiveTab] = useState("edit");
   const [brandColors, setBrandColors] = useState({
     primary: "#8B5CF6",
@@ -425,6 +429,24 @@ export default function CanvaEditor() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowRestyleModal(true)}
+              data-testid="button-ai-restyle"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Re-Style
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImageModal(true)}
+              data-testid="button-ai-image"
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              AI Image
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleSave}
               data-testid="button-save"
             >
@@ -730,6 +752,24 @@ export default function CanvaEditor() {
         onOpenChange={setShowExportDialog}
         project={project}
         sections={localSections}
+      />
+
+      <AIRestyleModal
+        open={showRestyleModal}
+        onOpenChange={setShowRestyleModal}
+        projectId={id!}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/projects", id] });
+        }}
+      />
+
+      <AIImageModal
+        open={showImageModal}
+        onOpenChange={setShowImageModal}
+        projectId={id!}
+        onSuccess={(imageUrl, assetId) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+        }}
       />
     </div>
   );
