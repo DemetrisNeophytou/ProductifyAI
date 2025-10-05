@@ -2107,8 +2107,8 @@ Be systematic, growth-focused, and results-oriented.`
       const currentText = (section.content as any)?.text || "";
       
       const result = await askLLMJSON<{ queries: string[] }>(
-        "You suggest relevant Unsplash search queries for content sections. Return a JSON array of 3-5 search queries that would find great images for the content.",
-        `Section: ${section.title}\n\nContent: ${currentText}\n\nSuggest Unsplash search queries for visuals that would enhance this section.`,
+        "You suggest relevant stock photo search queries for content sections. Return a JSON array of 3-5 search queries that would find great images for the content.",
+        `Section: ${section.title}\n\nContent: ${currentText}\n\nSuggest stock photo search queries for visuals that would enhance this section.`,
         {
           name: "image_suggestions",
           strict: true,
@@ -2118,7 +2118,7 @@ Be systematic, growth-focused, and results-oriented.`
               queries: {
                 type: "array",
                 items: { type: "string" },
-                description: "Array of Unsplash search queries"
+                description: "Array of stock photo search queries"
               }
             },
             required: ["queries"],

@@ -5,6 +5,28 @@ Productify AI is an AI-powered digital product creation platform designed to hel
 
 ## Recent Changes (October 2025)
 
+### License-Free Stock Photos Migration (October 5, 2025)
+Completed migration from Unsplash to 100% license-free stock photo sources for global commercial safety:
+
+**Photo Sources**
+- **Pexels (Primary)**: CC0 License, no attribution required, fully free for commercial use
+- **Pixabay (Fallback)**: CC0 License, no attribution required, fully free for commercial use
+- Both sources accessible via dropdown selector in Assets and AssetPicker components
+
+**Backend Implementation**
+- GET /api/pexels/search - Search Pexels photo library
+- POST /api/pexels/import - Import Pexels photos to asset library
+- GET /api/pixabay/search - Search Pixabay photo library  
+- POST /api/pixabay/import - Import Pixabay photos to asset library
+- All assets tagged with metadata.source ("pexels" or "pixabay") and metadata.license ("free_commercial")
+- Removed unsplash-js dependency and all Unsplash API references
+
+**User Experience**
+- Clear CC0 license messaging: "✓ 100% free for commercial use • No attribution required • CC0 License"
+- Source badges on imported assets (📸 Pexels, 🖼️ Pixabay)
+- Dual-source search available in both Assets page and AssetPicker component
+- Seamless photo search, preview, and import workflow
+
 ### Canva-Style Template Browsing System (October 5, 2025)
 Transformed the Templates page into a professional Canva-style browsing experience with AI-powered discovery:
 
