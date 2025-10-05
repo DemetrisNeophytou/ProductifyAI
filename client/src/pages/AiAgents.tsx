@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Paintbrush, FileText, Send, Trash2, Plus, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BuyCreditsModal } from '@/components/BuyCreditsModal';
 import {
   Select,
   SelectContent,
@@ -71,6 +72,7 @@ export default function AiAgents() {
   const [inputMessage, setInputMessage] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -78,6 +80,20 @@ export default function AiAgents() {
   const { data: creditInfo } = useQuery<CreditInfo>({
     queryKey: ['/api/ai-agents/credits'],
   });
+
+  // Check for successful credit purchase and show success message
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('credits_purchased') === 'true') {
+      queryClient.invalidateQueries({ queryKey: ['/api/ai-agents/credits'] });
+      toast({
+        title: 'Credits Added!',
+        description: 'Your credits have been successfully added to your account.',
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/ai-agents');
+    }
+  }, [toast]);
 
   // Fetch sessions for selected agent
   const { data: sessions = [] } = useQuery<AgentSession[]>({
@@ -274,12 +290,7 @@ export default function AiAgents() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => {
-              toast({
-                title: 'Add Credits',
-                description: 'Credit purchases will be available soon! For now, use your trial credits.',
-              });
-            }}
+            onClick={() => setBuyCreditsOpen(true)}
             data-testid="button-add-credits"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -478,6 +489,8 @@ export default function AiAgents() {
           </Card>
         </div>
       </div>
+
+      <BuyCreditsModal open={buyCreditsOpen} onOpenChange={setBuyCreditsOpen} />
     </div>
   );
 }
