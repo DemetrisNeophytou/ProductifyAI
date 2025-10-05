@@ -68,6 +68,7 @@ export const brandKits = pgTable("brand_kits", {
   logoUrl: text("logo_url"),
   primaryColor: varchar("primary_color", { length: 7 }).default("#8B5CF6"),
   secondaryColor: varchar("secondary_color", { length: 7 }).default("#EC4899"),
+  colors: jsonb("colors").$type<string[]>().default(sql`'["#8B5CF6", "#EC4899", "#F59E0B"]'::jsonb`),
   fonts: jsonb("fonts").$type<{
     heading?: string;
     body?: string;
