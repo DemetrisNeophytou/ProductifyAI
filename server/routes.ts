@@ -335,7 +335,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = generateOutlineSchema.parse(req.body);
       const { generateOutline } = await import('./openai');
-      const result = await generateOutline(data);
+      const result = await generateOutline({
+        productType: data.type,
+        topic: data.title,
+        targetAudience: data.audience || 'general audience',
+        mainGoal: data.goal || 'provide value',
+        experienceLevel: 'beginner',
+      });
 
       res.json(result);
     } catch (error: any) {
@@ -1116,7 +1122,7 @@ Be systematic, growth-focused, and results-oriented.`
       const pdfBytes = await generatePDF({
         title: project.title,
         type: project.type,
-        description: project.description,
+        description: project.metadata?.niche || project.metadata?.goal || '',
         sections: sections.map(s => ({
           title: s.title,
           content: convertTipTapToPlainText(s.content),
@@ -1160,7 +1166,7 @@ Be systematic, growth-focused, and results-oriented.`
       const docxBuffer = await generateDOCX({
         title: project.title,
         type: project.type,
-        description: project.description,
+        description: project.metadata?.niche || project.metadata?.goal || '',
         sections: sections.map(s => ({
           title: s.title,
           content: convertTipTapToPlainText(s.content),
@@ -1590,8 +1596,13 @@ Be systematic, growth-focused, and results-oriented.`
       const sections = await storage.getProjectSections(req.params.projectId);
       const snapshot = { project, sections };
       
+      // Get current version count to determine version number
+      const existingVersions = await storage.getProjectVersions(req.params.projectId);
+      const versionNumber = existingVersions.length + 1;
+      
       const version = await storage.createVersion({
         projectId: req.params.projectId,
+        versionNumber,
         snapshot,
       });
       res.json(version);
@@ -1791,7 +1802,7 @@ Be systematic, growth-focused, and results-oriented.`
         return res.status(404).json({ message: "User not found" });
       }
 
-      const { projects } = await storage.getUserProjects(userId);
+      const projects = await storage.getUserProjects(userId);
 
       res.json({
         aiTokensUsed: user.aiTokensUsed || 0,
@@ -1940,7 +1951,7 @@ Be systematic, growth-focused, and results-oriented.`
               subscriptionTier: tier,
               subscriptionStatus: 'active' as SubscriptionStatus,
               stripePriceId: subscription.items.data[0].price.id,
-              subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
+              subscriptionPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             });
           }
           break;
