@@ -22,6 +22,7 @@ import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import NewProject from "@/pages/NewProject";
 import ProjectEditor from "@/pages/ProjectEditor";
+import CanvaEditor from "@/pages/CanvaEditor";
 import WizardCreateProduct from "@/pages/WizardCreateProduct";
 import Products from "@/pages/Products";
 import BrandKit from "@/pages/BrandKit";
@@ -139,6 +140,11 @@ function Router() {
             </DashboardLayout>
           </Route>
           <Route path="/projects/:id">
+            {(params) => (
+              <CanvaEditor />
+            )}
+          </Route>
+          <Route path="/projects/:id/classic">
             {(params) => (
               <ProjectEditor />
             )}
