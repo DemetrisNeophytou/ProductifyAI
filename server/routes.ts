@@ -159,6 +159,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/templates/recommendations", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const [userProjects, recentUsage] = await Promise.all([
+        storage.getUserProjects(userId),
+        storage.getUserRecentTemplateUsage(userId, 20),
+      ]);
+      
+      const projectTypes = new Set(userProjects.map(p => p.type));
+      const usedTemplateIds = new Set(recentUsage.map(u => u.templateId));
+      
+      const curatedRecommendations = [
+        "fitness-ebook",
+        "mindfulness-course",
+        "social-media-checklist",
+        "productivity-guide",
+        "remote-work-guide",
+        "instagram-growth"
+      ];
+      
+      const recommendations = curatedRecommendations.filter(
+        id => !usedTemplateIds.has(id)
+      ).slice(0, 6);
+      
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+      res.status(500).json({ message: "Failed to generate recommendations" });
+    }
+  });
+
   // Temporary: Keep old /api/products for backwards compatibility
   app.get("/api/products", isAuthenticated, async (req: AuthRequest, res) => {
     try {
