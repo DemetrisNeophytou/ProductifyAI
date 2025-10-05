@@ -4,10 +4,11 @@
 Productify AI is an AI-powered digital product creation platform designed to help users create, manage, and export various professional digital products such as eBooks, online courses, checklists, templates, and lead magnets. The platform aims to be the most user-friendly and advanced digital product platform, featuring simplified navigation, an AI command interface, a redesigned dashboard, a floating AI coach, and a unified product creation wizard. It has undergone a major transformation to enhance the user experience and provide advanced AI-powered creation tools.
 
 ### Recent Enhancements (October 2025)
-- **Google Fonts Integration**: Dynamic font loading from Google Fonts API with fallback to curated popular fonts. Over 100 fonts available for commercial use. Fonts are previewed in dropdowns for easy selection.
+- **Google Fonts Integration**: Dynamic font loading from Google Fonts API with fallback to curated popular fonts. Over 100 fonts available for commercial use. Fonts are dynamically loaded when selected and previewed in their actual typeface in both dropdown items and selected state (SelectTrigger). Font loading prevents duplicates using unique link IDs. Pre-loads first 10 fonts for instant preview.
 - **Image Export Capabilities**: Added PNG and JPG export formats using html2canvas. All exports automatically apply brand kit styling (colors, fonts).
 - **Comprehensive Media Sources**: Integrated Pexels and Pixabay APIs for stock photos, Google Fonts for typography, and Lucide icons - all 100% free for commercial use with no attribution requirements.
-- **Enhanced Brand Kit**: Brand kit now includes dynamic font selection from Google Fonts API and applies globally across all templates, exports (PDF, DOCX, HTML, PNG, JPG), and projects.
+- **Enhanced Brand Kit**: Brand kit now includes dynamic font selection from Google Fonts API and applies globally across all templates, exports (PDF, DOCX, HTML, PNG, JPG), and projects. Font previews work correctly in both BrandKit page and BrandKitTab component within the editor.
+- **Font Preview System**: Implemented comprehensive font preview system that loads Google Fonts dynamically and displays them in their actual typeface throughout the UI. SelectTrigger components show selected fonts using inline styles, and dropdown items render each font option in its own typeface for easy visual selection.
 
 ## User Preferences
 - Modern, clean UI design with purple primary color (#a855f7)
