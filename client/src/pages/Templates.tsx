@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,24 +61,46 @@ const ICON_MAP: Record<string, any> = {
 export default function Templates() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<TemplateMetadata | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: templateData } = useQuery({
-    queryKey: ["/api/templates"],
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: templateData, isLoading, error } = useQuery<{
+    templates: TemplateMetadata[];
+    pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  }>({
+    queryKey: ["/api/templates", { q: debouncedSearch, type: selectedCategory !== 'All' ? selectedCategory : undefined }],
     staleTime: 60000,
   });
 
-  const { data: recommendationsData } = useQuery({
-    queryKey: ["/api/templates/recommendations"],
-    staleTime: 60000,
-  });
+  // Use API data with fallback to local catalog
+  const apiTemplates = templateData?.templates || [];
+  const favorites: string[] = [];
+  const recentlyUsed: string[] = [];
+  const recommendedIds: string[] = [];
+  
+  // Determine which templates to display
+  const displayTemplates = apiTemplates.length > 0 ? apiTemplates : (
+    debouncedSearch 
+      ? searchTemplates(debouncedSearch)
+      : getTemplatesByCategory(selectedCategory)
+  );
 
-  const favorites = templateData?.favorites || [];
-  const recentlyUsed = templateData?.recentlyUsed || [];
-  const recommendedIds = recommendationsData?.recommendations || [];
+  const trendingTemplates = getTrendingTemplates();
+  const newTemplates = getNewTemplates();
+  const starredTemplates = TEMPLATE_CATALOG.filter(t => favorites.includes(t.id));
+  const recentTemplates = TEMPLATE_CATALOG.filter(t => recentlyUsed.includes(t.id)).slice(0, 6);
+  const recommendedTemplates = TEMPLATE_CATALOG.filter(t => recommendedIds.includes(t.id));
 
   const toggleFavoriteMutation = useMutation({
     mutationFn: async (templateId: string) => {
@@ -168,16 +190,6 @@ export default function Templates() {
       default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
     }
   };
-
-  const filteredTemplates = searchQuery 
-    ? searchTemplates(searchQuery)
-    : getTemplatesByCategory(selectedCategory);
-
-  const trendingTemplates = getTrendingTemplates();
-  const newTemplates = getNewTemplates();
-  const starredTemplates = TEMPLATE_CATALOG.filter(t => favorites.includes(t.id));
-  const recentTemplates = TEMPLATE_CATALOG.filter(t => recentlyUsed.includes(t.id)).slice(0, 6);
-  const recommendedTemplates = TEMPLATE_CATALOG.filter(t => recommendedIds.includes(t.id));
 
   const renderTemplateCard = (template: TemplateMetadata) => {
     const Icon = ICON_MAP[template.icon] || FileText;
@@ -392,16 +404,53 @@ export default function Templates() {
           <h2 className="text-2xl font-bold mb-4">
             {searchQuery ? `Search Results for "${searchQuery}"` : "Explore Templates"}
           </h2>
-          {filteredTemplates.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="h-full flex flex-col">
+                  <CardHeader className="flex-1">
+                    <div className="h-12 w-12 rounded-lg bg-muted animate-pulse mb-3"></div>
+                    <div className="h-6 bg-muted rounded animate-pulse mb-2"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-20 bg-muted rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 mx-auto text-destructive mb-4" />
+              <p className="text-lg text-muted-foreground mb-4">
+                Failed to load templates. Please try again.
+              </p>
+              <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/templates"] })}>
+                Retry
+              </Button>
+            </div>
+          ) : displayTemplates.length === 0 ? (
             <div className="text-center py-12">
               <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground mb-4">
                 No templates found. Try adjusting your search or filters.
               </p>
+              {(searchQuery || selectedCategory !== 'All') && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("All");
+                  }}
+                  data-testid="button-clear-filters"
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map(renderTemplateCard)}
+              {displayTemplates.map(renderTemplateCard)}
             </div>
           )}
         </div>
