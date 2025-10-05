@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import OpenAI from 'openai';
 import { storage } from './storage';
+import { agentRunner } from './agent-runner';
 
 interface AuthRequest extends Request {
   user?: {
@@ -285,6 +286,109 @@ router.get('/credits', async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('[AI Agent] Get credits error:', error);
     res.status(500).json({ error: error.message || 'Failed to get credits' });
+  }
+});
+
+// Unified Agent Runner: Run an agent job
+router.post('/run', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { agentName, input, projectId } = req.body;
+
+    if (!agentName || !input) {
+      return res.status(400).json({ error: 'Missing required fields: agentName, input' });
+    }
+
+    // Check feature access
+    const hasAccess = await checkFeatureAccess(userId);
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        error: 'Feature not available', 
+        message: 'AI Agents are not available on your current plan' 
+      });
+    }
+
+    const result = await agentRunner.runAgent(userId, agentName, input, projectId);
+    res.json(result);
+  } catch (error: any) {
+    console.error('[Agent Runner] Run agent error:', error);
+    res.status(500).json({ error: error.message || 'Failed to run agent' });
+  }
+});
+
+// Get agent job status
+router.get('/jobs/:jobId', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { jobId } = req.params;
+    const job = await storage.getAgentJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    if (job.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const status = await agentRunner.getJobStatus(jobId);
+    res.json(status);
+  } catch (error: any) {
+    console.error('[Agent Runner] Get job status error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get job status' });
+  }
+});
+
+// Cancel agent job
+router.post('/jobs/:jobId/cancel', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { jobId } = req.params;
+    const job = await storage.getAgentJob(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    if (job.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await agentRunner.cancelJob(jobId);
+    res.json({ success: true, message: 'Job cancelled successfully' });
+  } catch (error: any) {
+    console.error('[Agent Runner] Cancel job error:', error);
+    res.status(500).json({ error: error.message || 'Failed to cancel job' });
+  }
+});
+
+// Get user's agent jobs
+router.get('/jobs', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const limit = parseInt(req.query.limit as string) || 50;
+    const jobs = await storage.getUserAgentJobs(userId, limit);
+
+    res.json(jobs);
+  } catch (error: any) {
+    console.error('[Agent Runner] Get jobs error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get jobs' });
   }
 });
 
