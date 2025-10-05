@@ -264,17 +264,33 @@ export default function AiAgents() {
           <h1 className="text-3xl font-bold" data-testid="text-page-title">AI Agents</h1>
           <p className="text-muted-foreground">Get help from specialized AI agents</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Coins className="w-5 h-5 text-yellow-500" />
-          <span className="text-lg font-semibold" data-testid="text-credits-balance">
-            {creditInfo?.credits || 0} credits
-          </span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Coins className="w-5 h-5 text-yellow-500" />
+            <span className="text-lg font-semibold" data-testid="text-credits-balance">
+              {creditInfo?.credits || 0} credits
+            </span>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              toast({
+                title: 'Add Credits',
+                description: 'Credit purchases will be available soon! For now, use your trial credits.',
+              });
+            }}
+            data-testid="button-add-credits"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Credits
+          </Button>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
         {/* Agent Selection Sidebar */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 flex flex-col">
           <CardHeader>
             <CardTitle>Select Agent</CardTitle>
             <CardDescription>Choose your AI assistant</CardDescription>
@@ -302,6 +318,34 @@ export default function AiAgents() {
                 </Button>
               );
             })}
+          </CardContent>
+
+          {/* Credit Usage History */}
+          <CardHeader className="pt-6 border-t">
+            <CardTitle className="text-base">Recent Usage</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+              {creditInfo?.history && creditInfo.history.length > 0 ? (
+                <div className="space-y-2">
+                  {creditInfo.history.map((entry: any) => (
+                    <div key={entry.id} className="text-xs p-2 rounded bg-muted/50" data-testid={`credit-history-${entry.id}`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="text-muted-foreground truncate">{entry.description}</span>
+                        <span className={`font-semibold flex-shrink-0 ${entry.amount > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                          {entry.amount > 0 ? '+' : ''}{entry.amount}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground/70 mt-1">
+                        Balance: {entry.balanceAfter}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No credit history yet</p>
+              )}
+            </ScrollArea>
           </CardContent>
         </Card>
 
