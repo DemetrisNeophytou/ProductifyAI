@@ -62,7 +62,7 @@ export function AssetPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [photoQuery, setPhotoQuery] = useState("");
   const [photoSearchQuery, setPhotoSearchQuery] = useState("");
-  const [photoSource, setPhotoSource] = useState<"pexels" | "pixabay">("pexels");
+  const [photoSource, setPhotoSource] = useState<"pexels" | "pixabay" | "all">("all");
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [imageName, setImageName] = useState("");
@@ -72,26 +72,14 @@ export function AssetPicker({
     enabled: open,
   });
 
-  const { data: pexelsResults, isLoading: isSearchingPexels } = useQuery({
-    queryKey: ["/api/pexels/search", photoSearchQuery],
-    enabled: !!photoSearchQuery && photoSource === "pexels" && open,
+  const { data: stockResults, isLoading: isSearchingPhotos } = useQuery({
+    queryKey: ["/api/images/search", photoSearchQuery, photoSource],
+    enabled: !!photoSearchQuery && open,
     queryFn: async () => {
       const response = await fetch(
-        `/api/pexels/search?query=${encodeURIComponent(photoSearchQuery)}&per_page=12`
+        `/api/images/search?query=${encodeURIComponent(photoSearchQuery)}&source=${photoSource}&perPage=12`
       );
-      if (!response.ok) throw new Error("Failed to search Pexels");
-      return response.json();
-    },
-  });
-
-  const { data: pixabayResults, isLoading: isSearchingPixabay } = useQuery({
-    queryKey: ["/api/pixabay/search", photoSearchQuery],
-    enabled: !!photoSearchQuery && photoSource === "pixabay" && open,
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/pixabay/search?query=${encodeURIComponent(photoSearchQuery)}&per_page=12`
-      );
-      if (!response.ok) throw new Error("Failed to search Pixabay");
+      if (!response.ok) throw new Error("Failed to search stock photos");
       return response.json();
     },
   });
@@ -112,20 +100,11 @@ export function AssetPicker({
     onOpenChange(false);
   };
 
-  const handleSelectPexelsImage = (photo: PexelsPhoto) => {
+  const handleSelectStockImage = (image: any) => {
     onSelect({
-      url: photo.src.large,
-      alt: photo.alt || `Photo by ${photo.photographer}`,
-      source: "pexels",
-    });
-    onOpenChange(false);
-  };
-
-  const handleSelectPixabayImage = (photo: PixabayPhoto) => {
-    onSelect({
-      url: photo.largeImageURL,
-      alt: photo.tags || `Photo by ${photo.user}`,
-      source: "pixabay",
+      url: image.url,
+      alt: image.alt || image.tags || "Stock photo",
+      source: image.source,
     });
     onOpenChange(false);
   };
@@ -184,7 +163,6 @@ export function AssetPicker({
     uploadUrlMutation.mutate();
   };
 
-  const isSearchingPhotos = isSearchingPexels || isSearchingPixabay;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -329,10 +307,11 @@ export function AssetPicker({
             <div className="flex gap-2">
               <select
                 value={photoSource}
-                onChange={(e) => setPhotoSource(e.target.value as "pexels" | "pixabay")}
+                onChange={(e) => setPhotoSource(e.target.value as "pexels" | "pixabay" | "all")}
                 className="border rounded-md px-3 py-2 bg-background"
                 data-testid="select-photo-source-picker"
               >
+                <option value="all">All Sources</option>
                 <option value="pexels">Pexels</option>
                 <option value="pixabay">Pixabay</option>
               </select>
@@ -343,7 +322,7 @@ export function AssetPicker({
                   onChange={(e) => setPhotoQuery(e.target.value)}
                   data-testid="input-stock-search"
                 />
-                <Button type="submit" data-testid="button-search-stock">
+                <Button type="submit" data-testid="button-search-stock" disabled={isSearchingPhotos}>
                   <Search className="h-4 w-4" />
                 </Button>
               </form>
@@ -356,27 +335,27 @@ export function AssetPicker({
             <div className="flex-1 overflow-y-auto">
               {isSearchingPhotos && (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Searching {photoSource === "pexels" ? "Pexels" : "Pixabay"}...
+                  Searching stock photos...
                 </div>
               )}
 
-              {photoSource === "pexels" && pexelsResults && pexelsResults.photos && (
+              {stockResults && stockResults.images && stockResults.images.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
-                  {pexelsResults.photos.map((photo: PexelsPhoto) => (
+                  {stockResults.images.map((image: any) => (
                     <button
-                      key={photo.id}
-                      onClick={() => handleSelectPexelsImage(photo)}
+                      key={`${image.source}-${image.id}`}
+                      onClick={() => handleSelectStockImage(image)}
                       className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
-                      data-testid={`button-select-pexels-${photo.id}`}
+                      data-testid={`button-select-stock-${image.id}`}
                     >
                       <img
-                        src={photo.src.medium}
-                        alt={photo.alt || "Stock photo"}
+                        src={image.thumbnail}
+                        alt={image.alt || "Stock photo"}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <p className="text-xs text-white truncate">
-                          by {photo.photographer}
+                          {image.attribution || `from ${image.source}`}
                         </p>
                       </div>
                     </button>
@@ -384,38 +363,7 @@ export function AssetPicker({
                 </div>
               )}
 
-              {photoSource === "pixabay" && pixabayResults && pixabayResults.hits && (
-                <div className="grid grid-cols-3 gap-3">
-                  {pixabayResults.hits.map((photo: PixabayPhoto) => (
-                    <button
-                      key={photo.id}
-                      onClick={() => handleSelectPixabayImage(photo)}
-                      className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
-                      data-testid={`button-select-pixabay-${photo.id}`}
-                    >
-                      <img
-                        src={photo.webformatURL}
-                        alt={photo.tags || "Stock photo"}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-xs text-white truncate">
-                          by {photo.user}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {pexelsResults && pexelsResults.photos?.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <ImageIcon className="h-12 w-12 mb-2" />
-                  <p className="text-sm">No images found. Try a different search.</p>
-                </div>
-              )}
-
-              {pixabayResults && pixabayResults.hits?.length === 0 && (
+              {stockResults && stockResults.images?.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <ImageIcon className="h-12 w-12 mb-2" />
                   <p className="text-sm">No images found. Try a different search.</p>
@@ -425,7 +373,8 @@ export function AssetPicker({
               {!photoSearchQuery && !isSearchingPhotos && (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <ImageIcon className="h-12 w-12 mb-2" />
-                  <p className="text-sm">Search for high-quality free stock photos from {photoSource === "pexels" ? "Pexels" : "Pixabay"}</p>
+                  <p className="text-sm">Search for high-quality free stock photos</p>
+                  <p className="text-xs mt-1">Try: workspace, nature, business, technology</p>
                 </div>
               )}
             </div>
