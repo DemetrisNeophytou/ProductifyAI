@@ -44,6 +44,18 @@ export default function BrandKit() {
     category: font.category,
   })) || [];
 
+  // Function to dynamically load Google Fonts
+  const loadGoogleFont = (fontName: string) => {
+    const linkId = `font-${fontName.replace(/\s+/g, '-')}`;
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/\s+/g, '+')}:wght@400;500;600;700&display=swap`;
+      document.head.appendChild(link);
+    }
+  };
+
   const [logoUrl, setLogoUrl] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#8B5CF6");
   const [secondaryColor, setSecondaryColor] = useState("#EC4899");
@@ -59,13 +71,51 @@ export default function BrandKit() {
       setSecondaryColor(brandKit.secondaryColor ?? "#EC4899");
       
       const fonts = brandKit.fonts as { heading?: string; body?: string; accent?: string } | null;
-      setHeadingFont(fonts?.heading ?? "Poppins");
-      setBodyFont(fonts?.body ?? "Inter");
-      setAccentFont(fonts?.accent ?? "Montserrat");
+      const heading = fonts?.heading ?? "Poppins";
+      const body = fonts?.body ?? "Inter";
+      const accent = fonts?.accent ?? "Montserrat";
+      
+      setHeadingFont(heading);
+      setBodyFont(body);
+      setAccentFont(accent);
+      
+      // Load fonts for preview
+      loadGoogleFont(heading);
+      loadGoogleFont(body);
+      loadGoogleFont(accent);
       
       setToneOfVoice(brandKit.toneOfVoice ?? "professional");
     }
   }, [brandKit]);
+
+  // Load fonts when they change
+  useEffect(() => {
+    if (headingFont) {
+      loadGoogleFont(headingFont);
+    }
+  }, [headingFont]);
+
+  useEffect(() => {
+    if (bodyFont) {
+      loadGoogleFont(bodyFont);
+    }
+  }, [bodyFont]);
+
+  useEffect(() => {
+    if (accentFont) {
+      loadGoogleFont(accentFont);
+    }
+  }, [accentFont]);
+
+  // Pre-load popular fonts for dropdown preview
+  useEffect(() => {
+    if (fontOptions.length > 0) {
+      // Load first 10 fonts for preview
+      fontOptions.slice(0, 10).forEach(font => {
+        loadGoogleFont(font.value);
+      });
+    }
+  }, [fontOptions]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -227,13 +277,13 @@ export default function BrandKit() {
               <div className="space-y-2">
                 <Label htmlFor="headingFont">Heading Font</Label>
                 <Select value={headingFont} onValueChange={setHeadingFont}>
-                  <SelectTrigger id="headingFont" data-testid="select-heading-font">
+                  <SelectTrigger id="headingFont" data-testid="select-heading-font" style={{ fontFamily: headingFont }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {fontOptions.map((font) => (
                       <SelectItem key={font.value} value={font.value}>
-                        {font.label}
+                        <span style={{ fontFamily: font.value }}>{font.label}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -242,13 +292,13 @@ export default function BrandKit() {
               <div className="space-y-2">
                 <Label htmlFor="bodyFont">Body Font</Label>
                 <Select value={bodyFont} onValueChange={setBodyFont}>
-                  <SelectTrigger id="bodyFont" data-testid="select-body-font">
+                  <SelectTrigger id="bodyFont" data-testid="select-body-font" style={{ fontFamily: bodyFont }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {fontOptions.map((font) => (
                       <SelectItem key={font.value} value={font.value}>
-                        {font.label}
+                        <span style={{ fontFamily: font.value }}>{font.label}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -257,13 +307,13 @@ export default function BrandKit() {
               <div className="space-y-2">
                 <Label htmlFor="accentFont">Accent Font</Label>
                 <Select value={accentFont} onValueChange={setAccentFont}>
-                  <SelectTrigger id="accentFont" data-testid="select-accent-font">
+                  <SelectTrigger id="accentFont" data-testid="select-accent-font" style={{ fontFamily: accentFont }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {fontOptions.map((font) => (
                       <SelectItem key={font.value} value={font.value}>
-                        {font.label}
+                        <span style={{ fontFamily: font.value }}>{font.label}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
