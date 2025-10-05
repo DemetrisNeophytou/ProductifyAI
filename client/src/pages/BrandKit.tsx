@@ -164,10 +164,10 @@ export default function BrandKit() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-4xl font-bold mb-2" data-testid="heading-brand-kit">Brand Kit</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2" data-testid="heading-brand-kit">Brand Kit</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
           Customize your brand identity to create consistent, professional digital products
         </p>
       </div>
