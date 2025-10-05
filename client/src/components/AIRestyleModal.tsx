@@ -14,6 +14,7 @@ const moodOptions = [
   { value: "elegant", label: "Elegant", description: "Sophisticated, refined, timeless" },
   { value: "playful", label: "Playful", description: "Fun, vibrant, friendly" },
   { value: "editorial", label: "Editorial", description: "Magazine-style, structured, professional" },
+  { value: "modern", label: "Modern", description: "Contemporary, sleek, minimalist aesthetics" },
 ];
 
 interface AIRestyleModalProps {
