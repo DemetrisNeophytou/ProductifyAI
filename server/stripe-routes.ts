@@ -115,6 +115,93 @@ export function registerStripeRoutes(app: Express) {
     }
   });
 
+  // Create credits checkout session
+  app.post("/api/stripe/create-credits-checkout", isAuthenticated, checkoutLimiter, async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { packageType } = req.body;
+
+      if (!packageType || !['starter', 'pro', 'business'].includes(packageType)) {
+        return res.status(400).json({ message: "Invalid package type" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Import credit packages
+      const { CREDIT_PACKAGES } = await import('./stripe-config');
+      const creditPackage = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES];
+
+      // Create or retrieve Stripe customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: {
+            userId: user.id,
+          },
+        });
+        customerId = customer.id;
+        await storage.updateUser(userId, { stripeCustomerId: customerId });
+      }
+
+      // Track checkout started event
+      await storage.trackEvent({
+        userId,
+        eventType: 'credits_checkout_started',
+        eventData: {
+          packageType,
+          credits: creditPackage.credits,
+          price: creditPackage.price,
+        },
+      });
+
+      const origin = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/') || 'https://your-domain.replit.app';
+
+      // Create checkout session for one-time payment
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: creditPackage.name,
+                description: `${creditPackage.credits} AI credits for your account`,
+              },
+              unit_amount: Math.round(creditPackage.price * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${origin}/ai-agents?credits_purchased=true`,
+        cancel_url: `${origin}/ai-agents?canceled=true`,
+        metadata: {
+          userId,
+          packageType,
+          credits: creditPackage.credits.toString(),
+          type: 'credits',
+        },
+      });
+
+      res.json({ sessionId: session.id, url: session.url });
+    } catch (error: any) {
+      console.error("Stripe credits checkout error:", error);
+      res.status(500).json({ 
+        message: "Failed to create checkout session",
+        error: error.message 
+      });
+    }
+  });
+
   // Create customer portal session
   app.post("/api/stripe/create-portal-session", isAuthenticated, async (req: AuthRequest, res: Response) => {
     try {
@@ -171,6 +258,7 @@ export function registerStripeRoutes(app: Express) {
           const userId = session.metadata?.userId;
           
           if (userId && session.subscription) {
+            // Handle subscription purchase
             const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
             const currentPeriodEnd = (subscription as any).current_period_end;
             
@@ -210,6 +298,47 @@ export function registerStripeRoutes(app: Express) {
                 revenue: session.amount_total || 0,
               },
             });
+          } else if (userId && session.metadata?.type === 'credits') {
+            // Handle credits purchase
+            const credits = parseInt(session.metadata.credits || '0', 10);
+            
+            if (credits > 0) {
+              // Add credits to user account
+              await storage.refillCredits(
+                userId, 
+                credits, 
+                `Purchased ${session.metadata.packageType} package`
+              );
+
+              // Create payment history record
+              if (session.amount_total) {
+                await storage.createPaymentHistory({
+                  userId,
+                  stripeInvoiceId: null,
+                  stripePaymentIntentId: session.payment_intent as string || null,
+                  amount: session.amount_total,
+                  currency: session.currency || 'usd',
+                  status: 'succeeded',
+                  plan: 'credits',
+                  billingPeriod: 'one-time',
+                  metadata: {
+                    description: `Credits purchase - ${session.metadata.packageType}`,
+                    credits: credits,
+                  },
+                });
+              }
+
+              // Track credits purchase event
+              await storage.trackEvent({
+                userId,
+                eventType: 'credits_purchased',
+                eventData: {
+                  packageType: session.metadata.packageType,
+                  credits: credits,
+                  revenue: session.amount_total || 0,
+                },
+              });
+            }
           }
           break;
         }

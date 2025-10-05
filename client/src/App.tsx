@@ -51,6 +51,7 @@ import Analytics from "@/pages/Analytics";
 import Referrals from "@/pages/Referrals";
 import AiAgents from "@/pages/AiAgents";
 import VideoBuilder from "@/pages/VideoBuilder";
+import JobDetails from "@/pages/JobDetails";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false);
@@ -211,6 +212,11 @@ function Router() {
           <Route path="/ai-agents">
             <DashboardLayout>
               <AiAgents />
+            </DashboardLayout>
+          </Route>
+          <Route path="/jobs/:jobId">
+            <DashboardLayout>
+              <JobDetails />
             </DashboardLayout>
           </Route>
           <Route path="/video-builder">

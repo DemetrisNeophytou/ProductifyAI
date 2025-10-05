@@ -43,3 +43,27 @@ export type SubscriptionTier = 'trial' | 'plus' | 'pro';
 export type SubscriptionStatus = 'trialing' | 'active' | 'cancelled' | 'past_due' | 'expired';
 
 export const TRIAL_DAYS = 3;
+
+export const CREDIT_PACKAGES = {
+  starter: {
+    name: '100 Credits',
+    credits: 100,
+    price: 9.99,
+    priceId: process.env.STRIPE_CREDITS_100_PRICE_ID || 'price_credits_100',
+  },
+  pro: {
+    name: '500 Credits',
+    credits: 500,
+    price: 39.99,
+    priceId: process.env.STRIPE_CREDITS_500_PRICE_ID || 'price_credits_500',
+    popular: true,
+  },
+  business: {
+    name: '1000 Credits',
+    credits: 1000,
+    price: 69.99,
+    priceId: process.env.STRIPE_CREDITS_1000_PRICE_ID || 'price_credits_1000',
+  },
+} as const;
+
+export type CreditPackage = keyof typeof CREDIT_PACKAGES;
