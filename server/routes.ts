@@ -252,14 +252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         title,
         type,
-        content: "",
+        templateId,
         metadata: {
           niche: category || "general",
           goal: description || "",
           audience: "Target audience",
           tone: "professional",
-          templateId,
-          isFromTemplate: true
         }
       });
 
@@ -277,11 +275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const openai = new OpenAI({ apiKey });
       const sections = [];
 
-      for (const [index, section] of template.templateStructure.sections.entries()) {
+      for (const [index, section] of Array.from(template.templateStructure.sections.entries())) {
         const systemPrompt = `You are an expert digital product creator. Generate compelling, professional content for a ${type} about "${title}".
 Category: ${category || 'general'}
 Section: ${section.title}
-${section.content ? `Context: ${section.content}` : ''}
 
 Create engaging, actionable content that delivers real value. Be specific and practical. Use a professional but friendly tone.`;
 
@@ -298,7 +295,7 @@ Create engaging, actionable content that delivers real value. Be specific and pr
             max_tokens: 800,
           });
 
-          const generatedContent = completion.choices[0]?.message?.content || section.content || "Content will be generated here.";
+          const generatedContent = completion.choices[0]?.message?.content || "Content will be generated here.";
 
           const createdSection = await storage.createSection({
             projectId: project.id,
@@ -313,7 +310,7 @@ Create engaging, actionable content that delivers real value. Be specific and pr
           const createdSection = await storage.createSection({
             projectId: project.id,
             title: section.title,
-            content: section.content || `Write your ${section.title.toLowerCase()} content here...`,
+            content: `Write your ${section.title.toLowerCase()} content here...`,
             order: index
           });
           sections.push(createdSection);
@@ -2078,7 +2075,7 @@ Be systematic, growth-focused, and results-oriented.`
       const pagesWithBlocks = await Promise.all(
         pages.map(async (page) => {
           const blocks = await storage.getPageBlocks(page.id);
-          return { ...page, blocks };
+          return { ...page, blocks } as any;
         })
       );
       
@@ -2122,7 +2119,7 @@ Be systematic, growth-focused, and results-oriented.`
       const pagesWithBlocks = await Promise.all(
         pages.map(async (page) => {
           const blocks = await storage.getPageBlocks(page.id);
-          return { ...page, blocks };
+          return { ...page, blocks } as any;
         })
       );
       
@@ -2135,7 +2132,7 @@ Be systematic, growth-focused, and results-oriented.`
         brandKit: brandKit ? {
           primaryColor: brandKit.primaryColor || undefined,
           secondaryColor: brandKit.secondaryColor || undefined,
-          logo: brandKit.logo || undefined,
+          logo: brandKit.logoUrl || undefined,
           fonts: brandKit.fonts ? {
             heading: (brandKit.fonts as any).heading || undefined,
             body: (brandKit.fonts as any).body || undefined,
@@ -3611,12 +3608,12 @@ Be systematic, growth-focused, and results-oriented.`
       const perPage = 20;
       const pageNum = parseInt(page as string, 10);
 
-      async function searchPexels() {
+      const searchPexels = async () => {
         const pexelsKey = process.env.PEXELS_API_KEY;
         if (!pexelsKey) return null;
 
         const params = new URLSearchParams({
-          query: q,
+          query: q as string,
           per_page: perPage.toString(),
           page: pageNum.toString(),
         });
@@ -3643,15 +3640,15 @@ Be systematic, growth-focused, and results-oriented.`
           alt: photo.alt || q,
           source: 'pexels' as const,
         }));
-      }
+      };
 
-      async function searchPixabay() {
+      const searchPixabay = async () => {
         const pixabayKey = process.env.PIXABAY_API_KEY;
         if (!pixabayKey) return null;
 
         const params = new URLSearchParams({
           key: pixabayKey,
-          q,
+          q: q as string,
           per_page: perPage.toString(),
           page: pageNum.toString(),
           image_type: 'photo',
@@ -3676,7 +3673,7 @@ Be systematic, growth-focused, and results-oriented.`
           alt: photo.tags || q,
           source: 'pixabay' as const,
         }));
-      }
+      };
 
       let photos = await searchPexels();
       if (!photos || photos.length === 0) {
