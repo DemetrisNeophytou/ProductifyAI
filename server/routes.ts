@@ -3778,6 +3778,90 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // Templates endpoints
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const { TEMPLATE_CATALOG, searchTemplates } = await import("@shared/template-catalog");
+      
+      const q = req.query.q as string;
+      const type = req.query.type as string;
+      const tag = req.query.tag as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 20;
+      
+      let templates = TEMPLATE_CATALOG;
+      
+      // Search filter
+      if (q && q.trim()) {
+        templates = searchTemplates(q.trim());
+      }
+      
+      // Type filter
+      if (type && type !== 'all') {
+        templates = templates.filter(t => t.type === type);
+      }
+      
+      // Tag filter
+      if (tag) {
+        templates = templates.filter(t => t.tags.includes(tag));
+      }
+      
+      // Pagination
+      const total = templates.length;
+      const totalPages = Math.ceil(total / pageSize);
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedTemplates = templates.slice(start, end);
+      
+      // Add slug if missing
+      const templatesWithSlug = paginatedTemplates.map(t => ({
+        ...t,
+        slug: t.slug || t.id,
+        thumbnailUrl: t.thumbnailUrl || t.previewImage || `/api/placeholder/template/${t.id}`,
+      }));
+      
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.json({
+        templates: templatesWithSlug,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const { TEMPLATE_CATALOG } = await import("@shared/template-catalog");
+      const { id } = req.params;
+      
+      const template = TEMPLATE_CATALOG.find(t => t.id === id || t.slug === id);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      // Add slug and thumbnailUrl if missing
+      const templateWithExtras = {
+        ...template,
+        slug: template.slug || template.id,
+        thumbnailUrl: template.thumbnailUrl || template.previewImage || `/api/placeholder/template/${template.id}`,
+      };
+      
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.json(templateWithExtras);
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      res.status(500).json({ message: "Failed to fetch template" });
+    }
+  });
+
   // Register Stripe payment and subscription routes
   registerStripeRoutes(app);
   
