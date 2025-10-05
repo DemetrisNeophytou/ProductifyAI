@@ -1,28 +1,18 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Save, Palette } from "lucide-react";
+import { Save, Palette, Loader2 } from "lucide-react";
 
-const popularFonts = [
-  "Inter",
-  "Roboto",
-  "Open Sans",
-  "Lato",
-  "Montserrat",
-  "Poppins",
-  "Raleway",
-  "Nunito",
-  "Playfair Display",
-  "Merriweather",
-  "Georgia",
-  "Times New Roman",
-  "Arial",
-  "Helvetica",
-];
+interface GoogleFont {
+  family: string;
+  category: string;
+  variants: string[];
+}
 
 const defaultColors = ["#8B5CF6", "#EC4899", "#F59E0B"];
 
@@ -44,6 +34,15 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
   const [headingFont, setHeadingFont] = useState(currentBrandKit?.fonts.heading || "Inter");
   const [bodyFont, setBodyFont] = useState(currentBrandKit?.fonts.body || "Open Sans");
   const [colors, setColors] = useState<string[]>(currentBrandKit?.colors || defaultColors);
+
+  const { data: googleFontsData, isLoading: isFontsLoading } = useQuery<{ items: GoogleFont[]; source: string }>({
+    queryKey: ["/api/fonts/google"],
+    staleTime: 1000 * 60 * 60 * 24, // Cache for 24 hours
+  });
+
+  const popularFonts = googleFontsData?.items.map((font) => font.family) || [
+    "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins"
+  ];
 
   useEffect(() => {
     if (currentBrandKit) {
@@ -84,6 +83,17 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
     loadGoogleFont(bodyFont);
   }, [headingFont, bodyFont]);
 
+  if (isFontsLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
+          <p className="text-sm text-muted-foreground">Loading fonts...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -96,7 +106,7 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
             <SelectContent>
               {popularFonts.map((font) => (
                 <SelectItem key={font} value={font}>
-                  {font}
+                  <span style={{ fontFamily: font }}>{font}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -121,7 +131,7 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
             <SelectContent>
               {popularFonts.map((font) => (
                 <SelectItem key={font} value={font}>
-                  {font}
+                  <span style={{ fontFamily: font }}>{font}</span>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -186,7 +196,10 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
       <div className="text-xs text-muted-foreground border-t pt-3">
         <p className="flex items-center gap-1">
           <Palette className="h-3 w-3" />
-          Fonts from Google Fonts - Free for commercial use
+          {googleFontsData?.source === "api" 
+            ? `${popularFonts.length}+ fonts from Google Fonts - Free for commercial use`
+            : "Curated fonts from Google Fonts - Free for commercial use"
+          }
         </p>
       </div>
     </div>
