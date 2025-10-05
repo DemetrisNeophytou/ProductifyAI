@@ -112,7 +112,7 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Sections - Content blocks within a project
+// Sections - Content blocks within a project (DEPRECATED - use pages/blocks instead)
 export const sections = pgTable("sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
@@ -131,6 +131,105 @@ export const sections = pgTable("sections", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Pages - Multi-page structure for projects (NEW)
+export const pages = pgTable("pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  order: integer("order").notNull().default(0),
+  settings: jsonb("settings").$type<{
+    backgroundColor?: string;
+    layout?: string;
+    padding?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_pages_project").on(table.projectId),
+  index("idx_pages_project_order").on(table.projectId, table.order),
+]);
+
+// Block content type definitions
+export type HeadingContent = {
+  text: string;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+};
+
+export type ParagraphContent = {
+  text: string;
+  html?: string;
+};
+
+export type ImageContent = {
+  url: string;
+  alt?: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+};
+
+export type CTAContent = {
+  heading?: string;
+  text: string;
+  buttonText: string;
+  buttonUrl: string;
+  buttonStyle?: string;
+};
+
+export type ListContent = {
+  items: Array<{ text: string; checked?: boolean }>;
+  style: 'bullet' | 'numbered' | 'checklist';
+};
+
+export type QuoteContent = {
+  text: string;
+  author?: string;
+  source?: string;
+};
+
+export type TableContent = {
+  rows: Array<Array<string>>;
+  headers?: string[];
+  caption?: string;
+};
+
+export type BlockContent = 
+  | HeadingContent 
+  | ParagraphContent 
+  | ImageContent 
+  | CTAContent 
+  | ListContent 
+  | QuoteContent 
+  | TableContent;
+
+// Block type validation
+export const blockTypes = ['heading', 'paragraph', 'image', 'cta', 'list', 'quote', 'table'] as const;
+export type BlockType = typeof blockTypes[number];
+
+// Blocks - Content blocks within pages (NEW - replaces sections)
+export const blocks = pgTable("blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pageId: varchar("page_id").notNull().references(() => pages.id, { onDelete: "cascade" }),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  type: varchar("type", { length: 50 }).notNull(), // heading, paragraph, image, cta, list, quote, table
+  content: jsonb("content").$type<BlockContent>().notNull(),
+  order: integer("order").notNull().default(0),
+  settings: jsonb("settings").$type<{
+    alignment?: 'left' | 'center' | 'right' | 'justify';
+    fontSize?: string;
+    color?: string;
+    backgroundColor?: string;
+    padding?: string;
+    margin?: string;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_blocks_page").on(table.pageId),
+  index("idx_blocks_project").on(table.projectId),
+  index("idx_blocks_page_order").on(table.pageId, table.order),
+]);
 
 // Assets - Images, files, and other media
 export const assets = pgTable("assets", {
@@ -175,6 +274,20 @@ export const insertSectionSchema = createInsertSchema(sections).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertPageSchema = createInsertSchema(pages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBlockSchema = createInsertSchema(blocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  type: z.enum(blockTypes),
 });
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
@@ -273,6 +386,12 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 
 export type Section = typeof sections.$inferSelect;
 export type InsertSection = z.infer<typeof insertSectionSchema>;
+
+export type Page = typeof pages.$inferSelect;
+export type InsertPage = z.infer<typeof insertPageSchema>;
+
+export type Block = typeof blocks.$inferSelect;
+export type InsertBlock = z.infer<typeof insertBlockSchema>;
 
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
