@@ -1,0 +1,399 @@
+Hey team 👋
+
+Let’s implement Phase 3 to level up Productify AI:
+
+
+
+Scope
+
+
+
+AI Re-Styling (one-click theme changes across the whole project)
+AI Image Generation (section/cover images from short prompts)
+Smart Project Search (NL queries, tags, filters)
+Lite Analytics (views, exports, publish status, AI usage)
+
+
+
+
+Keep everything consistent with our brand-safe rules and plan gating (Plus/Pro only). Details below.
+
+
+
+
+
+
+
+
+1) AI Re-Styling (Global Theme Apply)
+
+
+
+
+
+Goal: From a short prompt or “mood” (e.g., “minimal, bold, tech”), restyle the entire project (colors, fonts, spacing, image style hints) in one click.
+
+
+
+UI/UX
+
+
+
+In the Right Panel → Brand Kit, add a “AI Re-Style” button.
+Modal with options:
+Mood (dropdown: Minimal, Bold, Elegant, Playful, Editorial)
+Prompt (optional text, e.g., “futuristic purple tech with high contrast”)
+Apply to: Whole project / Current page / Selected block
+
+
+
+
+
+Implementation
+
+
+
+Create a prompt that returns a Theme 
+JSON:
+{
+  "fonts": {"heading":"Inter","body":"Inter"},
+  "colors": ["#6D28D9","#19161d","#F9FAFB","#10B981"],
+  "spacingScale": 1.0,
+  "imageStyle": "clean high-contrast editorial, no text"
+}
+
+
+Apply theme live to canvas (update CSS vars, block styles).
+Save theme under projects.settings.theme.
+
+API
+
+POST /api/ai/restyle
+body: { projectId, mood, prompt? }
+-> returns Theme JSON
+Prompt (server)
+
+You are a design system assistant. Produce a cohesive theme for a digital product document.
+Return JSON with: fonts.heading, fonts.body, colors[4], spacingScale (0.8-1.2), imageStyle (<=12 words).
+Mood: {{mood}}. Optional user notes: {{prompt}}.
+Only return valid JSON.
+Plan Gating
+
+
+
+Plus: 3 AI Re-Style actions per day
+Pro: Unlimited (fair use)
+
+
+
+
+QA
+
+
+
+Theme applies instantly and consistently
+Undo/Redo works after apply
+Theme saved and loads on reopen
+
+
+
+
+
+
+
+
+
+2) AI Image Generation (Cover + Section Images)
+
+
+
+
+
+Goal: Generate legal-safe images via OpenAI Images (or SDXL via Replicate) directly in the editor.
+
+
+
+UI/UX
+
+
+
+On any Image block, add: Generate with AI / Regenerate / Edit prompt.
+In Cover page, add “Generate Cover Image” with seed prompts.
+
+API
+
+POST /api/ai/image
+body: { prompt, size:"1024x1024", styleHint?, projectId, pageId, blockId }
+-> { url, attribution?: null, source: "openai|replicate", license:"free_commercial" }
+Prompt generation
+
+
+
+Combine: section title + theme.imageStyle + user brand keywords.
+Always enforce no text in the image.
+
+
+
+
+Storage
+
+
+
+Save chosen images in assets with metadata:
+{ "src":"https://...", "source":"openai", "license":"free_commercial", "projectId":"...", "blockId":"..." }
+
+Plan Gating
+
+
+
+Plus: up to 10 AI images/day
+Pro: Unlimited (fair use; add soft limit 200/day to prevent abuse)
+
+
+
+
+QA
+
+
+
+Generate/regenerate works
+Image inserts into the correct block
+Respect limits per plan; show helpful message if limit reached
+
+
+
+
+
+
+
+
+
+3) Smart Project Search (Natural Language + Filters)
+
+
+
+
+
+Goal: Let users find projects quickly by topic, type, dates, content with natural language.
+
+
+
+UI/UX
+
+
+
+Global search bar (header): placeholder “Search projects (try: ‘ebooks about fitness last month’)”.
+Filters: Type (ebook/course/funnel/social), Date, Tag, Status (draft/published), Starred.
+
+
+
+
+Implementation Options
+
+
+
+Phase 3A (fast): SQL/Full-text on titles, tags, and block text.
+Phase 3B (optional): Add embeddings later (Supabase pgvector).
+
+
+API
+
+GET /api/projects/search?q=...&type=...&tag=...&from=...&to=...&status=...
+Parsing
+
+
+
+Parse natural queries (simple rules):
+“last week/month” → date range
+“ebooks about X” → type=ebook, q=X
+“starred” → starred=true
+
+
+
+
+
+QA
+
+
+
+Search by keyword returns relevant projects
+Filters combine correctly
+Performance: first byte under 300ms for small datasets
+
+
+
+
+
+
+
+
+
+4) Lite Analytics (Per Project + Home)
+
+
+
+
+
+Goal: Give creators feedback loops that drive action.
+
+
+
+Metrics (per project)
+
+
+
+Views (count /preview loads)
+Exports (PDF/PNG/HTML)
+AI usage (generations count: text/images/restyles)
+Last edited, publish status
+
+
+
+
+Home “Insights”
+
+
+
+“Next Best Action” (rule-based for now):
+If 0 CTA blocks → suggest adding one
+If no cover → suggest cover image
+If no export → suggest “Export draft now”
+If repeated AI restyles → suggest “Save as template”
+
+
+
+
+
+Data Model Updates
+
+create table project_events (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid references projects(id) on delete cascade,
+  user_id uuid references profiles(id),
+  type text check (type in ('view','export_pdf','export_png','export_html','ai_text','ai_image','ai_restyle')),
+  meta jsonb,
+  created_at timestamp default now()
+);
+
+API
+
+POST /api/analytics/event { projectId, type, meta? }
+GET  /api/analytics/summary?projectId=...
+UI
+
+
+
+Project sidebar: small card with counters + mini sparkline.
+Home dashboard: “Your week at a glance” (exports, AI actions, projects edited).
+
+
+
+
+QA
+
+
+
+Events recorded for each action
+Summary aggregates correctly
+“Next Best Action” shows contextually relevant tip
+
+
+
+
+
+
+
+
+
+Cross-cutting Concerns
+
+
+
+
+
+Feature Flags
+
+FEATURE_AI_RESTYLE=true
+FEATURE_AI_IMAGE=true
+FEATURE_SMART_SEARCH=true
+FEATURE_LITE_ANALYTICS=true
+
+Rate Limits & Safety
+
+
+
+Server-side throttling per user for AI endpoints.
+Block competitor names in prompts/outputs (existing brand-guard).
+Enforce no text/logos inside generated images.
+
+
+
+
+Plan Gating
+
+
+
+Controller reads active plan (Plus/Pro) and applies limits.
+Show upgrade modal if user exceeds limits.
+
+
+
+
+Performance
+
+
+
+Debounce API calls from UI.
+Lazy-load images in search results.
+Background prefetch of fonts when opening Brand Kit.
+
+
+
+
+Errors & UX
+
+
+
+Friendly toasts: “Generation failed — try a shorter prompt or different mood.”
+Retry button (reuses last parameters).
+Fallbacks (e.g., if AI image fails, keep placeholder).
+
+
+
+
+
+
+
+
+
+Acceptance Checklist (Phase 3)
+
+
+
+
+
+AI Re-Style applies theme project-wide; Undo/Redo works; limits respect plan
+AI Image generation/regeneration inserts into correct blocks; limits enforced
+Global search finds projects by topic/type/date; filters stack; fast responses
+Analytics logs events and shows summaries + “Next Best Action” tips
+All endpoints authenticated; rate-limited; brand-safe; feature-flagged
+Works on mobile & desktop (drawer panels, canvas stable)
+
+
+
+
+
+
+
+
+
+Nice-to-Have (if time allows)
+
+
+
+
+
+Save Themes: Let users save favorite themes and apply later.
+Batch Image Gen: “Generate images for all pages” (Pro only).
+Search in Content: quick “Find/Replace” in project text blocks.
+Template Analytics: track which templates users finish/export the most.
