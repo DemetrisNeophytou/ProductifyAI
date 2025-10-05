@@ -81,15 +81,24 @@ export function GraphicsTab({ onInsert }: GraphicsTabProps) {
   const handleInsertIcon = (icon: typeof allIcons[0]) => {
     if (onInsert) {
       const Icon = icon.Icon;
-      const svgMarkup = renderToStaticMarkup(
-        <Icon 
-          size={32}
-          color={selectedColor}
-          strokeWidth={2}
-        />
-      );
-      
-      onInsert(svgMarkup, selectedColor);
+      try {
+        const svgMarkup = renderToStaticMarkup(
+          <Icon 
+            size={32}
+            color={selectedColor}
+            strokeWidth={2}
+          />
+        );
+        
+        onInsert(svgMarkup, selectedColor);
+      } catch (error) {
+        console.error('Error rendering icon:', error);
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${selectedColor}" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <text x="12" y="16" text-anchor="middle" font-size="8" fill="${selectedColor}">${icon.name}</text>
+        </svg>`;
+        onInsert(fallbackSvg, selectedColor);
+      }
     }
   };
 
