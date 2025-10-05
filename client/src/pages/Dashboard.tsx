@@ -34,6 +34,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import type { Project } from "@shared/schema";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 
 const AI_AGENTS = [
   {
@@ -353,6 +354,9 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Analytics Dashboard */}
+      <AnalyticsDashboard />
 
       {/* Actionable Widgets */}
       <div className="grid md:grid-cols-2 gap-6">
