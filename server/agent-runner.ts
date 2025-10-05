@@ -134,9 +134,23 @@ export class AgentRunner {
       message: "Validating input",
     });
 
-    if (!input.content || !input.action) {
-      throw new Error("Content and action are required");
+    if (!input.blockId || !input.operation) {
+      throw new Error("blockId and operation are required");
     }
+
+    steps.push({
+      at: new Date().toISOString(),
+      message: "Fetching block content",
+    });
+
+    const block = await storage.getBlock(input.blockId);
+    if (!block) {
+      throw new Error("Block not found");
+    }
+
+    const content = typeof block.content === 'string' 
+      ? block.content 
+      : JSON.stringify(block.content);
 
     steps.push({
       at: new Date().toISOString(),
@@ -151,39 +165,58 @@ export class AgentRunner {
       improve: "Improve the quality and clarity of the following content:",
       shorten: "Condense the following content while keeping the key points:",
       expand: "Expand the following content with more detail and examples:",
-      translate: `Translate the following content to ${input.targetLanguage || 'Spanish'}:`,
-      restyle: `Rewrite the following content in a ${input.tone || 'professional'} tone:`,
+      translate: `Translate the following content to ${input.targetLang || 'Spanish'}:`,
     };
 
-    const prompt = prompts[input.action] || prompts.improve;
+    const prompt = prompts[input.operation] || prompts.improve;
+    const systemMessage = input.tone 
+      ? `You are a professional content writer. Write in a ${input.tone} tone. Return only the improved content without explanations.`
+      : "You are a professional content writer. Return only the improved content without explanations.";
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "You are a professional content writer. Return only the improved content without explanations.",
+          content: systemMessage,
         },
         {
           role: "user",
-          content: `${prompt}\n\n${input.content}`,
+          content: `${prompt}\n\n${content}${input.context ? `\n\nContext: ${input.context}` : ''}`,
         },
       ],
       temperature: 0.7,
+      max_tokens: input.maxTokens || 1000,
     });
 
-    const improvedContent = completion.choices[0]?.message?.content || input.content;
+    const improvedContent = completion.choices[0]?.message?.content || content;
 
     steps.push({
       at: new Date().toISOString(),
-      message: `Content ${input.action} completed`,
+      message: "Updating block with new content",
+    });
+
+    let newBlockContent: any;
+    if (block.type === 'paragraph') {
+      newBlockContent = { text: improvedContent };
+    } else if (block.type === 'heading' && typeof block.content === 'object' && 'level' in block.content) {
+      newBlockContent = { text: improvedContent, level: block.content.level };
+    } else {
+      newBlockContent = improvedContent;
+    }
+
+    await storage.updateBlock(input.blockId, {
+      content: newBlockContent as any,
+    });
+
+    steps.push({
+      at: new Date().toISOString(),
+      message: `Content ${input.operation} completed`,
     });
 
     return {
-      content: improvedContent,
-      action: input.action,
-      originalLength: input.content.length,
-      newLength: improvedContent.length,
+      blockId: input.blockId,
+      newText: improvedContent,
     };
   }
 
@@ -197,11 +230,11 @@ export class AgentRunner {
       message: "Validating input",
     });
 
-    if (!input.action) {
-      throw new Error("Action is required for image agent");
+    if (!input.sectionId || !input.mode) {
+      throw new Error("sectionId and mode are required for image agent");
     }
 
-    if (input.action === "generate") {
+    if (input.mode === "generate") {
       steps.push({
         at: new Date().toISOString(),
         message: "Generating image with DALL-E",
@@ -210,12 +243,16 @@ export class AgentRunner {
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+      if (!input.query) {
+        throw new Error("query is required for image generation");
+      }
+
       const response = await openai.images.generate({
         model: "dall-e-3",
-        prompt: input.prompt,
+        prompt: input.query,
         n: 1,
-        size: input.size || "1024x1024",
-        quality: input.quality || "standard",
+        size: "1024x1024",
+        quality: "standard",
       });
 
       const imageUrl = response.data?.[0]?.url || "";
@@ -226,14 +263,20 @@ export class AgentRunner {
       });
 
       return {
-        imageUrl,
-        prompt: input.prompt,
-        size: input.size || "1024x1024",
+        sectionId: input.sectionId,
+        images: [{
+          url: imageUrl,
+          width: 1024,
+          height: 1024,
+          source: "ai" as const,
+          alt: input.query,
+        }],
+        selectedIndex: 0,
       };
-    } else if (input.action === "search") {
+    } else if (input.mode === "search") {
       steps.push({
         at: new Date().toISOString(),
-        message: "Searching stock images",
+        message: `Searching ${input.license} for images`,
       });
 
       steps.push({
@@ -242,13 +285,15 @@ export class AgentRunner {
       });
 
       return {
+        sectionId: input.sectionId,
         images: [],
-        query: input.query,
-        message: "Stock image search not yet implemented",
+        selectedIndex: 0,
       };
+    } else if (input.mode === "upload") {
+      throw new Error("Upload mode should be handled by the frontend");
     }
 
-    throw new Error(`Unknown image action: ${input.action}`);
+    throw new Error(`Unknown image mode: ${input.mode}`);
   }
 
   private async updateJobStatus(jobId: string, status: JobStatus): Promise<void> {
