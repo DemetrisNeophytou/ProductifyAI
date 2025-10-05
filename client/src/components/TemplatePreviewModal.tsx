@@ -138,11 +138,6 @@ export function TemplatePreviewModal({
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-sm">{section.title}</p>
-                        {section.content && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {section.content}
-                          </p>
-                        )}
                       </div>
                     </div>
                   ))}

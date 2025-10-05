@@ -4,7 +4,6 @@ import { CreateProductForm } from "@/components/CreateProductForm";
 import { FileText, Image, Mail, MessageSquare, Code, Palette } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import type { Product } from "@shared/schema";
 import { Card } from "@/components/ui/card";
 
 const productTypes = [
@@ -48,7 +47,6 @@ const productTypes = [
 
 export default function CreateProduct() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [generatedProduct, setGeneratedProduct] = useState<Product | null>(null);
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
@@ -102,7 +100,6 @@ export default function CreateProduct() {
             <button
               onClick={() => {
                 setSelectedType(null);
-                setGeneratedProduct(null);
               }}
               className="text-muted-foreground hover:text-foreground"
               data-testid="button-back"
@@ -118,22 +115,13 @@ export default function CreateProduct() {
           <div className="grid lg:grid-cols-2 gap-8">
             <CreateProductForm 
               productType={selectedType} 
-              onProductGenerated={setGeneratedProduct}
+              onProductGenerated={() => {}}
             />
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Preview</h3>
-              {generatedProduct ? (
-                <Card className="p-6">
-                  <h4 className="font-semibold mb-2">{generatedProduct.title}</h4>
-                  <div className="prose prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap text-sm">{generatedProduct.content}</pre>
-                  </div>
-                </Card>
-              ) : (
-                <div className="aspect-video bg-muted rounded-xl flex items-center justify-center border-2 border-dashed">
-                  <p className="text-muted-foreground">Generated content will appear here</p>
-                </div>
-              )}
+              <div className="aspect-video bg-muted rounded-xl flex items-center justify-center border-2 border-dashed">
+                <p className="text-muted-foreground">Generated content will appear here</p>
+              </div>
             </div>
           </div>
         </>
