@@ -15,6 +15,7 @@ import { Plus, Crown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CommandBar } from "@/components/CommandBar";
 import { FloatingAICoach } from "@/components/FloatingAICoach";
+import { BottomNav } from "@/components/BottomNav";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -88,11 +89,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto pb-20 md:pb-0">
             {children}
           </main>
         </div>
       </div>
+      <BottomNav />
       <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />
       <FloatingAICoach />
     </SidebarProvider>
