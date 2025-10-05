@@ -14,24 +14,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Image as ImageIcon, Check } from "lucide-react";
 import type { Asset } from "@shared/schema";
 
-interface UnsplashPhoto {
-  id: string;
-  urls: {
-    regular: string;
+interface PexelsPhoto {
+  id: number;
+  src: {
+    large: string;
+    medium: string;
     small: string;
   };
+  alt: string;
+  photographer: string;
+  photographer_url: string;
   width: number;
   height: number;
-  user: {
-    name: string;
-    links: {
-      html: string;
-    };
-  };
-  links: {
-    download_location: string;
-  };
-  alt_description?: string;
 }
 
 interface AssetPickerProps {
@@ -47,11 +41,11 @@ export function AssetPicker({
   onOpenChange,
   onSelect,
   title = "Select Image",
-  description = "Choose an image from your library or search Unsplash",
+  description = "Choose an image from your library or search free stock photos",
 }: AssetPickerProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [unsplashQuery, setUnsplashQuery] = useState("");
-  const [unsplashSearchQuery, setUnsplashSearchQuery] = useState("");
+  const [photoQuery, setPhotoQuery] = useState("");
+  const [photoSearchQuery, setPhotoSearchQuery] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
   const { data: assets = [] } = useQuery<Asset[]>({
@@ -59,14 +53,14 @@ export function AssetPicker({
     enabled: open,
   });
 
-  const { data: unsplashResults, isLoading: isSearchingUnsplash } = useQuery({
-    queryKey: ["/api/unsplash/search", unsplashSearchQuery],
-    enabled: !!unsplashSearchQuery && open,
+  const { data: pexelsResults, isLoading: isSearchingPexels } = useQuery({
+    queryKey: ["/api/pexels/search", photoSearchQuery],
+    enabled: !!photoSearchQuery && open,
     queryFn: async () => {
       const response = await fetch(
-        `/api/unsplash/search?query=${encodeURIComponent(unsplashSearchQuery)}&per_page=12`
+        `/api/pexels/search?query=${encodeURIComponent(photoSearchQuery)}&per_page=12`
       );
-      if (!response.ok) throw new Error("Failed to search Unsplash");
+      if (!response.ok) throw new Error("Failed to search Pexels");
       return response.json();
     },
   });
@@ -87,19 +81,19 @@ export function AssetPicker({
     onOpenChange(false);
   };
 
-  const handleSelectUnsplashImage = (photo: UnsplashPhoto) => {
+  const handleSelectPexelsImage = (photo: PexelsPhoto) => {
     onSelect({
-      url: photo.urls.regular,
-      alt: photo.alt_description || `Photo by ${photo.user.name}`,
-      source: "unsplash",
+      url: photo.src.large,
+      alt: photo.alt || `Photo by ${photo.photographer}`,
+      source: "pexels",
     });
     onOpenChange(false);
   };
 
-  const handleUnsplashSearch = (e: React.FormEvent) => {
+  const handlePhotoSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (unsplashQuery.trim()) {
-      setUnsplashSearchQuery(unsplashQuery.trim());
+    if (photoQuery.trim()) {
+      setPhotoSearchQuery(photoQuery.trim());
     }
   };
 
@@ -116,8 +110,8 @@ export function AssetPicker({
             <TabsTrigger value="library" data-testid="tab-library">
               My Library ({assets.filter(a => a.type === "image").length})
             </TabsTrigger>
-            <TabsTrigger value="unsplash" data-testid="tab-unsplash-picker">
-              Unsplash
+            <TabsTrigger value="stock" data-testid="tab-stock-photos">
+              Free Stock Photos
             </TabsTrigger>
           </TabsList>
 
@@ -126,18 +120,15 @@ export function AssetPicker({
               placeholder="Search your images..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              data-testid="input-search-library"
-              className="w-full"
+              data-testid="input-library-search"
             />
 
             <div className="flex-1 overflow-y-auto">
               {filteredAssets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                  <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    {searchQuery
-                      ? "No images match your search"
-                      : "No images in your library yet"}
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <ImageIcon className="h-12 w-12 mb-2" />
+                  <p className="text-sm">
+                    {searchQuery ? "No images match your search" : "No images in your library"}
                   </p>
                 </div>
               ) : (
@@ -146,7 +137,7 @@ export function AssetPicker({
                     <button
                       key={asset.id}
                       onClick={() => handleSelectLibraryAsset(asset)}
-                      className="relative aspect-video rounded-lg overflow-hidden bg-muted hover-elevate active-elevate-2 group"
+                      className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
                       data-testid={`button-select-asset-${asset.id}`}
                     >
                       <img
@@ -154,13 +145,12 @@ export function AssetPicker({
                         alt={asset.filename}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <Check className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                      {asset.metadata && typeof asset.metadata === 'object' && 'unsplash' in asset.metadata && (
-                        <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
-                          Unsplash
-                        </Badge>
+                      {selectedAsset === asset.id && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <div className="bg-primary text-primary-foreground rounded-full p-1">
+                            <Check className="h-4 w-4" />
+                          </div>
+                        </div>
                       )}
                     </button>
                   ))}
@@ -169,62 +159,65 @@ export function AssetPicker({
             </div>
           </TabsContent>
 
-          <TabsContent value="unsplash" className="flex-1 flex flex-col overflow-hidden space-y-4 mt-4">
-            <form onSubmit={handleUnsplashSearch} className="flex gap-2">
+          <TabsContent value="stock" className="flex-1 flex flex-col overflow-hidden space-y-4 mt-4">
+            <form onSubmit={handlePhotoSearch} className="flex gap-2">
               <Input
-                placeholder="Search Unsplash..."
-                value={unsplashQuery}
-                onChange={(e) => setUnsplashQuery(e.target.value)}
-                data-testid="input-search-unsplash-picker"
+                placeholder="Search for images (e.g., 'workspace', 'nature')"
+                value={photoQuery}
+                onChange={(e) => setPhotoQuery(e.target.value)}
+                data-testid="input-stock-search"
               />
-              <Button type="submit" data-testid="button-search-unsplash-picker">
+              <Button type="submit" data-testid="button-search-stock">
                 <Search className="h-4 w-4" />
               </Button>
             </form>
 
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              ✓ 100% free for commercial use • No attribution required • CC0 License
+            </div>
+
             <div className="flex-1 overflow-y-auto">
-              {isSearchingUnsplash && (
+              {isSearchingPexels && (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Searching...
+                  Searching Pexels...
                 </div>
               )}
 
-              {unsplashResults && unsplashResults.results && (
+              {pexelsResults && pexelsResults.photos && (
                 <div className="grid grid-cols-3 gap-3">
-                  {unsplashResults.results.map((photo: UnsplashPhoto) => (
+                  {pexelsResults.photos.map((photo: PexelsPhoto) => (
                     <button
                       key={photo.id}
-                      onClick={() => handleSelectUnsplashImage(photo)}
-                      className="relative aspect-video rounded-lg overflow-hidden bg-muted hover-elevate active-elevate-2 group"
-                      data-testid={`button-select-unsplash-${photo.id}`}
+                      onClick={() => handleSelectPexelsImage(photo)}
+                      className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
+                      data-testid={`button-select-pexels-${photo.id}`}
                     >
                       <img
-                        src={photo.urls.small}
-                        alt={photo.alt_description || "Unsplash image"}
+                        src={photo.src.medium}
+                        alt={photo.alt || "Stock photo"}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <Check className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-xs text-white truncate">
+                          by {photo.photographer}
+                        </p>
                       </div>
                     </button>
                   ))}
                 </div>
               )}
 
-              {!unsplashSearchQuery && !isSearchingUnsplash && (
-                <div className="flex items-center justify-center h-full text-center">
-                  <div>
-                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-sm text-muted-foreground">
-                      Search for stock images
-                    </p>
-                  </div>
+              {pexelsResults && pexelsResults.photos?.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <ImageIcon className="h-12 w-12 mb-2" />
+                  <p className="text-sm">No images found. Try a different search.</p>
                 </div>
               )}
 
-              {unsplashResults && unsplashResults.results?.length === 0 && (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No results found
+              {!photoSearchQuery && !isSearchingPexels && (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <ImageIcon className="h-12 w-12 mb-2" />
+                  <p className="text-sm">Search for high-quality free stock photos</p>
                 </div>
               )}
             </div>
