@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { TemplatePreviewModal } from "@/components/TemplatePreviewModal";
 import { 
   BookOpen, 
   FileText, 
@@ -59,6 +61,8 @@ const ICON_MAP: Record<string, any> = {
 export default function Templates() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateMetadata | null>(null);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -104,30 +108,27 @@ export default function Templates() {
 
   const useTemplateMutation = useMutation({
     mutationFn: async (template: TemplateMetadata) => {
-      const response = await apiRequest("POST", "/api/projects", {
+      const response = await apiRequest("POST", "/api/templates/generate", {
+        templateId: template.id,
         title: template.title,
         type: template.type,
-        templateId: template.id,
-        metadata: {
-          niche: template.category,
-          goal: template.description,
-          audience: "Target audience",
-          tone: "professional"
-        }
+        category: template.category,
+        description: template.description,
       });
       const data = await response.json();
       return { data, templateId: template.id };
     },
     onSuccess: ({ data, templateId }) => {
       trackUsageMutation.mutate({ templateId, projectId: data?.id });
+      setPreviewTemplate(null);
       toast({
-        title: "Template Added!",
-        description: "Your product has been created from this template.",
+        title: "Product Created!",
+        description: "Your AI-generated product is ready to edit.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
       if (data?.id) {
-        window.location.href = `/projects/${data.id}`;
+        setLocation(`/projects/${data.id}`);
       }
     },
     onError: () => {
@@ -188,6 +189,7 @@ export default function Templates() {
         key={template.id} 
         className="hover-elevate cursor-pointer h-full flex flex-col group relative" 
         data-testid={`card-template-${template.id}`}
+        onClick={() => setPreviewTemplate(template)}
       >
         <Button
           size="icon"
@@ -274,14 +276,6 @@ export default function Templates() {
               {template.difficulty}
             </Badge>
           </div>
-          <Button 
-            className="w-full" 
-            onClick={() => useTemplateMutation.mutate(template)}
-            disabled={useTemplateMutation.isPending}
-            data-testid={`button-use-${template.id}`}
-          >
-            {useTemplateMutation.isPending ? "Creating..." : "Use Template"}
-          </Button>
         </CardContent>
       </Card>
     );
@@ -412,6 +406,16 @@ export default function Templates() {
           )}
         </div>
       </div>
+
+      <TemplatePreviewModal
+        template={previewTemplate}
+        open={!!previewTemplate}
+        onOpenChange={(open) => !open && setPreviewTemplate(null)}
+        onUseTemplate={(template) => useTemplateMutation.mutate(template)}
+        onToggleFavorite={(templateId) => toggleFavoriteMutation.mutate(templateId)}
+        isFavorite={previewTemplate ? favorites.includes(previewTemplate.id) : false}
+        isGenerating={useTemplateMutation.isPending}
+      />
     </div>
   );
 }
