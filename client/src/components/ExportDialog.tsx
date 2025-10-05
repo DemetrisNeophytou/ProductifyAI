@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, FileText, Globe, File } from "lucide-react";
+import { Download, FileText, Globe, File, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Project, Section } from "@shared/schema";
 import { PDFDocument, rgb, StandardFonts, PDFTextField, PDFCheckBox } from "pdf-lib";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 import MarkdownIt from "markdown-it";
+import html2canvas from "html2canvas";
 
 const md = new MarkdownIt();
 
@@ -416,6 +417,170 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
     }
   };
 
+  const exportToPNG = async () => {
+    try {
+      setExporting(true);
+
+      // Create a temporary container for rendering
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 1200px;
+        padding: 60px;
+        background: white;
+        font-family: ${brandKit?.fonts?.body || 'Inter'}, sans-serif;
+      `;
+
+      // Apply brand kit fonts and colors
+      const headingFontName = brandKit?.fonts?.heading || 'Inter';
+      const bodyFontName = brandKit?.fonts?.body || 'Inter';
+      const primaryColor = brandKit?.primaryColor || '#8B5CF6';
+      const secondaryColor = brandKit?.secondaryColor || '#EC4899';
+      const accentColor = brandKit?.colors?.[2] || '#F59E0B';
+
+      // Build HTML content
+      let html = `
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=${headingFontName.replace(/ /g, '+')}:wght@400;700&family=${bodyFontName.replace(/ /g, '+')}:wght@400;500&display=swap" rel="stylesheet">
+        <div style="font-family: '${bodyFontName}', sans-serif;">
+          <h1 style="font-family: '${headingFontName}', sans-serif; color: ${primaryColor}; font-size: 48px; margin-bottom: 30px; font-weight: 700;">${project.title}</h1>
+      `;
+
+      for (const section of sections) {
+        const content = extractTextFromContent(section.content);
+        html += `
+          <div style="margin-bottom: 40px; padding: 30px; background: #fafafa; border-radius: 12px; border-left: 4px solid ${accentColor};">
+            <h2 style="font-family: '${headingFontName}', sans-serif; color: ${secondaryColor}; font-size: 32px; margin-bottom: 15px; font-weight: 600;">${section.title}</h2>
+            <p style="color: #333; font-size: 18px; line-height: 1.8;">${content.replace(/\n/g, "<br>")}</p>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      // Wait for fonts to load
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Capture as canvas
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      // Remove temp container
+      document.body.removeChild(container);
+
+      // Convert to PNG and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${project.title}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast({ title: "PNG exported successfully" });
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('PNG export error:', error);
+      toast({ title: "Export failed", variant: "destructive" });
+    } finally {
+      setExporting(false);
+      onOpenChange(false);
+    }
+  };
+
+  const exportToJPG = async () => {
+    try {
+      setExporting(true);
+
+      // Create a temporary container for rendering
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        width: 1200px;
+        padding: 60px;
+        background: white;
+        font-family: ${brandKit?.fonts?.body || 'Inter'}, sans-serif;
+      `;
+
+      // Apply brand kit fonts and colors
+      const headingFontName = brandKit?.fonts?.heading || 'Inter';
+      const bodyFontName = brandKit?.fonts?.body || 'Inter';
+      const primaryColor = brandKit?.primaryColor || '#8B5CF6';
+      const secondaryColor = brandKit?.secondaryColor || '#EC4899';
+      const accentColor = brandKit?.colors?.[2] || '#F59E0B';
+
+      // Build HTML content
+      let html = `
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=${headingFontName.replace(/ /g, '+')}:wght@400;700&family=${bodyFontName.replace(/ /g, '+')}:wght@400;500&display=swap" rel="stylesheet">
+        <div style="font-family: '${bodyFontName}', sans-serif;">
+          <h1 style="font-family: '${headingFontName}', sans-serif; color: ${primaryColor}; font-size: 48px; margin-bottom: 30px; font-weight: 700;">${project.title}</h1>
+      `;
+
+      for (const section of sections) {
+        const content = extractTextFromContent(section.content);
+        html += `
+          <div style="margin-bottom: 40px; padding: 30px; background: #fafafa; border-radius: 12px; border-left: 4px solid ${accentColor};">
+            <h2 style="font-family: '${headingFontName}', sans-serif; color: ${secondaryColor}; font-size: 32px; margin-bottom: 15px; font-weight: 600;">${section.title}</h2>
+            <p style="color: #333; font-size: 18px; line-height: 1.8;">${content.replace(/\n/g, "<br>")}</p>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      // Wait for fonts to load
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Capture as canvas
+      const canvas = await html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      // Remove temp container
+      document.body.removeChild(container);
+
+      // Convert to JPG and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${project.title}.jpg`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast({ title: "JPG exported successfully" });
+        }
+      }, 'image/jpeg', 0.95);
+    } catch (error) {
+      console.error('JPG export error:', error);
+      toast({ title: "Export failed", variant: "destructive" });
+    } finally {
+      setExporting(false);
+      onOpenChange(false);
+    }
+  };
+
   const exportToHTML = () => {
     try {
       setExporting(true);
@@ -571,18 +736,30 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
         description: "Web page format",
         action: exportToHTML,
       },
+      png: {
+        format: "PNG",
+        icon: Image,
+        description: "High-quality image",
+        action: exportToPNG,
+      },
+      jpg: {
+        format: "JPG",
+        icon: Image,
+        description: "Compressed image",
+        action: exportToJPG,
+      },
     };
 
     const formatsByType: Record<string, string[]> = {
-      ebook: ['pdf', 'docx', 'html'],
-      workbook: ['pdf', 'docx'],
-      course: ['docx'],
-      landing: ['html', 'pdf'],
-      emails: ['html', 'docx'],
-      social: ['html', 'docx'],
+      ebook: ['pdf', 'docx', 'html', 'png', 'jpg'],
+      workbook: ['pdf', 'docx', 'png', 'jpg'],
+      course: ['docx', 'pdf', 'png'],
+      landing: ['html', 'pdf', 'png', 'jpg'],
+      emails: ['html', 'docx', 'png'],
+      social: ['png', 'jpg', 'html', 'pdf'],
     };
 
-    const formats = formatsByType[productType] || ['pdf', 'docx', 'html'];
+    const formats = formatsByType[productType] || ['pdf', 'docx', 'html', 'png', 'jpg'];
     return formats.map(format => allOptions[format as keyof typeof allOptions]);
   };
 
