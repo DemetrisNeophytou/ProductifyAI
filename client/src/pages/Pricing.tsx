@@ -29,12 +29,11 @@ export default function Pricing() {
 
   const checkoutMutation = useMutation({
     mutationFn: async ({ plan, billingPeriod }: { plan: string; billingPeriod: string }) => {
-      const response = await apiRequest('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        body: JSON.stringify({ plan, billingPeriod }),
-        headers: { 'Content-Type': 'application/json' },
+      const response = await apiRequest('POST', '/api/stripe/create-checkout-session', {
+        plan,
+        billingPeriod,
       });
-      return response;
+      return await response.json();
     },
     onSuccess: async (data: any) => {
       if (data.url) {
