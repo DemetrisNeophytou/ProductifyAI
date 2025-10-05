@@ -97,6 +97,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Template routes
+  app.get("/api/templates", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const [favorites, recentUsage] = await Promise.all([
+        storage.getUserTemplateFavorites(userId),
+        storage.getUserRecentTemplateUsage(userId, 10),
+      ]);
+      
+      res.json({
+        favorites,
+        recentlyUsed: recentUsage.map(u => u.templateId),
+      });
+    } catch (error) {
+      console.error("Error fetching template data:", error);
+      res.status(500).json({ message: "Failed to fetch template data" });
+    }
+  });
+
+  app.post("/api/templates/:templateId/favorite", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { templateId } = req.params;
+      const result = await storage.toggleTemplateFavorite(userId, templateId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error toggling template favorite:", error);
+      res.status(500).json({ message: "Failed to toggle template favorite" });
+    }
+  });
+
+  app.post("/api/templates/:templateId/use", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const { templateId } = req.params;
+      const { projectId } = req.body;
+      
+      await storage.createTemplateUsage({
+        userId,
+        templateId,
+        projectId: projectId || null,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking template usage:", error);
+      res.status(500).json({ message: "Failed to track template usage" });
+    }
+  });
+
   // Temporary: Keep old /api/products for backwards compatibility
   app.get("/api/products", isAuthenticated, async (req: AuthRequest, res) => {
     try {
