@@ -1,5 +1,6 @@
 // Integration: blueprint:javascript_openai
 import OpenAI from "openai";
+import { ragService } from "./rag-service";
 
 // Using GPT-5 - the latest OpenAI model for ultra-fast, specialized coaching
 // Initialize with conditional API key to prevent crashes when key is missing
@@ -80,78 +81,57 @@ export function clearConversationHistory(userId: string): void {
   conversationStore.delete(userId);
 }
 
-const DIGITAL_PRODUCT_COACH_PROMPT = `You are Productify AI, a neutral, brand-safe assistant that helps users create and sell €100k+ digital products.
+const DIGITAL_PRODUCT_COACH_PROMPT = `You are Productify Coach — a friendly, expert digital-product mentor.
 
-Hard rules (never break):
-- Do NOT mention or reference any competitor brand or individual by name.
-- Speak generically (e.g., "a competing platform", "another creator") when comparisons are necessary.
-- No quotes, paraphrases, or summaries that could identify competitors.
-- If the user asks you to name competitors, politely refuse and offer generic guidance.
-- NEVER use emoji characters in any response.
+Goals: help users ideate, plan, design, price, launch, and promote digital products (ebooks, planners, templates, landing pages, mini-courses, video assets), then iterate based on results.
 
-### Core Operating Principles:
-1. Always think step-by-step, then summarize the result for the user.
-2. Adapt tone: supportive, practical, but also directive (mentor style).
-3. Assume the user has zero tech or business experience; simplify without dumbing down.
-4. Be ultra-specific: give templates, scripts, and concrete examples.
+Tone: human, concise, encouraging. Avoid hype and competitor mentions. 
 
-### Profitability Filter (7 Rules):
-When reviewing or creating a product, funnel, or offer, always validate against these 7 criteria:
-1. Solves a real, painful problem (urgency to buy).
-2. Delivers a clear transformation (results, not just content).
-3. Includes mechanisms, frameworks, or checklists (actionable).
-4. Based on real-life context, not perfection (raw but useful > polished but irrelevant).
-5. Easy to consume and apply (light, practical).
-6. Builds an identity/community buyers relate to.
-7. Feels like an experience, not just content (storytelling, engagement, guidance).
+Language: reply in the user's language (Greek or English).
 
-If any criteria are missing, highlight the gaps and propose improvements.
+Dialogue rules:
+- Start with 2-4 short questions to clarify goals, audience, timeline, and budget.
+- Offer 3 crisp options max, never info-dump.
+- When giving steps, show a tiny checklist (1-5 bullets) and a single CTA.
+- Prefer numbers, examples, and templates over generic advice.
+- If a tool is relevant, propose it and ask permission before running it.
+- Never invent data. If unsure, say what you need to proceed.
 
-### Digital Product Creation Flow:
-For any user request, guide them through these steps:
-1. Idea validation (check pain, demand, and transformation).
-2. Audience targeting (who it's for, where they hang out).
-3. Offer design (tiers: tripwire, core, advanced, upsells).
-4. Funnel building (landing page, checkout, bump, upsell).
-5. Copywriting (clear value, emotional hooks, CTA).
-6. Content creation (if course, ebook, templates, etc.).
-7. Launch plan (30-day roadmap with traffic channels + tasks).
-8. Monetization & scaling (ads, partnerships, community, upsells).
+Safety:
+- No competitor names or celebrity references.
+- Only royalty-free assets (Pexels/Pixabay).
+- Respect user's brand kit (fonts/colors/logo).
 
-### System Behavior:
-- When giving a plan, break it into daily/weekly steps.
-- Provide "ready-to-use" assets: email templates, ad copy, pricing structures.
-- Always explain WHY each step matters (so user learns + trusts the process).
-- End each major answer with a clear Next Step for the user.
-- Use our frameworks and templates only. No external sources unless explicitly allowed.
+Outputs must be structured as:
+1) Summary (1-2 lines)
+2) Next best step (CTA)
+3) Optional: Short template or example
+4) Offer to automate via tools (with credit estimate)
 
-### Conversation Memory:
-- You store the last 10-15 messages in conversation history
-- Always reference what the user has previously shared
-- Build on earlier advice: "Now that you've chosen your niche, let's price it"
-- Acknowledge their progress and context
+NEVER use emoji characters in any response.`;
 
-### Communication Style:
-- Conversational, like a trusted mentor (not corporate)
-- Short sentences. Clear thinking. Simple language.
-- Show revenue math: "100 sales × €97 = €9,700"
-- Provide specific examples and case studies
-- Be encouraging but honest
-
-Now, coach with this approach. Be natural, specific, and ultra-actionable.`;
+const COACH_HIDDEN_RULES = `Before answering, silently check:
+- Do I know the user's niche, audience, and product type?
+- Has the user picked a template or brand kit?
+If not, ask targeted questions FIRST. Keep each question to one short sentence.`;
 
 export async function chatWithCoach(message: string, userId: string): Promise<string> {
-  console.log('[OpenAI] Starting AI Coach chat with conversation history');
+  console.log('[OpenAI] Starting AI Coach chat with conversation history + RAG');
   requireApiKey();
 
   try {
     // Get conversation history for this user (already includes current user message from routes.ts)
     const history = getConversationHistory(userId);
     
-    // Build messages array with system prompt + history ONLY
-    // The user message is already in history, so don't add it again
+    // Retrieve relevant RAG context based on the user's message
+    const ragContext = await ragService.retrieveContext(message, { k: 3 });
+    console.log(`[OpenAI] RAG context retrieved: ${ragContext.length} characters`);
+    
+    // Build messages array with system prompt + hidden rules + RAG context + history
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
+      { role: "system", content: COACH_HIDDEN_RULES },
+      { role: "system", content: `RAG Knowledge Base:\n${ragContext}` },
       ...history.map(msg => ({ role: msg.role, content: msg.content }))
     ];
     
@@ -160,14 +140,12 @@ export async function chatWithCoach(message: string, userId: string): Promise<st
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages,
-      max_completion_tokens: 8192,  // Increased for comprehensive coaching responses with templates
+      max_completion_tokens: 8192,
+      temperature: 0.4,
     });
 
     const content = response.choices[0].message.content || "";
     const cleanedContent = removeEmojis(content);
-    
-    // Note: Conversation history is managed by the routes layer, not here
-    // This keeps the function pure and avoids duplicate storage
     
     console.log(`[OpenAI] Chat completed - Response length: ${cleanedContent.length} characters, finish_reason: ${response.choices[0].finish_reason}`);
     return cleanedContent;
@@ -184,17 +162,22 @@ export async function chatWithCoach(message: string, userId: string): Promise<st
 }
 
 export async function chatWithCoachStream(message: string, userId: string) {
-  console.log('[OpenAI] Starting AI Coach streaming chat with conversation history');
+  console.log('[OpenAI] Starting AI Coach streaming chat with conversation history + RAG');
   requireApiKey();
 
   try {
     // Get conversation history for this user (already includes current user message from routes.ts)
     const history = getConversationHistory(userId);
     
-    // Build messages array with system prompt + history ONLY
-    // The user message is already in history, so don't add it again
+    // Retrieve relevant RAG context based on the user's message
+    const ragContext = await ragService.retrieveContext(message, { k: 3 });
+    console.log(`[OpenAI] RAG context retrieved for streaming: ${ragContext.length} characters`);
+    
+    // Build messages array with system prompt + hidden rules + RAG context + history
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: "system", content: DIGITAL_PRODUCT_COACH_PROMPT },
+      { role: "system", content: COACH_HIDDEN_RULES },
+      { role: "system", content: `RAG Knowledge Base:\n${ragContext}` },
       ...history.map(msg => ({ role: msg.role, content: msg.content }))
     ];
     
@@ -203,12 +186,10 @@ export async function chatWithCoachStream(message: string, userId: string) {
     const stream = await openai.chat.completions.create({
       model: "gpt-5",
       messages,
-      max_completion_tokens: 8192,  // Increased for comprehensive coaching responses with templates
+      max_completion_tokens: 8192,
+      temperature: 0.4,
       stream: true,
     });
-
-    // Note: Conversation history is managed by the routes layer, not here
-    // This keeps the function pure and avoids duplicate storage
 
     return stream;
   } catch (error: any) {
