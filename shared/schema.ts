@@ -726,11 +726,7 @@ export const featureFlags = pgTable("feature_flags", {
   name: varchar("name", { length: 100 }).notNull().unique(), // e.g., "FEATURE_AGENTS", "FEATURE_VIDEO_BUILDER"
   enabled: integer("enabled").default(0).notNull(), // 0 = disabled, 1 = enabled
   description: text("description"),
-  metadata: jsonb("metadata").$type<{
-    beta?: boolean;
-    allowedTiers?: string[]; // ['plus', 'pro']
-    maxUsagePerDay?: number;
-  }>(),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -778,13 +774,7 @@ export const featureUsageLog = pgTable("feature_usage_log", {
   featureName: varchar("feature_name", { length: 100 }).notNull(), // 'ai_agent_builder', 'video_builder', etc.
   tokenCount: integer("token_count").default(0), // AI tokens used
   creditsCost: integer("credits_cost").default(0), // Credits deducted
-  metadata: jsonb("metadata").$type<{
-    agentType?: string;
-    promptLength?: number;
-    responseLength?: number;
-    videoId?: string;
-    videoDuration?: number;
-  }>(),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_feature_usage_user").on(table.userId),
