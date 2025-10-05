@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExportDialog } from "@/components/ExportDialog";
 import { AIRestyleModal } from "@/components/AIRestyleModal";
 import { AIImageModal } from "@/components/AIImageModal";
@@ -116,6 +117,10 @@ export default function CanvaEditor() {
     colors: string[];
   }>({
     queryKey: ["/api/brand-kit"],
+  });
+
+  const { data: creditsData } = useQuery<{ credits: number }>({
+    queryKey: ["/api/ai-agents/credits"],
   });
 
   useEffect(() => {
@@ -469,6 +474,8 @@ export default function CanvaEditor() {
               variant="outline"
               size="sm"
               onClick={() => setShowRestyleModal(true)}
+              disabled={!selectedSectionId || (creditsData?.credits ?? 0) === 0}
+              title={!selectedSectionId ? "Select a section first" : (creditsData?.credits ?? 0) === 0 ? "No credits available" : "AI Re-Style"}
               data-testid="button-ai-restyle"
             >
               <Sparkles className="h-4 w-4 mr-2" />
@@ -478,6 +485,8 @@ export default function CanvaEditor() {
               variant="outline"
               size="sm"
               onClick={() => setShowImageModal(true)}
+              disabled={!selectedSectionId || (creditsData?.credits ?? 0) === 0}
+              title={!selectedSectionId ? "Select a section first" : (creditsData?.credits ?? 0) === 0 ? "No credits available" : "AI Image Generation"}
               data-testid="button-ai-image"
             >
               <ImageIcon className="h-4 w-4 mr-2" />
@@ -793,6 +802,20 @@ export default function CanvaEditor() {
               </TabsContent>
 
               <TabsContent value="ai" className="p-4 space-y-4 m-0">
+                {!selectedSectionId && (
+                  <Alert data-testid="alert-no-section">
+                    <AlertDescription>
+                      💡 Select a section from the left panel to use AI features
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {(creditsData?.credits ?? 0) === 0 && (
+                  <Alert variant="destructive" data-testid="alert-no-credits">
+                    <AlertDescription>
+                      No credits remaining. <Link href="/ai-agents" className="underline font-semibold">Buy more credits</Link>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <AISuggestionsTab projectId={id!} selectedSection={selectedSection} />
               </TabsContent>
             </ScrollArea>
