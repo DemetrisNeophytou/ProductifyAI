@@ -9,6 +9,8 @@ import {
   communityPosts,
   communityComments,
   communityPostLikes,
+  templateFavorites,
+  templateUsage,
   aiSessions,
   aiMessages,
   paymentHistory,
@@ -32,6 +34,10 @@ import {
   type InsertCommunityPost,
   type CommunityComment,
   type InsertCommunityComment,
+  type TemplateFavorite,
+  type InsertTemplateFavorite,
+  type TemplateUsage,
+  type InsertTemplateUsage,
   type AiSession,
   type InsertAiSession,
   type AiMessage,
@@ -142,6 +148,12 @@ export interface IStorage {
     totalRevenue: number;
     conversionRate: number;
   }>;
+  
+  // Template operations
+  toggleTemplateFavorite(userId: string, templateId: string): Promise<{ favorited: boolean }>;
+  getUserTemplateFavorites(userId: string): Promise<string[]>;
+  createTemplateUsage(usage: InsertTemplateUsage): Promise<TemplateUsage>;
+  getUserRecentTemplateUsage(userId: string, limit?: number): Promise<TemplateUsage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -791,6 +803,49 @@ export class DatabaseStorage implements IStorage {
       totalRevenue,
       conversionRate,
     };
+  }
+  
+  // Template operations
+  async toggleTemplateFavorite(userId: string, templateId: string): Promise<{ favorited: boolean }> {
+    const existing = await db
+      .select()
+      .from(templateFavorites)
+      .where(and(
+        eq(templateFavorites.userId, userId),
+        eq(templateFavorites.templateId, templateId)
+      ));
+    
+    if (existing.length > 0) {
+      await db
+        .delete(templateFavorites)
+        .where(eq(templateFavorites.id, existing[0].id));
+      return { favorited: false };
+    } else {
+      await db.insert(templateFavorites).values({ userId, templateId });
+      return { favorited: true };
+    }
+  }
+  
+  async getUserTemplateFavorites(userId: string): Promise<string[]> {
+    const favorites = await db
+      .select()
+      .from(templateFavorites)
+      .where(eq(templateFavorites.userId, userId));
+    return favorites.map(f => f.templateId);
+  }
+  
+  async createTemplateUsage(usageData: InsertTemplateUsage): Promise<TemplateUsage> {
+    const [usage] = await db.insert(templateUsage).values(usageData).returning();
+    return usage;
+  }
+  
+  async getUserRecentTemplateUsage(userId: string, limit: number = 10): Promise<TemplateUsage[]> {
+    return await db
+      .select()
+      .from(templateUsage)
+      .where(eq(templateUsage.userId, userId))
+      .orderBy(desc(templateUsage.createdAt))
+      .limit(limit);
   }
 }
 
