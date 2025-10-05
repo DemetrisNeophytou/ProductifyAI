@@ -983,6 +983,15 @@ Include 1 image prompt per section (<=30 words).`,
     social: 'Create a social media content pack with exactly 10 posts optimized for engagement. Include a mix of educational, inspirational, and promotional content.'
   };
 
+  const blockTypesByProduct: Record<string, string> = {
+    ebook: 'Use block types: "text", "image", "quote", "cta"',
+    workbook: 'Use block types: "text" for intro paragraphs, "task" for exercises, "checkbox" for checklist items, "exercise" for reflective questions',
+    course: 'Use block types: "lesson" for module content, "objective" for learning objectives, "script" for video scripts, "slide_prompt" for slide descriptions',
+    landing: 'Use block types: "hero" for hero section, "proof" for testimonials, "benefits" for benefits list, "offer" for pricing, "faq" for Q&A, "cta" for calls to action',
+    emails: 'Use block types: "text" for email body content',
+    social: 'Use block types: "text" for social media post content'
+  };
+
   const systemPrompt = `You are Productify AI, an expert at creating complete, ready-to-sell digital products.
 
 Return ONLY valid JSON in this exact format:
@@ -1015,15 +1024,16 @@ Return ONLY valid JSON in this exact format:
 
 CRITICAL RULES:
 1. ${productTypeInstructions[params.type]}
-2. Generate 300-400 words of high-quality content for EACH block
-3. Create exactly ONE block per outline section
-4. Image prompts must be <= 30 words, descriptive for DALL-E 3, and specify NO TEXT in images
-5. Content should be in markdown format with headings, bold, italic, lists, etc.
-6. Make it valuable, actionable, and ready to sell at €47-€197
-7. NEVER use emoji characters in any content
-8. Never mention competitor brands or individuals by name
-9. Use generic terms when referencing other tools/platforms
-10. Focus on transformation and results for the target audience`;
+2. ${blockTypesByProduct[params.type]}
+3. Generate 300-400 words of high-quality content for EACH block (100-150 words for workbook intros)
+4. Create the appropriate number and types of blocks per section based on product type
+5. Image prompts must be <= 30 words, descriptive for DALL-E 3, and specify NO TEXT in images
+6. Content should be in markdown format with headings, bold, italic, lists, etc.
+7. Make it valuable, actionable, and ready to sell at €47-€197
+8. NEVER use emoji characters in any content
+9. Never mention competitor brands or individuals by name
+10. Use generic terms when referencing other tools/platforms
+11. Focus on transformation and results for the target audience`;
 
   const userPrompt = `Create a complete, ready-to-sell ${params.type} based on these inputs:
 
