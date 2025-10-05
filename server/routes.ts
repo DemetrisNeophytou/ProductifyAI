@@ -1761,6 +1761,132 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  app.post("/api/sections/:id/enhance/improve", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      const currentContent = section.content;
+      const currentText = (currentContent as any)?.text || JSON.stringify(currentContent);
+      
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Section has no content to improve" });
+      }
+
+      const result = await askLLM({
+        system: "You are an expert editor. Improve the writing quality, clarity, and impact of the content. Make it more engaging, persuasive, and professional. Return ONLY the improved content in TipTap JSON format.",
+        user: `Section: ${section.title}\n\nCurrent content:\n${currentText}\n\nImprove this content to make it more compelling and effective.`,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const improvedContent = (result as any).content;
+      const updated = await storage.updateSection(req.params.id, { 
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: improvedContent }] }] }
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error improving section:", error);
+      res.status(500).json({ message: error?.message || "Failed to improve section" });
+    }
+  });
+
+  app.post("/api/sections/:id/enhance/shorten", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      const currentContent = section.content;
+      const currentText = (currentContent as any)?.text || JSON.stringify(currentContent);
+      
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Section has no content to shorten" });
+      }
+
+      const result = await askLLM({
+        system: "You are an expert editor. Make the content more concise while preserving key points and impact. Remove redundancy and keep only essential information. Return ONLY the shortened content.",
+        user: `Section: ${section.title}\n\nCurrent content:\n${currentText}\n\nMake this content shorter and more concise.`,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const shortenedContent = (result as any).content;
+      const updated = await storage.updateSection(req.params.id, { 
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: shortenedContent }] }] }
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error shortening section:", error);
+      res.status(500).json({ message: error?.message || "Failed to shorten section" });
+    }
+  });
+
+  app.post("/api/sections/:id/enhance/expand", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const section = await storage.getSection(req.params.id);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      const currentContent = section.content;
+      const currentText = (currentContent as any)?.text || JSON.stringify(currentContent);
+      
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Section has no content to expand" });
+      }
+
+      const result = await askLLM({
+        system: "You are an expert editor. Expand the content with more details, examples, explanations, and depth while maintaining the original message. Add value and substance. Return ONLY the expanded content.",
+        user: `Section: ${section.title}\n\nCurrent content:\n${currentText}\n\nExpand this content with more detail and examples.`,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const expandedContent = (result as any).content;
+      const updated = await storage.updateSection(req.params.id, { 
+        content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: expandedContent }] }] }
+      });
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error expanding section:", error);
+      res.status(500).json({ message: error?.message || "Failed to expand section" });
+    }
+  });
+
   app.post("/api/sections/:id/enhance/images", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
     try {
       const userId = req.user?.claims?.sub;
