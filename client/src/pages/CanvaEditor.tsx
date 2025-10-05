@@ -1050,27 +1050,87 @@ export default function CanvaEditor() {
 function AISuggestionsTab({ projectId, selectedSection }: { projectId: string; selectedSection: Section | undefined }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [seoResults, setSeoResults] = useState<any>(null);
   
-  const { data: suggestions, isLoading } = useQuery<Array<{ id: string; suggestion: string; type: string }>>({
-    queryKey: ["/api/ai/suggestions", projectId, selectedSection?.id],
-    enabled: !!projectId && !!selectedSection,
+  const improveMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/sections/${selectedSection!.id}/enhance/improve`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
+      toast({ 
+        title: "Content improved", 
+        description: "Your content has been enhanced with AI suggestions" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to improve content",
+        variant: "destructive" 
+      });
+    },
   });
 
-  const applySuggestionMutation = useMutation({
-    mutationFn: async (suggestionId: string) => {
-      return await apiRequest("POST", `/api/ai/suggestions/${suggestionId}/apply`, {
-        projectId,
-        sectionId: selectedSection?.id,
-      });
+  const shortenMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/sections/${selectedSection!.id}/enhance/shorten`);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
-      toast({ title: "Suggestion applied", description: "Content has been updated with the suggestion" });
+      toast({ 
+        title: "Content shortened", 
+        description: "Your content has been made more concise" 
+      });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({ 
         title: "Error", 
-        description: "Failed to apply suggestion",
+        description: error.message || "Failed to shorten content",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const expandMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/sections/${selectedSection!.id}/enhance/expand`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
+      toast({ 
+        title: "Content expanded", 
+        description: "Your content has been enriched with more details" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to expand content",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const seoMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/sections/${selectedSection!.id}/enhance/seo`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setSeoResults(data);
+      toast({ 
+        title: "SEO analysis complete", 
+        description: "Review the suggestions below" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to analyze SEO",
         variant: "destructive" 
       });
     },
@@ -1084,27 +1144,65 @@ function AISuggestionsTab({ projectId, selectedSection }: { projectId: string; s
       </h3>
       {!selectedSection ? (
         <p className="text-sm text-muted-foreground">Select a section to see AI suggestions</p>
-      ) : isLoading ? (
-        <div className="text-sm text-muted-foreground">Loading suggestions...</div>
-      ) : !suggestions || suggestions.length === 0 ? (
-        <div className="text-sm text-muted-foreground">No suggestions available for this section</div>
       ) : (
         <div className="space-y-3">
-          {suggestions.map((suggestion) => (
-            <Card key={suggestion.id} className="p-3">
-              <p className="text-sm text-muted-foreground">{suggestion.suggestion}</p>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="px-0 mt-1"
-                onClick={() => applySuggestionMutation.mutate(suggestion.id)}
-                disabled={applySuggestionMutation.isPending}
-                data-testid={`button-apply-suggestion-${suggestion.id}`}
-              >
-                {applySuggestionMutation.isPending ? 'Applying...' : 'Apply suggestion'}
-              </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => improveMutation.mutate()}
+              disabled={improveMutation.isPending}
+              data-testid="button-improve-content"
+            >
+              <Wand2 className="h-3 w-3 mr-1" />
+              {improveMutation.isPending ? 'Improving...' : 'Improve'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => shortenMutation.mutate()}
+              disabled={shortenMutation.isPending}
+              data-testid="button-shorten-content"
+            >
+              {shortenMutation.isPending ? 'Shortening...' : 'Shorten'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => expandMutation.mutate()}
+              disabled={expandMutation.isPending}
+              data-testid="button-expand-content"
+            >
+              {expandMutation.isPending ? 'Expanding...' : 'Expand'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => seoMutation.mutate()}
+              disabled={seoMutation.isPending}
+              data-testid="button-seo-analyze"
+            >
+              {seoMutation.isPending ? 'Analyzing...' : 'SEO Check'}
+            </Button>
+          </div>
+
+          {seoResults && (
+            <Card className="p-3 space-y-2">
+              <h4 className="font-medium text-sm">SEO Recommendations</h4>
+              <div className="space-y-1 text-xs">
+                <p className="font-medium">Title: <span className="font-normal text-muted-foreground">{seoResults.titleSuggestion}</span></p>
+                <p className="font-medium">Meta: <span className="font-normal text-muted-foreground">{seoResults.metaDescription}</span></p>
+                <p className="font-medium">Keywords: <span className="font-normal text-muted-foreground">{seoResults.keywords?.join(', ')}</span></p>
+              </div>
             </Card>
-          ))}
+          )}
+
+          <div className="text-xs text-muted-foreground pt-2 border-t">
+            <p>• <strong>Improve</strong>: Enhance clarity and impact</p>
+            <p>• <strong>Shorten</strong>: Make more concise</p>
+            <p>• <strong>Expand</strong>: Add more details</p>
+            <p>• <strong>SEO Check</strong>: Get optimization tips</p>
+          </div>
         </div>
       )}
     </div>
