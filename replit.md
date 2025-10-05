@@ -3,6 +3,12 @@
 ## Overview
 Productify AI is an AI-powered digital product creation platform designed to help users create, manage, and export various professional digital products such as eBooks, online courses, checklists, templates, and lead magnets. The platform aims to be the most user-friendly and advanced digital product platform, featuring simplified navigation, an AI command interface, a redesigned dashboard, a floating AI coach, and a unified product creation wizard. It has undergone a major transformation to enhance the user experience and provide advanced AI-powered creation tools.
 
+### Recent Enhancements (October 2025)
+- **Google Fonts Integration**: Dynamic font loading from Google Fonts API with fallback to curated popular fonts. Over 100 fonts available for commercial use. Fonts are previewed in dropdowns for easy selection.
+- **Image Export Capabilities**: Added PNG and JPG export formats using html2canvas. All exports automatically apply brand kit styling (colors, fonts).
+- **Comprehensive Media Sources**: Integrated Pexels and Pixabay APIs for stock photos, Google Fonts for typography, and Lucide icons - all 100% free for commercial use with no attribution requirements.
+- **Enhanced Brand Kit**: Brand kit now includes dynamic font selection from Google Fonts API and applies globally across all templates, exports (PDF, DOCX, HTML, PNG, JPG), and projects.
+
 ## User Preferences
 - Modern, clean UI design with purple primary color (#a855f7)
 - Dark mode support throughout
@@ -25,6 +31,8 @@ Productify AI is a fullstack application built with React, Vite, TypeScript, Tai
 - **Template Management**: Canva-style template browsing with personalized recommendations, smart search, favorites, and AI auto-generation of content.
 - **Content Editing**: Canva-style interactive editor with drag-and-drop sections, WYSIWYG editing, undo/redo, autosave, and AI integration.
 - **Asset Management**: Import from Pexels/Pixabay, search, and manage assets with commercial-free licensing.
+- **Brand Kit System**: Comprehensive brand kit with primary/secondary colors, custom font selection (100+ Google Fonts via API with fallback to curated popular fonts), brand voice/tone settings, and global application across all templates and exports.
+- **Multi-Format Export**: Export projects to PDF, DOCX, HTML, PNG, and JPG formats with brand kit styling automatically applied. PNG/JPG exports use html2canvas for high-quality image generation.
 - **Analytics**: Lite analytics for tracking project-level events (views, exports, AI usage) and summary reporting.
 - **AI Coach**: Interactive chat assistant providing context-aware guidance and real-time assistance.
 - **Platform Navigation**: Simplified sidebar, universal AI Command Bar (Ctrl/Cmd+K) for rapid navigation, and a redesigned dashboard.
@@ -39,8 +47,11 @@ The project architecture emphasizes modularity and clear separation between clie
 - **Authentication**: Replit Auth (OpenID Connect)
 - **Rich Text Editor**: TipTap
 - **Drag & Drop**: @hello-pangea/dnd
-- **Stock Photos**: Pexels API (primary), Pixabay API (fallback) for 100% license-free commercial use.
+- **Stock Photos**: Pexels API (requires `PEXELS_API_KEY`), Pixabay API (requires `PIXABAY_API_KEY`) - Both provide 100% free for commercial use, no attribution required.
+- **Fonts**: Google Fonts API (optional `GOOGLE_FONTS_API_KEY` - falls back to curated popular fonts list if not provided) - All fonts free for commercial use.
+- **Icons**: Lucide React - Open-source, free for commercial use.
 - **PDF Generation**: pdf-lib
 - **DOCX Generation**: docx.js
+- **HTML to Image**: html2canvas (for PNG/JPG exports)
 - **Markdown Processing**: markdown-it
 - **ZIP Archiving**: jszip
