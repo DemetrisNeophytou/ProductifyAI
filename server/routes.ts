@@ -2825,6 +2825,352 @@ Be systematic, growth-focused, and results-oriented.`
     }
   });
 
+  // Consolidated AI Content Operations
+  app.post("/api/ai/content", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId, blockId, op, tone, targetLang, context } = req.body;
+      
+      if (!projectId || !blockId || !op) {
+        return res.status(400).json({ message: "Missing required fields: projectId, blockId, op" });
+      }
+
+      // Get the section/block
+      const section = await storage.getSection(blockId);
+      if (!section) {
+        return res.status(404).json({ message: "Block not found" });
+      }
+
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const currentText = (section.content as any)?.text || "";
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Block has no content to process" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      let systemPrompt = "";
+      let userPrompt = "";
+
+      switch (op) {
+        case 'polish':
+          systemPrompt = "You are an expert copywriter. Polish the content to improve clarity, flow, and professional tone while maintaining the original voice. Return ONLY the improved text.";
+          userPrompt = `${context ? `Context: ${context}\n\n` : ""}Polish this content:\n${currentText}`;
+          break;
+        case 'shorten':
+          systemPrompt = "You are an expert editor. Make the content more concise while preserving key points. Return ONLY the shortened text.";
+          userPrompt = `${context ? `Context: ${context}\n\n` : ""}Shorten this content:\n${currentText}`;
+          break;
+        case 'expand':
+          systemPrompt = "You are an expert writer. Expand the content with more detail, examples, and depth while maintaining coherence. Return ONLY the expanded text.";
+          userPrompt = `${context ? `Context: ${context}\n\n` : ""}Expand this content:\n${currentText}`;
+          break;
+        case 'translate':
+          if (!targetLang) {
+            return res.status(400).json({ message: "targetLang is required for translation" });
+          }
+          systemPrompt = `You are an expert translator. Translate the content to ${targetLang} while preserving tone and meaning. Return ONLY the translated text.`;
+          userPrompt = `Translate to ${targetLang}:\n${currentText}`;
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid operation. Use: polish, shorten, expand, or translate" });
+      }
+
+      const result = await askLLM({
+        system: systemPrompt,
+        user: userPrompt,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const newText = (result as any).content;
+      const updated = await storage.updateSection(blockId, { 
+        content: { text: newText } 
+      });
+
+      res.json({ blockId, newText });
+    } catch (error: any) {
+      console.error("Error processing AI content:", error);
+      res.status(500).json({ message: error?.message || "Failed to process content" });
+    }
+  });
+
+  // AI Re-Style
+  app.post("/api/ai/restyle", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId, blockId, tone } = req.body;
+      
+      if (!projectId || !blockId || !tone) {
+        return res.status(400).json({ message: "Missing required fields: projectId, blockId, tone" });
+      }
+
+      if (!['professional', 'casual', 'inspirational', 'educational'].includes(tone)) {
+        return res.status(400).json({ message: "Invalid tone. Use: professional, casual, inspirational, or educational" });
+      }
+
+      const section = await storage.getSection(blockId);
+      if (!section) {
+        return res.status(404).json({ message: "Block not found" });
+      }
+
+      const project = await storage.getProject(section.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const currentText = (section.content as any)?.text || "";
+      if (!currentText.trim()) {
+        return res.status(400).json({ message: "Block has no content to restyle" });
+      }
+
+      const { askLLM } = await import('./llm-client');
+      const toneDescriptions: Record<string, string> = {
+        professional: "formal, business-like, and authoritative",
+        casual: "friendly, conversational, and approachable",
+        inspirational: "motivating, uplifting, and encouraging",
+        educational: "informative, clear, and instructive"
+      };
+
+      const result = await askLLM({
+        system: `You are an expert copywriter. Rewrite the content in a ${toneDescriptions[tone]} tone. Maintain the core message but completely restyle the language and phrasing. Return ONLY the restyled text.`,
+        user: `Rewrite this in a ${tone} tone:\n${currentText}`,
+        mode: 'quality',
+        timeout: 30000
+      });
+
+      const newText = (result as any).content;
+      const updated = await storage.updateSection(blockId, { 
+        content: { text: newText } 
+      });
+
+      res.json({ blockId, newText });
+    } catch (error: any) {
+      console.error("Error restyling content:", error);
+      res.status(500).json({ message: error?.message || "Failed to restyle content" });
+    }
+  });
+
+  // Unified Image Search
+  app.get("/api/images/search", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const { provider = 'pexels', q: query, page = '1', per_page = '12', orientation = '' } = req.query;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      if (provider === 'pexels') {
+        const apiKey = process.env.PEXELS_API_KEY;
+        if (!apiKey) {
+          return res.status(500).json({ message: "Pexels API key not configured" });
+        }
+
+        const searchUrl = new URL("https://api.pexels.com/v1/search");
+        searchUrl.searchParams.set("query", query);
+        searchUrl.searchParams.set("page", page.toString());
+        searchUrl.searchParams.set("per_page", per_page.toString());
+        if (orientation && typeof orientation === 'string') {
+          searchUrl.searchParams.set("orientation", orientation);
+        }
+
+        const response = await fetch(searchUrl.toString(), {
+          headers: { Authorization: apiKey },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Pexels API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const images = data.photos.map((photo: any) => ({
+          url: photo.src.large,
+          thumb: photo.src.medium,
+          source: 'pexels',
+          attribution: `Photo by ${photo.photographer}`,
+          id: photo.id
+        }));
+
+        res.json({ images });
+      } else if (provider === 'pixabay') {
+        const apiKey = process.env.PIXABAY_API_KEY;
+        if (!apiKey) {
+          return res.status(500).json({ message: "Pixabay API key not configured" });
+        }
+
+        const searchUrl = new URL("https://pixabay.com/api/");
+        searchUrl.searchParams.set("key", apiKey);
+        searchUrl.searchParams.set("q", query);
+        searchUrl.searchParams.set("page", page.toString());
+        searchUrl.searchParams.set("per_page", per_page.toString());
+        searchUrl.searchParams.set("image_type", "photo");
+        if (orientation && typeof orientation === 'string') {
+          searchUrl.searchParams.set("orientation", orientation);
+        }
+
+        const response = await fetch(searchUrl.toString());
+
+        if (!response.ok) {
+          throw new Error(`Pixabay API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const images = data.hits.map((hit: any) => ({
+          url: hit.largeImageURL,
+          thumb: hit.webformatURL,
+          source: 'pixabay',
+          attribution: `Image by ${hit.user}`,
+          id: hit.id
+        }));
+
+        res.json({ images });
+      } else {
+        return res.status(400).json({ message: "Invalid provider. Use 'pexels' or 'pixabay'" });
+      }
+    } catch (error) {
+      console.error("Error searching images:", error);
+      res.status(500).json({ message: "Failed to search images" });
+    }
+  });
+
+  // Image Upload
+  app.post("/api/images/upload", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // For now, return a placeholder since we don't have file upload configured
+      // In production, this would handle multipart form data with multer or similar
+      return res.status(501).json({ 
+        message: "Image upload not yet implemented. Use stock image search instead." 
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Brand Kit Apply
+  app.post("/api/brand/apply", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { projectId, colors, fonts, logoUrl } = req.body;
+      
+      if (!projectId) {
+        return res.status(400).json({ message: "projectId is required" });
+      }
+
+      const project = await storage.getProject(projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Update project with brand kit
+      const updated = await storage.updateProject(projectId, {
+        brand: {
+          ...project.brand,
+          ...(colors && colors.length > 0 && { primary: colors[0], secondary: colors[1] || colors[0] }),
+          ...(fonts && { font: fonts.heading || fonts.body }),
+          ...(logoUrl && { logoUrl }),
+        }
+      });
+
+      res.json({ applied: true, project: updated });
+    } catch (error) {
+      console.error("Error applying brand kit:", error);
+      res.status(500).json({ message: "Failed to apply brand kit" });
+    }
+  });
+
+  // Credits Estimate
+  app.post("/api/credits/estimate", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const { operation, params } = req.body;
+      
+      // Estimate credit costs based on operation type
+      const creditCosts: Record<string, number> = {
+        'ai_content_polish': 2,
+        'ai_content_shorten': 2,
+        'ai_content_expand': 3,
+        'ai_content_translate': 3,
+        'ai_restyle': 2,
+        'ai_image_generate': 5,
+        'export_pdf': 1,
+        'export_png': 1,
+        'export_html': 0,
+      };
+
+      const estimated = creditCosts[operation] || 1;
+      res.json({ estimated, operation });
+    } catch (error) {
+      console.error("Error estimating credits:", error);
+      res.status(500).json({ message: "Failed to estimate credits" });
+    }
+  });
+
+  // Credits Deduct
+  app.post("/api/credits/deduct", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { amount, operation } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid credit amount" });
+      }
+
+      // Get current user credit balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const currentBalance = user.credits || 0;
+      if (currentBalance < amount) {
+        return res.status(402).json({ 
+          message: "Insufficient credits",
+          balance: currentBalance,
+          required: amount
+        });
+      }
+
+      // Deduct credits
+      await storage.updateUser(userId, { credits: currentBalance - amount });
+      
+      // Track event
+      await storage.trackEvent({
+        userId,
+        eventType: 'credits_used',
+        eventData: { operation, amount }
+      });
+
+      res.json({ balance: currentBalance - amount });
+    } catch (error) {
+      console.error("Error deducting credits:", error);
+      res.status(500).json({ message: "Failed to deduct credits" });
+    }
+  });
+
   // Asset routes
   app.get("/api/assets", isAuthenticated, async (req: AuthRequest, res) => {
     try {

@@ -612,6 +612,8 @@ export const analyticsEvents = pgTable("analytics_events", {
     packageType?: string;
     credits?: number;
     price?: number;
+    operation?: string;
+    amount?: number;
   }>(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
