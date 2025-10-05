@@ -936,6 +936,126 @@ Make it valuable enough that people would pay €47-€97 for it.`;
   }
 }
 
+// Generate complete product (all 6 types) with outline, content blocks, and image prompts
+export async function generateCompleteProduct(params: {
+  type: 'ebook' | 'workbook' | 'course' | 'landing' | 'emails' | 'social';
+  topic: string;
+  audience: string;
+  tone: string;
+  goal: string;
+}): Promise<any> {
+  console.log(`[OpenAI] Generating complete ${params.type} - Topic: ${params.topic}`);
+  requireApiKey();
+
+  const productTypeInstructions: Record<string, string> = {
+    ebook: 'Create an ebook with 8-10 sections covering the topic comprehensively. Each section should provide valuable insights, actionable advice, and transformation.',
+    workbook: 'Create an interactive workbook with 8-10 sections that include exercises, worksheets, checklists, and reflection prompts. Make it actionable and hands-on.',
+    course: 'Create a comprehensive course outline with 10-12 lessons/modules. Each lesson should have clear learning objectives, content, and action steps.',
+    landing: 'Create a high-converting landing page structure with 8-10 sections: hero, problem, solution, benefits, features, testimonials, FAQ, CTA, etc.',
+    emails: 'Create an email sequence with exactly 5 emails designed to nurture, educate, and convert. Each email should have a clear purpose and compelling copy.',
+    social: 'Create a social media content pack with exactly 10 posts optimized for engagement. Include a mix of educational, inspirational, and promotional content.'
+  };
+
+  const systemPrompt = `You are Productify AI, an expert at creating complete, ready-to-sell digital products.
+
+Return ONLY valid JSON in this exact format:
+{
+  "title": "Compelling product title",
+  "subtitle": "Engaging subtitle that clarifies the value proposition",
+  "outline": [
+    { "id": "sec1", "title": "Section title", "level": 1 },
+    { "id": "sec2", "title": "Subsection title", "level": 2 }
+  ],
+  "blocks": [
+    {
+      "id": "blk1",
+      "sectionId": "sec1",
+      "type": "text",
+      "content": "Full section content (300-400 words) in markdown format with proper formatting",
+      "imagePrompt": "concise image prompt for DALL-E (<= 30 words, no text in image)"
+    }
+  ],
+  "brand": {
+    "primary": "#7c3bed",
+    "secondary": "#19161d",
+    "font": "Inter"
+  },
+  "metadata": {
+    "wordCount": 5200,
+    "imageCount": 8
+  }
+}
+
+CRITICAL RULES:
+1. ${productTypeInstructions[params.type]}
+2. Generate 300-400 words of high-quality content for EACH block
+3. Create exactly ONE block per outline section
+4. Image prompts must be <= 30 words, descriptive for DALL-E 3, and specify NO TEXT in images
+5. Content should be in markdown format with headings, bold, italic, lists, etc.
+6. Make it valuable, actionable, and ready to sell at €47-€197
+7. NEVER use emoji characters in any content
+8. Never mention competitor brands or individuals by name
+9. Use generic terms when referencing other tools/platforms
+10. Focus on transformation and results for the target audience`;
+
+  const userPrompt = `Create a complete, ready-to-sell ${params.type} based on these inputs:
+
+Topic: ${params.topic}
+Target Audience: ${params.audience}
+Tone of Voice: ${params.tone}
+Primary Goal: ${params.goal}
+
+Generate:
+1. A compelling title and subtitle
+2. A complete outline with ${params.type === 'emails' ? '5' : params.type === 'social' ? '10' : '8-12'} sections
+3. Full content blocks (300-400 words each) for every section
+4. Professional image prompts for each block (<= 30 words, no text)
+5. Brand colors and font selection that fits the ${params.tone} tone
+6. Accurate metadata (word count, image count)
+
+Make it professional, compelling, and ready to launch.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 16000,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    const product = JSON.parse(content);
+    
+    if (!product.outline || !Array.isArray(product.outline) || product.outline.length === 0) {
+      console.error('[OpenAI] Invalid product structure - missing or empty outline');
+      throw new Error("AI_ERROR: Generated product has invalid structure");
+    }
+    
+    if (!product.blocks || !Array.isArray(product.blocks) || product.blocks.length === 0) {
+      console.error('[OpenAI] Invalid product structure - missing or empty blocks');
+      throw new Error("AI_ERROR: Generated product has invalid structure");
+    }
+    
+    console.log(`[OpenAI] Complete ${params.type} generated with ${product.outline.length} sections and ${product.blocks.length} blocks`);
+    return product;
+  } catch (error: any) {
+    console.error('[OpenAI] Generate complete product failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    if (error?.message?.startsWith("AI_ERROR:")) {
+      throw error;
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to generate complete product"}`);
+  }
+}
+
 // Generate image using DALL-E 3
 export async function generateEbookImage(params: {
   prompt: string;
@@ -972,5 +1092,75 @@ export async function generateEbookImage(params: {
       throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
     }
     throw new Error(`AI_IMAGE_ERROR: ${error?.message || "Failed to generate image"}`);
+  }
+}
+
+// Regenerate a single section with new content and image prompt
+export async function regenerateSection(params: {
+  sectionTitle: string;
+  productType: string;
+  audience: string;
+  tone: string;
+  context?: string;
+}): Promise<{ content: string; imagePrompt: string }> {
+  console.log(`[OpenAI] Regenerating section - ${params.sectionTitle}`);
+  requireApiKey();
+
+  const systemPrompt = `You are Productify AI, an expert at creating high-quality digital product content.
+
+Return ONLY valid JSON in this exact format:
+{
+  "content": "Full section content (300-400 words) in markdown format",
+  "imagePrompt": "concise DALL-E prompt (<= 30 words, no text in image)"
+}
+
+RULES:
+- Generate 300-400 words of valuable, actionable content
+- Use markdown formatting (headings, bold, lists, etc.)
+- Make it professional and transformation-focused
+- Image prompt must be <= 30 words and specify NO TEXT
+- NEVER use emoji characters
+- Never mention competitor brands or individuals`;
+
+  const contextInfo = params.context ? `\n\nContext: ${params.context}` : '';
+  
+  const userPrompt = `Regenerate content for this section:
+
+Section Title: ${params.sectionTitle}
+Product Type: ${params.productType}
+Target Audience: ${params.audience}
+Tone: ${params.tone}${contextInfo}
+
+Create fresh, compelling content that adds value and drives transformation.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_completion_tokens: 2000,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content || "{}";
+    const result = JSON.parse(content);
+    
+    if (!result.content || !result.imagePrompt) {
+      throw new Error("AI_ERROR: Invalid regeneration response structure");
+    }
+    
+    console.log(`[OpenAI] Section regenerated successfully`);
+    return result;
+  } catch (error: any) {
+    console.error('[OpenAI] Regenerate section failed:', error);
+    if (error?.status === 429 || error?.code === 'insufficient_quota') {
+      throw new Error("QUOTA_EXCEEDED: OpenAI API quota has been exceeded.");
+    }
+    if (error?.status === 401) {
+      throw new Error("INVALID_API_KEY: OpenAI API key is invalid or missing.");
+    }
+    throw new Error(`AI_ERROR: ${error?.message || "Failed to regenerate section"}`);
   }
 }
