@@ -124,12 +124,20 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
         return StandardFonts.Helvetica; // Default sans-serif
       };
       
+      const getBoldStandardFont = (fontName?: string): StandardFonts => {
+        if (!fontName) return StandardFonts.HelveticaBold;
+        const lower = fontName.toLowerCase();
+        if (lower.includes('serif') || lower.includes('georgia') || lower.includes('playfair')) {
+          return StandardFonts.TimesRomanBold;
+        }
+        if (lower.includes('mono') || lower.includes('courier')) {
+          return StandardFonts.CourierBold;
+        }
+        return StandardFonts.HelveticaBold; // Default sans-serif bold
+      };
+      
       const font = await pdfDoc.embedFont(getBestStandardFont(brandKit?.fonts?.body));
-      const boldFont = await pdfDoc.embedFont(
-        brandKit?.fonts?.heading?.toLowerCase().includes('serif') 
-          ? StandardFonts.TimesRomanBold 
-          : StandardFonts.HelveticaBold
-      );
+      const boldFont = await pdfDoc.embedFont(getBoldStandardFont(brandKit?.fonts?.heading));
       const form = pdfDoc.getForm();
 
       let page = pdfDoc.addPage([612, 792]);
@@ -413,8 +421,10 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       setExporting(true);
 
       // Apply brand kit fonts and colors
-      const headingFont = brandKit?.fonts?.heading || 'Inter, system-ui, sans-serif';
-      const bodyFont = brandKit?.fonts?.body || 'Georgia, serif';
+      const headingFontName = brandKit?.fonts?.heading || 'Inter';
+      const bodyFontName = brandKit?.fonts?.body || 'Georgia';
+      const headingFontStack = `'${headingFontName}', sans-serif`;
+      const bodyFontStack = `'${bodyFontName}', serif`;
       const primaryColor = brandKit?.primaryColor || '#8B5CF6';
       const secondaryColor = brandKit?.secondaryColor || '#EC4899';
       const accentColor = brandKit?.colors?.[2] || '#F59E0B';
@@ -427,11 +437,11 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
   <title>${project.title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=${headingFont.replace(/ /g, '+')}:wght@400;700&family=${bodyFont.replace(/ /g, '+')}:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=${headingFontName.replace(/ /g, '+')}:wght@400;700&family=${bodyFontName.replace(/ /g, '+')}:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
-      font-family: '${bodyFont}', serif; 
+      font-family: ${bodyFontStack}; 
       max-width: 900px; 
       margin: 0 auto; 
       padding: 20px;
@@ -443,7 +453,7 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       body { padding: 60px 40px; }
     }
     h1 { 
-      font-family: '${headingFont}', sans-serif;
+      font-family: ${headingFontStack};
       color: ${primaryColor}; 
       font-size: clamp(2rem, 5vw, 3rem); 
       margin-bottom: 1.5rem;
@@ -451,7 +461,7 @@ export function ExportDialog({ open, onOpenChange, project, sections }: ExportDi
       line-height: 1.2;
     }
     h2 { 
-      font-family: '${headingFont}', sans-serif;
+      font-family: ${headingFontStack};
       color: ${secondaryColor}; 
       font-size: clamp(1.5rem, 3vw, 2rem); 
       margin-top: 3rem;
