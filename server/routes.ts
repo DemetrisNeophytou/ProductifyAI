@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateProduct, chatWithCoach, chatWithCoachStream, generateIdeas, generateOutline, generateContent, generateOffer, generateFunnel } from "./openai";
 import aiGenerateRouter from "./ai-generate";
+import nichesRouter from "./niches";
 import { z } from "zod";
 import { stripe } from "./stripe-config";
 import { 
@@ -940,6 +941,9 @@ Be systematic, growth-focused, and results-oriented.`
 
   // New simplified AI Generate endpoint
   app.use("/api/ai", isAuthenticated, aiGenerationLimiter, aiGenerateRouter);
+
+  // Niches endpoint with dedicated routes for niche generation
+  app.use("/api/niches", isAuthenticated, aiGenerationLimiter, nichesRouter);
 
   app.delete("/api/products/:id", isAuthenticated, async (req: AuthRequest, res) => {
     try {
