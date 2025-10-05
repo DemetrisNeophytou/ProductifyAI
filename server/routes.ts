@@ -194,6 +194,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/templates/generate", isAuthenticated, aiGenerationLimiter, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { templateId, title, type, category, description } = req.body;
+
+      if (!templateId || !title || !type) {
+        return res.status(400).json({ message: "Template ID, title, and type are required" });
+      }
+
+      const { TEMPLATE_CATALOG } = await import("../shared/template-catalog");
+      const template = TEMPLATE_CATALOG.find(t => t.id === templateId);
+
+      if (!template || !template.templateStructure) {
+        return res.status(404).json({ message: "Template not found or has no structure" });
+      }
+
+      const project = await storage.createProject({
+        userId,
+        title,
+        type,
+        content: "",
+        metadata: {
+          niche: category || "general",
+          goal: description || "",
+          audience: "Target audience",
+          tone: "professional",
+          templateId,
+          isFromTemplate: true
+        }
+      });
+
+      if (!project?.id) {
+        throw new Error("Failed to create project");
+      }
+
+      const OpenAI = (await import("openai")).default;
+      const apiKey = process.env.OPENAI_API_KEY || 'placeholder-key-not-configured';
+      
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn("OpenAI API key not configured - using placeholder content");
+      }
+      
+      const openai = new OpenAI({ apiKey });
+      const sections = [];
+
+      for (const [index, section] of template.templateStructure.sections.entries()) {
+        const systemPrompt = `You are an expert digital product creator. Generate compelling, professional content for a ${type} about "${title}".
+Category: ${category || 'general'}
+Section: ${section.title}
+${section.content ? `Context: ${section.content}` : ''}
+
+Create engaging, actionable content that delivers real value. Be specific and practical. Use a professional but friendly tone.`;
+
+        const userPrompt = `Write the content for the "${section.title}" section of this ${type}. Make it approximately 300-500 words. Focus on delivering value and actionable insights.`;
+
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 800,
+          });
+
+          const generatedContent = completion.choices[0]?.message?.content || section.content || "Content will be generated here.";
+
+          const createdSection = await storage.createSection({
+            projectId: project.id,
+            title: section.title,
+            content: generatedContent,
+            order: index
+          });
+
+          sections.push(createdSection);
+        } catch (error) {
+          console.error(`Error generating section ${section.title}:`, error);
+          const createdSection = await storage.createSection({
+            projectId: project.id,
+            title: section.title,
+            content: section.content || `Write your ${section.title.toLowerCase()} content here...`,
+            order: index
+          });
+          sections.push(createdSection);
+        }
+      }
+
+      res.json({
+        id: project.id,
+        title: project.title,
+        type: project.type,
+        sectionsCount: sections.length
+      });
+    } catch (error) {
+      console.error("Error generating from template:", error);
+      res.status(500).json({ message: "Failed to generate product from template" });
+    }
+  });
+
   // Temporary: Keep old /api/products for backwards compatibility
   app.get("/api/products", isAuthenticated, async (req: AuthRequest, res) => {
     try {
