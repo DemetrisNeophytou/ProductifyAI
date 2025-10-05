@@ -21,6 +21,11 @@ import {
   referralConversions,
   analyticsEvents,
   projectEvents,
+  featureFlags,
+  creditHistory,
+  featureUsageLog,
+  aiAgentSessions,
+  videoProjects,
   type User,
   type UpsertUser,
   type BrandKit,
@@ -61,6 +66,16 @@ import {
   type InsertAnalyticsEvent,
   type ProjectEvent,
   type InsertProjectEvent,
+  type FeatureFlag,
+  type InsertFeatureFlag,
+  type CreditHistory,
+  type InsertCreditHistory,
+  type FeatureUsageLog,
+  type InsertFeatureUsageLog,
+  type AiAgentSession,
+  type InsertAiAgentSession,
+  type VideoProject,
+  type InsertVideoProject,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, or, like, gte, lte, ilike } from "drizzle-orm";
@@ -205,6 +220,42 @@ export interface IStorage {
     limit?: number;
     offset?: number;
   }): Promise<Project[]>;
+  
+  // Phase 5: Feature Flag operations
+  getFeatureFlag(name: string): Promise<FeatureFlag | undefined>;
+  getAllFeatureFlags(): Promise<FeatureFlag[]>;
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+  updateFeatureFlag(name: string, enabled: boolean): Promise<void>;
+  isFeatureEnabled(name: string, userTier?: string): Promise<boolean>;
+  
+  // Phase 5: Credit operations
+  getUserCredits(userId: string): Promise<number>;
+  deductCredits(userId: string, amount: number, type: string, description?: string): Promise<number>;
+  refillCredits(userId: string, amount: number, description?: string): Promise<number>;
+  getUserCreditHistory(userId: string, limit?: number): Promise<CreditHistory[]>;
+  
+  // Phase 5: Feature Usage Log operations
+  logFeatureUsage(log: InsertFeatureUsageLog): Promise<FeatureUsageLog>;
+  getUserFeatureUsage(userId: string, featureName?: string, limit?: number): Promise<FeatureUsageLog[]>;
+  getWeeklyUsageSummary(userId: string): Promise<{
+    totalTokens: number;
+    totalCredits: number;
+    byFeature: Record<string, { tokens: number; credits: number }>;
+  }>;
+  
+  // Phase 5: AI Agent Session operations
+  createAiAgentSession(session: InsertAiAgentSession): Promise<AiAgentSession>;
+  getAiAgentSession(id: string): Promise<AiAgentSession | undefined>;
+  getUserAiAgentSessions(userId: string, agentType?: string): Promise<AiAgentSession[]>;
+  updateAiAgentSession(id: string, data: Partial<InsertAiAgentSession>): Promise<AiAgentSession>;
+  deleteAiAgentSession(id: string): Promise<void>;
+  
+  // Phase 5: Video Project operations
+  createVideoProject(project: InsertVideoProject): Promise<VideoProject>;
+  getVideoProject(id: string): Promise<VideoProject | undefined>;
+  getUserVideoProjects(userId: string): Promise<VideoProject[]>;
+  updateVideoProject(id: string, data: Partial<InsertVideoProject>): Promise<VideoProject>;
+  deleteVideoProject(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1150,6 +1201,233 @@ export class DatabaseStorage implements IStorage {
       .offset(offset);
     
     return results;
+  }
+  
+  // Phase 5: Feature Flag operations
+  async getFeatureFlag(name: string): Promise<FeatureFlag | undefined> {
+    const result = await db
+      .select()
+      .from(featureFlags)
+      .where(eq(featureFlags.name, name))
+      .limit(1);
+    return result[0];
+  }
+  
+  async getAllFeatureFlags(): Promise<FeatureFlag[]> {
+    return await db.select().from(featureFlags);
+  }
+  
+  async createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const result = await db.insert(featureFlags).values(flag).returning();
+    return result[0]!;
+  }
+  
+  async updateFeatureFlag(name: string, enabled: boolean): Promise<void> {
+    await db
+      .update(featureFlags)
+      .set({ enabled: enabled ? 1 : 0, updatedAt: new Date() })
+      .where(eq(featureFlags.name, name));
+  }
+  
+  async isFeatureEnabled(name: string, userTier?: string): Promise<boolean> {
+    const flag = await this.getFeatureFlag(name);
+    if (!flag || flag.enabled === 0) return false;
+    
+    if (flag.metadata?.allowedTiers && userTier) {
+      return flag.metadata.allowedTiers.includes(userTier);
+    }
+    
+    return true;
+  }
+  
+  // Phase 5: Credit operations
+  async getUserCredits(userId: string): Promise<number> {
+    const user = await this.getUser(userId);
+    return user?.credits || 0;
+  }
+  
+  async deductCredits(userId: string, amount: number, type: string, description?: string): Promise<number> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error('User not found');
+    
+    const currentCredits = user.credits || 0;
+    const newBalance = Math.max(0, currentCredits - amount);
+    
+    await db.update(users).set({ credits: newBalance }).where(eq(users.id, userId));
+    
+    await db.insert(creditHistory).values({
+      userId,
+      amount: -amount,
+      type,
+      description: description || `Used ${amount} credits for ${type}`,
+      balanceAfter: newBalance,
+    });
+    
+    return newBalance;
+  }
+  
+  async refillCredits(userId: string, amount: number, description?: string): Promise<number> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error('User not found');
+    
+    const currentCredits = user.credits || 0;
+    const newBalance = currentCredits + amount;
+    
+    await db.update(users).set({ credits: newBalance }).where(eq(users.id, userId));
+    
+    await db.insert(creditHistory).values({
+      userId,
+      amount,
+      type: 'refill',
+      description: description || `Refilled ${amount} credits`,
+      balanceAfter: newBalance,
+    });
+    
+    return newBalance;
+  }
+  
+  async getUserCreditHistory(userId: string, limit: number = 50): Promise<CreditHistory[]> {
+    return await db
+      .select()
+      .from(creditHistory)
+      .where(eq(creditHistory.userId, userId))
+      .orderBy(desc(creditHistory.createdAt))
+      .limit(limit);
+  }
+  
+  // Phase 5: Feature Usage Log operations
+  async logFeatureUsage(log: InsertFeatureUsageLog): Promise<FeatureUsageLog> {
+    const result = await db.insert(featureUsageLog).values(log).returning();
+    return result[0]!;
+  }
+  
+  async getUserFeatureUsage(userId: string, featureName?: string, limit: number = 100): Promise<FeatureUsageLog[]> {
+    const conditions = [eq(featureUsageLog.userId, userId)];
+    if (featureName) {
+      conditions.push(eq(featureUsageLog.featureName, featureName));
+    }
+    
+    return await db
+      .select()
+      .from(featureUsageLog)
+      .where(and(...conditions))
+      .orderBy(desc(featureUsageLog.createdAt))
+      .limit(limit);
+  }
+  
+  async getWeeklyUsageSummary(userId: string): Promise<{
+    totalTokens: number;
+    totalCredits: number;
+    byFeature: Record<string, { tokens: number; credits: number }>;
+  }> {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    const logs = await db
+      .select()
+      .from(featureUsageLog)
+      .where(
+        and(
+          eq(featureUsageLog.userId, userId),
+          gte(featureUsageLog.createdAt, weekAgo)
+        )
+      );
+    
+    const summary = {
+      totalTokens: 0,
+      totalCredits: 0,
+      byFeature: {} as Record<string, { tokens: number; credits: number }>,
+    };
+    
+    for (const log of logs) {
+      summary.totalTokens += log.tokenCount || 0;
+      summary.totalCredits += log.creditsCost || 0;
+      
+      if (!summary.byFeature[log.featureName]) {
+        summary.byFeature[log.featureName] = { tokens: 0, credits: 0 };
+      }
+      summary.byFeature[log.featureName].tokens += log.tokenCount || 0;
+      summary.byFeature[log.featureName].credits += log.creditsCost || 0;
+    }
+    
+    return summary;
+  }
+  
+  // Phase 5: AI Agent Session operations
+  async createAiAgentSession(session: InsertAiAgentSession): Promise<AiAgentSession> {
+    const result = await db.insert(aiAgentSessions).values(session).returning();
+    return result[0]!;
+  }
+  
+  async getAiAgentSession(id: string): Promise<AiAgentSession | undefined> {
+    const result = await db
+      .select()
+      .from(aiAgentSessions)
+      .where(eq(aiAgentSessions.id, id))
+      .limit(1);
+    return result[0];
+  }
+  
+  async getUserAiAgentSessions(userId: string, agentType?: string): Promise<AiAgentSession[]> {
+    const conditions = [eq(aiAgentSessions.userId, userId)];
+    if (agentType) {
+      conditions.push(eq(aiAgentSessions.agentType, agentType));
+    }
+    
+    return await db
+      .select()
+      .from(aiAgentSessions)
+      .where(and(...conditions))
+      .orderBy(desc(aiAgentSessions.updatedAt));
+  }
+  
+  async updateAiAgentSession(id: string, data: Partial<InsertAiAgentSession>): Promise<AiAgentSession> {
+    const result = await db
+      .update(aiAgentSessions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(aiAgentSessions.id, id))
+      .returning();
+    return result[0]!;
+  }
+  
+  async deleteAiAgentSession(id: string): Promise<void> {
+    await db.delete(aiAgentSessions).where(eq(aiAgentSessions.id, id));
+  }
+  
+  // Phase 5: Video Project operations
+  async createVideoProject(project: InsertVideoProject): Promise<VideoProject> {
+    const result = await db.insert(videoProjects).values(project).returning();
+    return result[0]!;
+  }
+  
+  async getVideoProject(id: string): Promise<VideoProject | undefined> {
+    const result = await db
+      .select()
+      .from(videoProjects)
+      .where(eq(videoProjects.id, id))
+      .limit(1);
+    return result[0];
+  }
+  
+  async getUserVideoProjects(userId: string): Promise<VideoProject[]> {
+    return await db
+      .select()
+      .from(videoProjects)
+      .where(eq(videoProjects.userId, userId))
+      .orderBy(desc(videoProjects.updatedAt));
+  }
+  
+  async updateVideoProject(id: string, data: Partial<InsertVideoProject>): Promise<VideoProject> {
+    const result = await db
+      .update(videoProjects)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(videoProjects.id, id))
+      .returning();
+    return result[0]!;
+  }
+  
+  async deleteVideoProject(id: string): Promise<void> {
+    await db.delete(videoProjects).where(eq(videoProjects.id, id));
   }
 }
 

@@ -11,8 +11,9 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Plus, Crown } from "lucide-react";
+import { Plus, Crown, Coins } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CommandBar } from "@/components/CommandBar";
 import { FloatingAICoach } from "@/components/FloatingAICoach";
 import { BottomNav } from "@/components/BottomNav";
@@ -47,6 +48,8 @@ import Billing from "@/pages/Billing";
 import SuccessStories from "@/pages/SuccessStories";
 import Analytics from "@/pages/Analytics";
 import Referrals from "@/pages/Referrals";
+import AiAgents from "@/pages/AiAgents";
+import VideoBuilder from "@/pages/VideoBuilder";
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false);
@@ -55,6 +58,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
     "--sidebar-width": "20rem",
     "--sidebar-width-icon": "4rem",
   };
+
+  // Fetch credits
+  const { data: creditInfo } = useQuery<{ credits: number }>({
+    queryKey: ['/api/ai-agents/credits'],
+    staleTime: 30000, // 30 seconds
+  });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -79,6 +88,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               <SmartSearch />
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/ai-agents">
+                <Button variant="ghost" size="default" className="gap-2" data-testid="button-credits">
+                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <span className="font-semibold">{creditInfo?.credits || 0}</span>
+                </Button>
+              </Link>
               <Link href="/pricing">
                 <Button variant="outline" size="default" data-testid="button-upgrade">
                   <Crown className="h-4 w-4 mr-2" />
@@ -191,6 +206,16 @@ function Router() {
           </Route>
           <Route path="/builders/chat">
             <AIChatBuilder />
+          </Route>
+          <Route path="/ai-agents">
+            <DashboardLayout>
+              <AiAgents />
+            </DashboardLayout>
+          </Route>
+          <Route path="/video-builder">
+            <DashboardLayout>
+              <VideoBuilder />
+            </DashboardLayout>
           </Route>
           <Route path="/community">
             <DashboardLayout>

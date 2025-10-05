@@ -1,4 +1,4 @@
-import { Home, Lightbulb, FileText, Rocket, BarChart3, MessageCircle, Palette, Users, Settings, LogOut } from "lucide-react";
+import { Home, Plus, FileText, BarChart3, MessageCircle, Palette, Users, Settings, LogOut, Sparkles, Video } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,33 +23,41 @@ const mainItems = [
     icon: Home,
   },
   {
-    title: "Create Product",
-    url: "/builders/idea-finder",
-    icon: Lightbulb,
+    title: "Create",
+    url: "/create",
+    icon: Plus,
   },
   {
-    title: "Content Studio",
-    url: "/builders/content",
+    title: "My Products",
+    url: "/products",
     icon: FileText,
   },
   {
-    title: "Launch & Sales",
-    url: "/builders/funnel",
-    icon: Rocket,
-  },
-  {
-    title: "Performance",
+    title: "Analytics",
     url: "/analytics",
     icon: BarChart3,
   },
 ];
 
-const toolsItems = [
+const aiToolsItems = [
+  {
+    title: "AI Agents",
+    url: "/ai-agents",
+    icon: Sparkles,
+  },
+  {
+    title: "Video Builder",
+    url: "/video-builder",
+    icon: Video,
+  },
   {
     title: "AI Coach",
     url: "/ai-coach",
     icon: MessageCircle,
   },
+];
+
+const moreItems = [
   {
     title: "Brand Kit",
     url: "/brand-kit",
@@ -116,11 +124,36 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
-            Tools & Settings
+            AI Tools
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {toolsItems.map((item) => (
+              {aiToolsItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={location === item.url}>
+                    <Link 
+                      href={item.url}
+                      data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
+            More
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {moreItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location === item.url}>
                     <Link 

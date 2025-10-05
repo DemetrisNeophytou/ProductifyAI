@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { seedPhase5Features } from "./seed-phase5";
 
 const app = express();
 app.use(express.json({ limit: '2mb' })); // Prevents "Method is not a valid HTTP token" error
@@ -37,6 +38,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize Phase 5 features
+  await seedPhase5Features();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
