@@ -171,7 +171,7 @@ The project architecture emphasizes modularity with clear separation between cli
 - **DOCX Generation**: docx.js
 - **Markdown Processing**: markdown-it
 - **ZIP Archiving**: jszip
-- **Image Assets**: Unsplash API
+- **Stock Photos**: Pexels API (primary), Pixabay API (fallback) - 100% free for commercial use, no attribution required
 
 ## Configuration Requirements
 
