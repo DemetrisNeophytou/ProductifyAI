@@ -1,0 +1,58 @@
+Hey team 👋
+Please make sure the app includes all the integrations and legal-free resources we discussed.
+The goal is to make Productify AI fully self-contained, legally safe, and powerful for digital product creation.
+Here’s the complete list of what I want included:
+
+⸻
+
+📸 Media Sources (for photos & videos):
+	•	Integrate Pexels API as the main photo source → https://www.pexels.com/api
+(100% free for commercial use, no attribution required)
+	•	Add Pixabay API as fallback → https://pixabay.com/api/docs
+(also fully free and open-license)
+	•	Use both APIs for image search inside templates, eBooks, and design sections.
+
+⸻
+
+🔤 Fonts & Typography:
+	•	Integrate Google Fonts API → https://developers.google.com/fonts
+	•	Allow users to choose fonts dynamically from Google Fonts inside the Brand Kit.
+	•	All fonts must load dynamically and be applied globally across all templates, exports, and projects.
+
+⸻
+
+🎨 Icons & Graphics:
+	•	Use only open-source icon libraries such as Lucide Icons, Heroicons, or Phosphor Icons.
+	•	Replace any proprietary icon sets with these open-source alternatives.
+
+⸻
+
+🧩 Brand Kit Integration:
+	•	Implement a complete Brand Kit system so users can:
+	•	Upload their logo (PNG/SVG)
+	•	Choose primary/secondary colors
+	•	Select typography (from Google Fonts)
+	•	Save preset styles (buttons, backgrounds, layout colors)
+	•	All these should apply globally to all templates, exports, and projects.
+
+⸻
+
+📁 Export System:
+	•	Users must be able to export:
+	•	PDF (for eBooks)
+	•	PNG/JPG (for images or mockups)
+	•	HTML (for landing pages)
+	•	Exports should maintain all brand styles and layout integrity, and be responsive on both desktop and mobile.
+
+⸻
+
+⚙️ Legal & Licensing Requirements:
+	•	Only use APIs, fonts, and icons that are 100% free for commercial use and require no attribution.
+	•	No external or non-licensed assets should be used anywhere in the app.
+
+⸻
+
+Goal:
+The app should be fully ready for public beta after Phase 4 — with legal, open integrations and brand customization across all product types (ebooks, images, landing pages, etc.).
+
+Thank you! 🙌
