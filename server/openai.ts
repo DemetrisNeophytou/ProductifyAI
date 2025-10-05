@@ -955,10 +955,11 @@ export async function generateEbookImage(params: {
       quality: "standard",
     });
 
-    const imageUrl = response.data[0].url;
-    if (!imageUrl) {
+    if (!response.data || !response.data[0]?.url) {
       throw new Error("No image URL returned from DALL-E");
     }
+    
+    const imageUrl = response.data[0].url;
 
     console.log(`[OpenAI] Image generated successfully`);
     return imageUrl;
