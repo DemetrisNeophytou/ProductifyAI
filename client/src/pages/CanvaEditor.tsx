@@ -1048,6 +1048,9 @@ export default function CanvaEditor() {
 }
 
 function AISuggestionsTab({ projectId, selectedSection }: { projectId: string; selectedSection: Section | undefined }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const { data: suggestions, isLoading } = useQuery<Array<{ id: string; suggestion: string; type: string }>>({
     queryKey: ["/api/ai/suggestions", projectId, selectedSection?.id],
     enabled: !!projectId && !!selectedSection,
