@@ -97,7 +97,7 @@ router.post('/projects', async (req: AuthRequest, res: Response) => {
       prompt,
       clips: clips || [],
       captions: captions || [],
-      musicUrl: musicUrl || null,
+      music: musicUrl ? { url: musicUrl } : undefined,
       status: 'draft',
       duration: clips?.reduce((sum: number, clip: any) => sum + (clip.duration || 5), 0) || 0,
     });
