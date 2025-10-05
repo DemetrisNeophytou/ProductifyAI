@@ -116,7 +116,7 @@ export const projects = pgTable("projects", {
 export const sections = pgTable("sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 100 }), // text, image, list, quote, cta
+  type: varchar("type", { length: 100 }), // text, image, list, quote, cta, task, checkbox, exercise, lesson, objective, script, slide_prompt, hero, proof, benefits, offer, faq
   sectionId: varchar("section_id"), // Reference to outline section
   title: text("title").notNull(),
   content: jsonb("content").notNull(), // TipTap JSON content or markdown

@@ -948,11 +948,38 @@ export async function generateCompleteProduct(params: {
   requireApiKey();
 
   const productTypeInstructions: Record<string, string> = {
-    ebook: 'Create an ebook with 8-10 sections covering the topic comprehensively. Each section should provide valuable insights, actionable advice, and transformation.',
-    workbook: 'Create an interactive workbook with 8-10 sections that include exercises, worksheets, checklists, and reflection prompts. Make it actionable and hands-on.',
-    course: 'Create a comprehensive course outline with 10-12 lessons/modules. Each lesson should have clear learning objectives, content, and action steps.',
-    landing: 'Create a high-converting landing page structure with 8-10 sections: hero, problem, solution, benefits, features, testimonials, FAQ, CTA, etc.',
+    ebook: `Generate a complete ebook on the topic for the target audience in the specified tone. 
+Include title, introduction, 8–12 chapters, and summary. 
+Each chapter: headline, 300–400 words, 1 image prompt (<=30 words, no text).`,
+    
+    workbook: `Create a practical workbook for the topic designed for the target audience in the specified tone. 
+Structure it into 8–10 short sections. 
+Each section should include:
+- A short intro paragraph (100–150 words)
+- 3–5 actionable exercises or checklist items (use "task" or "checkbox" block types)
+- 1 reflective question
+- 1 image prompt (<=30 words)`,
+    
+    course: `Create a 6-module online course about the topic for the target audience. 
+Each module should include:
+- Module Title
+- Learning Objectives (3–5 bullet points)
+- Lesson Script (video script, 3–5 minutes, conversational tone)
+- Key Takeaways (bullets)
+- 1 Slide Prompt (describe visuals)`,
+    
+    landing: `Write a complete, high-converting landing page to sell the product. 
+Structure:
+1. Hero Section: headline, subheadline, CTA
+2. Proof Section: 3 testimonials or credibility elements
+3. Benefits Section: 3–5 bullet points
+4. Offer Stack: product description, pricing tiers
+5. CTA Section
+6. FAQ (3–4 questions/answers)
+Include 1 image prompt per section (<=30 words).`,
+    
     emails: 'Create an email sequence with exactly 5 emails designed to nurture, educate, and convert. Each email should have a clear purpose and compelling copy.',
+    
     social: 'Create a social media content pack with exactly 10 posts optimized for engagement. Include a mix of educational, inspirational, and promotional content.'
   };
 
