@@ -28,6 +28,18 @@ interface PexelsPhoto {
   height: number;
 }
 
+interface PixabayPhoto {
+  id: number;
+  largeImageURL: string;
+  webformatURL: string;
+  previewURL: string;
+  tags: string;
+  user: string;
+  pageURL: string;
+  imageWidth: number;
+  imageHeight: number;
+}
+
 interface AssetPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -46,6 +58,7 @@ export function AssetPicker({
   const [searchQuery, setSearchQuery] = useState("");
   const [photoQuery, setPhotoQuery] = useState("");
   const [photoSearchQuery, setPhotoSearchQuery] = useState("");
+  const [photoSource, setPhotoSource] = useState<"pexels" | "pixabay">("pexels");
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
   const { data: assets = [] } = useQuery<Asset[]>({
@@ -55,12 +68,24 @@ export function AssetPicker({
 
   const { data: pexelsResults, isLoading: isSearchingPexels } = useQuery({
     queryKey: ["/api/pexels/search", photoSearchQuery],
-    enabled: !!photoSearchQuery && open,
+    enabled: !!photoSearchQuery && photoSource === "pexels" && open,
     queryFn: async () => {
       const response = await fetch(
         `/api/pexels/search?query=${encodeURIComponent(photoSearchQuery)}&per_page=12`
       );
       if (!response.ok) throw new Error("Failed to search Pexels");
+      return response.json();
+    },
+  });
+
+  const { data: pixabayResults, isLoading: isSearchingPixabay } = useQuery({
+    queryKey: ["/api/pixabay/search", photoSearchQuery],
+    enabled: !!photoSearchQuery && photoSource === "pixabay" && open,
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/pixabay/search?query=${encodeURIComponent(photoSearchQuery)}&per_page=12`
+      );
+      if (!response.ok) throw new Error("Failed to search Pixabay");
       return response.json();
     },
   });
@@ -90,12 +115,23 @@ export function AssetPicker({
     onOpenChange(false);
   };
 
+  const handleSelectPixabayImage = (photo: PixabayPhoto) => {
+    onSelect({
+      url: photo.largeImageURL,
+      alt: photo.tags || `Photo by ${photo.user}`,
+      source: "pixabay",
+    });
+    onOpenChange(false);
+  };
+
   const handlePhotoSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (photoQuery.trim()) {
       setPhotoSearchQuery(photoQuery.trim());
     }
   };
+
+  const isSearchingPhotos = isSearchingPexels || isSearchingPixabay;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,30 +196,41 @@ export function AssetPicker({
           </TabsContent>
 
           <TabsContent value="stock" className="flex-1 flex flex-col overflow-hidden space-y-4 mt-4">
-            <form onSubmit={handlePhotoSearch} className="flex gap-2">
-              <Input
-                placeholder="Search for images (e.g., 'workspace', 'nature')"
-                value={photoQuery}
-                onChange={(e) => setPhotoQuery(e.target.value)}
-                data-testid="input-stock-search"
-              />
-              <Button type="submit" data-testid="button-search-stock">
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
+            <div className="flex gap-2">
+              <select
+                value={photoSource}
+                onChange={(e) => setPhotoSource(e.target.value as "pexels" | "pixabay")}
+                className="border rounded-md px-3 py-2 bg-background"
+                data-testid="select-photo-source-picker"
+              >
+                <option value="pexels">Pexels</option>
+                <option value="pixabay">Pixabay</option>
+              </select>
+              <form onSubmit={handlePhotoSearch} className="flex gap-2 flex-1">
+                <Input
+                  placeholder="Search for images (e.g., 'workspace', 'nature')"
+                  value={photoQuery}
+                  onChange={(e) => setPhotoQuery(e.target.value)}
+                  data-testid="input-stock-search"
+                />
+                <Button type="submit" data-testid="button-search-stock">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
 
             <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
               ✓ 100% free for commercial use • No attribution required • CC0 License
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {isSearchingPexels && (
+              {isSearchingPhotos && (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Searching Pexels...
+                  Searching {photoSource === "pexels" ? "Pexels" : "Pixabay"}...
                 </div>
               )}
 
-              {pexelsResults && pexelsResults.photos && (
+              {photoSource === "pexels" && pexelsResults && pexelsResults.photos && (
                 <div className="grid grid-cols-3 gap-3">
                   {pexelsResults.photos.map((photo: PexelsPhoto) => (
                     <button
@@ -207,6 +254,30 @@ export function AssetPicker({
                 </div>
               )}
 
+              {photoSource === "pixabay" && pixabayResults && pixabayResults.hits && (
+                <div className="grid grid-cols-3 gap-3">
+                  {pixabayResults.hits.map((photo: PixabayPhoto) => (
+                    <button
+                      key={photo.id}
+                      onClick={() => handleSelectPixabayImage(photo)}
+                      className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
+                      data-testid={`button-select-pixabay-${photo.id}`}
+                    >
+                      <img
+                        src={photo.webformatURL}
+                        alt={photo.tags || "Stock photo"}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <p className="text-xs text-white truncate">
+                          by {photo.user}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {pexelsResults && pexelsResults.photos?.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <ImageIcon className="h-12 w-12 mb-2" />
@@ -214,10 +285,17 @@ export function AssetPicker({
                 </div>
               )}
 
-              {!photoSearchQuery && !isSearchingPexels && (
+              {pixabayResults && pixabayResults.hits?.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <ImageIcon className="h-12 w-12 mb-2" />
-                  <p className="text-sm">Search for high-quality free stock photos</p>
+                  <p className="text-sm">No images found. Try a different search.</p>
+                </div>
+              )}
+
+              {!photoSearchQuery && !isSearchingPhotos && (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <ImageIcon className="h-12 w-12 mb-2" />
+                  <p className="text-sm">Search for high-quality free stock photos from {photoSource === "pexels" ? "Pexels" : "Pixabay"}</p>
                 </div>
               )}
             </div>
