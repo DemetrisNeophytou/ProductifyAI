@@ -40,7 +40,14 @@ export function AIImageModal({ open, onOpenChange, projectId, pageId, blockId, o
         size,
         styleHint: styleHint === "none" ? undefined : styleHint,
       });
-      return await response.json();
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to generate image");
+      }
+      
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
