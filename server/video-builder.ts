@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { storage } from './storage';
+import { videoRenderQueue } from './video-render-queue';
 
 interface AuthRequest extends Request {
   user?: {
@@ -215,18 +216,13 @@ router.post('/projects/:id/render', async (req: AuthRequest, res: Response) => {
       metadata: { projectId: id, title: project.title }
     });
 
-    // TODO: In a real implementation, this would trigger actual video rendering
-    // For MVP, we'll simulate it by marking as completed after a delay
-    setTimeout(async () => {
-      await storage.updateVideoProject(id, {
-        status: 'completed',
-        outputUrl: `https://example.com/videos/${id}.mp4`, // Placeholder
-      });
-    }, 3000);
+    // Add to rendering queue (async, non-blocking)
+    videoRenderQueue.addJob(id, userId);
 
     res.json({ 
       ...updatedProject, 
-      message: 'Video rendering started. This may take a few minutes.' 
+      message: 'Video rendering started. This may take a few minutes.',
+      queuePosition: videoRenderQueue.getQueueLength()
     });
   } catch (error: any) {
     console.error('[Video Builder] Render error:', error);
