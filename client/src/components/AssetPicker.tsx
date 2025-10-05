@@ -124,7 +124,14 @@ export function AssetPicker({
         filename: imageName || "Uploaded image",
         metadata: { source: "url_upload" },
       });
-      return await response.json();
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add image");
+      }
+      
+      return data;
     },
     onSuccess: (asset) => {
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
