@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Image as ImageIcon, Check } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, Image as ImageIcon, Check, Link as LinkIcon, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Asset } from "@shared/schema";
 
 interface PexelsPhoto {
@@ -55,11 +58,14 @@ export function AssetPicker({
   title = "Select Image",
   description = "Choose an image from your library or search free stock photos",
 }: AssetPickerProps) {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [photoQuery, setPhotoQuery] = useState("");
   const [photoSearchQuery, setPhotoSearchQuery] = useState("");
   const [photoSource, setPhotoSource] = useState<"pexels" | "pixabay">("pexels");
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageName, setImageName] = useState("");
 
   const { data: assets = [] } = useQuery<Asset[]>({
     queryKey: ["/api/assets"],
@@ -131,6 +137,53 @@ export function AssetPicker({
     }
   };
 
+  const uploadUrlMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/assets", {
+        type: "image",
+        url: imageUrl,
+        filename: imageName || "Uploaded image",
+        metadata: { source: "url_upload" },
+      });
+      return await response.json();
+    },
+    onSuccess: (asset) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      toast({
+        title: "Image added",
+        description: "Your image has been added to the library",
+      });
+      onSelect({
+        url: asset.url,
+        alt: asset.filename,
+        source: "library",
+      });
+      setImageUrl("");
+      setImageName("");
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add image",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUrlUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!imageUrl.trim()) {
+      toast({
+        title: "URL required",
+        description: "Please enter an image URL",
+        variant: "destructive",
+      });
+      return;
+    }
+    uploadUrlMutation.mutate();
+  };
+
   const isSearchingPhotos = isSearchingPexels || isSearchingPixabay;
 
   return (
@@ -142,9 +195,13 @@ export function AssetPicker({
         </DialogHeader>
 
         <Tabs defaultValue="library" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="library" data-testid="tab-library">
               My Library ({assets.filter(a => a.type === "image").length})
+            </TabsTrigger>
+            <TabsTrigger value="url" data-testid="tab-url-upload">
+              <Upload className="h-3 w-3 mr-1" />
+              Add by URL
             </TabsTrigger>
             <TabsTrigger value="stock" data-testid="tab-stock-photos">
               Free Stock Photos
@@ -193,6 +250,79 @@ export function AssetPicker({
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="url" className="flex-1 flex flex-col overflow-hidden space-y-4 mt-4">
+            <form onSubmit={handleUrlUpload} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="image-url">Image URL *</Label>
+                <Input
+                  id="image-url"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  data-testid="input-image-url"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Paste a direct link to an image (JPG, PNG, GIF, WebP)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image-name">Image Name (Optional)</Label>
+                <Input
+                  id="image-name"
+                  type="text"
+                  placeholder="e.g., Product photo, Hero banner"
+                  value={imageName}
+                  onChange={(e) => setImageName(e.target.value)}
+                  data-testid="input-image-name"
+                />
+              </div>
+
+              {imageUrl && (
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <p className="text-sm font-medium mb-2">Preview:</p>
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={imageUrl}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={uploadUrlMutation.isPending || !imageUrl}
+                data-testid="button-add-by-url"
+              >
+                {uploadUrlMutation.isPending ? (
+                  <>Adding to library...</>
+                ) : (
+                  <>
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    Add to Library
+                  </>
+                )}
+              </Button>
+
+              <div className="text-xs text-muted-foreground bg-blue-500/10 border border-blue-500/20 p-3 rounded">
+                <p className="font-medium mb-1">💡 Tip: Where to find image URLs</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Right-click any web image → "Copy image address"</li>
+                  <li>Use free stock sites like Unsplash, Pexels, or Pixabay</li>
+                  <li>Upload to Imgur or similar hosting services</li>
+                </ul>
+              </div>
+            </form>
           </TabsContent>
 
           <TabsContent value="stock" className="flex-1 flex flex-col overflow-hidden space-y-4 mt-4">
