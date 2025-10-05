@@ -218,6 +218,28 @@ export const communityPostLikes = pgTable("community_post_likes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Template Favorites - Track user's starred templates
+export const templateFavorites = pgTable("template_favorites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  templateId: varchar("template_id").notNull(), // Reference to template in shared/templates.ts
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_template_favorites_user").on(table.userId),
+]);
+
+// Template Usage - Track when users use templates
+export const templateUsage = pgTable("template_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  templateId: varchar("template_id").notNull(), // Reference to template in shared/templates.ts
+  projectId: varchar("project_id").references(() => projects.id, { onDelete: "set null" }), // Project created from template
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_template_usage_user").on(table.userId),
+  index("idx_template_usage_created_at").on(table.createdAt),
+]);
+
 export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({
   id: true,
   likesCount: true,
@@ -230,6 +252,16 @@ export const insertCommunityCommentSchema = createInsertSchema(communityComments
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertTemplateFavoriteSchema = createInsertSchema(templateFavorites).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTemplateUsageSchema = createInsertSchema(templateUsage).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Types
@@ -255,6 +287,12 @@ export type CommunityComment = typeof communityComments.$inferSelect;
 export type InsertCommunityComment = z.infer<typeof insertCommunityCommentSchema>;
 
 export type CommunityPostLike = typeof communityPostLikes.$inferSelect;
+
+export type TemplateFavorite = typeof templateFavorites.$inferSelect;
+export type InsertTemplateFavorite = z.infer<typeof insertTemplateFavoriteSchema>;
+
+export type TemplateUsage = typeof templateUsage.$inferSelect;
+export type InsertTemplateUsage = z.infer<typeof insertTemplateUsageSchema>;
 
 // Artifacts - AI Builder outputs (outlines, content, funnels, etc.)
 export const artifacts = pgTable("artifacts", {
