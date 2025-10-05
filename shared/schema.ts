@@ -82,7 +82,7 @@ export const brandKits = pgTable("brand_kits", {
 export const projects = pgTable("projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 50 }).notNull(), // ebook, course, checklist, template, leadmagnet, workbook
+  type: varchar("type", { length: 50 }).notNull(), // ebook, workbook, course, landing, emails, social
   title: text("title").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, final
   templateId: varchar("template_id"), // ID of template used to create this project
@@ -91,7 +91,21 @@ export const projects = pgTable("projects", {
     goal?: string;
     audience?: string;
     tone?: string;
+    wordCount?: number;
+    imageCount?: number;
+    version?: number;
   }>(),
+  brand: jsonb("brand").$type<{
+    primary?: string;
+    secondary?: string;
+    font?: string;
+    logoUrl?: string | null;
+  }>(),
+  outline: jsonb("outline").$type<Array<{
+    id: string;
+    title: string;
+    level: number;
+  }>>(),
   coverImageUrl: text("cover_image_url"),
   backgroundColor: text("background_color"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -102,9 +116,17 @@ export const projects = pgTable("projects", {
 export const sections = pgTable("sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-  type: varchar("type", { length: 100 }), // framework type: intro, problem, solution, offer, etc
+  type: varchar("type", { length: 100 }), // text, image, list, quote, cta
+  sectionId: varchar("section_id"), // Reference to outline section
   title: text("title").notNull(),
-  content: jsonb("content").notNull(), // TipTap JSON content
+  content: jsonb("content").notNull(), // TipTap JSON content or markdown
+  imagePrompt: text("image_prompt"), // AI prompt for image generation (<= 30 words)
+  imageUrl: text("image_url"), // Generated image URL
+  imageMetadata: jsonb("image_metadata").$type<{
+    width?: number;
+    height?: number;
+    mimeType?: string;
+  }>(),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
