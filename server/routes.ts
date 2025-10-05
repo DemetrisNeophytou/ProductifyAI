@@ -114,11 +114,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = await storage.searchProjects({
         userId,
         query: query as string | undefined,
-        type: type as string | undefined,
+        type: type && type !== 'all' ? type as string : undefined,
         tag: tag as string | undefined,
         from: from as string | undefined,
         to: to as string | undefined,
-        status: status as string | undefined,
+        status: status && status !== 'all' ? status as string : undefined,
         starred: starred === 'true' ? true : starred === 'false' ? false : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         offset: offset ? parseInt(offset as string) : undefined,
