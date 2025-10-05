@@ -13,12 +13,12 @@ interface AuthRequest extends Request {
   };
 }
 
-// Stripe Price IDs
+// Stripe Price IDs - Updated with production Price IDs
 const PRICE_IDS = {
-  plus_monthly: 'price_1SEEtkAggnQzW8UqG-tur2sN4',
-  plus_quarterly: 'price_1SEEyOAggnQzW8UqaCk-Qj1Ci',
-  pro_monthly: 'price_1SEF9RAggnQzW8Uqw-U63D90S',
-  pro_quarterly: 'price_1SEF9zAggnQzW8Uq7lcO-JB8Q',
+  plus_monthly: 'price_1SEEtkAggnQzW8UqGtur2sN4',
+  plus_quarterly: 'price_1SEEyOAggnQzW8UqaCkQj1Ci',
+  pro_monthly: 'price_1SEF9RAggnQzW8UqwU63D90S',
+  pro_quarterly: 'price_1SEF9zAggnQzW8Uq7lcOJB8Q',
 };
 
 export function registerStripeRoutes(app: Express) {
