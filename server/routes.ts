@@ -22,6 +22,8 @@ import {
   insertBrandKitSchema,
   insertProjectSchema,
   insertSectionSchema,
+  insertPageSchema,
+  insertBlockSchema,
   insertAssetSchema,
   insertCommunityPostSchema,
   insertCommunityCommentSchema,
@@ -1917,6 +1919,246 @@ Be systematic, growth-focused, and results-oriented.`
     } catch (error) {
       console.error("Error reordering sections:", error);
       res.status(500).json({ message: "Failed to reorder sections" });
+    }
+  });
+
+  // Page routes
+  app.get("/api/projects/:projectId/pages", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const project = await storage.getProject(req.params.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const pages = await storage.getProjectPages(req.params.projectId);
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching pages:", error);
+      res.status(500).json({ message: "Failed to fetch pages" });
+    }
+  });
+
+  app.post("/api/projects/:projectId/pages", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const project = await storage.getProject(req.params.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const pageData = insertPageSchema.parse({ ...req.body, projectId: req.params.projectId });
+      const page = await storage.createPage(pageData);
+      res.json(page);
+    } catch (error) {
+      console.error("Error creating page:", error);
+      res.status(500).json({ message: "Failed to create page" });
+    }
+  });
+
+  app.patch("/api/pages/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const page = await storage.getPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const updated = await storage.updatePage(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating page:", error);
+      res.status(500).json({ message: "Failed to update page" });
+    }
+  });
+
+  app.delete("/api/pages/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const page = await storage.getPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      await storage.deletePage(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting page:", error);
+      res.status(500).json({ message: "Failed to delete page" });
+    }
+  });
+
+  app.post("/api/pages/:id/duplicate", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const page = await storage.getPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const duplicated = await storage.duplicatePage(req.params.id);
+      res.json(duplicated);
+    } catch (error) {
+      console.error("Error duplicating page:", error);
+      res.status(500).json({ message: "Failed to duplicate page" });
+    }
+  });
+
+  app.post("/api/pages/reorder", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { projectId, pageIds } = req.body;
+      const project = await storage.getProject(projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      await storage.reorderPages(projectId, pageIds);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering pages:", error);
+      res.status(500).json({ message: "Failed to reorder pages" });
+    }
+  });
+
+  // Block routes
+  app.get("/api/pages/:pageId/blocks", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const page = await storage.getPage(req.params.pageId);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const blocks = await storage.getPageBlocks(req.params.pageId);
+      res.json(blocks);
+    } catch (error) {
+      console.error("Error fetching blocks:", error);
+      res.status(500).json({ message: "Failed to fetch blocks" });
+    }
+  });
+
+  app.post("/api/pages/:pageId/blocks", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const page = await storage.getPage(req.params.pageId);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const blockData = insertBlockSchema.parse({ 
+        ...req.body, 
+        pageId: req.params.pageId, 
+        projectId: page.projectId 
+      });
+      const block = await storage.createBlock(blockData);
+      res.json(block);
+    } catch (error) {
+      console.error("Error creating block:", error);
+      res.status(500).json({ message: "Failed to create block" });
+    }
+  });
+
+  app.patch("/api/blocks/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const block = await storage.getBlock(req.params.id);
+      if (!block) {
+        return res.status(404).json({ message: "Block not found" });
+      }
+      const project = await storage.getProject(block.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      const updated = await storage.updateBlock(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating block:", error);
+      res.status(500).json({ message: "Failed to update block" });
+    }
+  });
+
+  app.delete("/api/blocks/:id", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const block = await storage.getBlock(req.params.id);
+      if (!block) {
+        return res.status(404).json({ message: "Block not found" });
+      }
+      const project = await storage.getProject(block.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      await storage.deleteBlock(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting block:", error);
+      res.status(500).json({ message: "Failed to delete block" });
+    }
+  });
+
+  app.post("/api/blocks/reorder", isAuthenticated, async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      const { pageId, blockIds } = req.body;
+      const page = await storage.getPage(pageId);
+      if (!page) {
+        return res.status(404).json({ message: "Page not found" });
+      }
+      const project = await storage.getProject(page.projectId);
+      if (!project || project.userId !== userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      await storage.reorderBlocks(pageId, blockIds);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering blocks:", error);
+      res.status(500).json({ message: "Failed to reorder blocks" });
     }
   });
 

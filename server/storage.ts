@@ -4,6 +4,8 @@ import {
   brandKits,
   projects,
   sections,
+  pages,
+  blocks,
   assets,
   projectVersions,
   communityPosts,
@@ -26,6 +28,10 @@ import {
   type InsertProject,
   type Section,
   type InsertSection,
+  type Page,
+  type InsertPage,
+  type Block,
+  type InsertBlock,
   type Asset,
   type InsertAsset,
   type ProjectVersion,
@@ -75,13 +81,30 @@ export interface IStorage {
   deleteProject(id: string): Promise<void>;
   duplicateProject(id: string, userId: string): Promise<Project>;
   
-  // Section operations
+  // Section operations (DEPRECATED - use pages/blocks instead)
   createSection(section: InsertSection): Promise<Section>;
   getSection(id: string): Promise<Section | undefined>;
   getProjectSections(projectId: string): Promise<Section[]>;
   updateSection(id: string, data: Partial<InsertSection>): Promise<Section>;
   deleteSection(id: string): Promise<void>;
   reorderSections(projectId: string, sectionIds: string[]): Promise<void>;
+  
+  // Page operations (NEW)
+  createPage(page: InsertPage): Promise<Page>;
+  getPage(id: string): Promise<Page | undefined>;
+  getProjectPages(projectId: string): Promise<Page[]>;
+  updatePage(id: string, data: Partial<InsertPage>): Promise<Page>;
+  deletePage(id: string): Promise<void>;
+  reorderPages(projectId: string, pageIds: string[]): Promise<void>;
+  duplicatePage(id: string): Promise<Page>;
+  
+  // Block operations (NEW)
+  createBlock(block: InsertBlock): Promise<Block>;
+  getBlock(id: string): Promise<Block | undefined>;
+  getPageBlocks(pageId: string): Promise<Block[]>;
+  updateBlock(id: string, data: Partial<InsertBlock>): Promise<Block>;
+  deleteBlock(id: string): Promise<void>;
+  reorderBlocks(pageId: string, blockIds: string[]): Promise<void>;
   
   // Asset operations
   createAsset(asset: InsertAsset): Promise<Asset>;
@@ -338,6 +361,124 @@ export class DatabaseStorage implements IStorage {
           .update(sections)
           .set({ order: i })
           .where(eq(sections.id, sectionIds[i]));
+      }
+    });
+  }
+
+  // Page operations
+  async createPage(page: InsertPage): Promise<Page> {
+    const [newPage] = await db.insert(pages).values(page).returning();
+    return newPage;
+  }
+
+  async getPage(id: string): Promise<Page | undefined> {
+    const [page] = await db.select().from(pages).where(eq(pages.id, id));
+    return page;
+  }
+
+  async getProjectPages(projectId: string): Promise<Page[]> {
+    return await db
+      .select()
+      .from(pages)
+      .where(eq(pages.projectId, projectId))
+      .orderBy(pages.order);
+  }
+
+  async updatePage(id: string, data: Partial<InsertPage>): Promise<Page> {
+    const [updated] = await db
+      .update(pages)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(pages.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePage(id: string): Promise<void> {
+    await db.delete(pages).where(eq(pages.id, id));
+  }
+
+  async reorderPages(projectId: string, pageIds: string[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < pageIds.length; i++) {
+        await tx
+          .update(pages)
+          .set({ order: i })
+          .where(eq(pages.id, pageIds[i]));
+      }
+    });
+  }
+
+  async duplicatePage(id: string): Promise<Page> {
+    const original = await this.getPage(id);
+    if (!original) throw new Error("Page not found");
+
+    const pageBlocks = await this.getPageBlocks(id);
+
+    return await db.transaction(async (tx) => {
+      const [newPage] = await tx
+        .insert(pages)
+        .values({
+          projectId: original.projectId,
+          title: `${original.title} (Copy)`,
+          order: original.order + 1,
+          settings: original.settings,
+        })
+        .returning();
+
+      for (const block of pageBlocks) {
+        await tx.insert(blocks).values({
+          pageId: newPage.id,
+          projectId: original.projectId,
+          type: block.type,
+          content: block.content,
+          order: block.order,
+          settings: block.settings,
+        });
+      }
+
+      return newPage;
+    });
+  }
+
+  // Block operations
+  async createBlock(block: InsertBlock): Promise<Block> {
+    const [newBlock] = await db.insert(blocks).values(block).returning();
+    return newBlock;
+  }
+
+  async getBlock(id: string): Promise<Block | undefined> {
+    const [block] = await db.select().from(blocks).where(eq(blocks.id, id));
+    return block;
+  }
+
+  async getPageBlocks(pageId: string): Promise<Block[]> {
+    return await db
+      .select()
+      .from(blocks)
+      .where(eq(blocks.pageId, pageId))
+      .orderBy(blocks.order);
+  }
+
+  async updateBlock(id: string, data: Partial<InsertBlock>): Promise<Block> {
+    const [updated] = await db
+      .update(blocks)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(blocks.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteBlock(id: string): Promise<void> {
+    await db.delete(blocks).where(eq(blocks.id, id));
+  }
+
+  async reorderBlocks(pageId: string, blockIds: string[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < blockIds.length; i++) {
+        await tx
+          .update(blocks)
+          .set({ order: i })
+          .where(eq(blocks.id, blockIds[i]));
       }
     });
   }
