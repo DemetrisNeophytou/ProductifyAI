@@ -28,7 +28,7 @@ export function AIImageModal({ open, onOpenChange, projectId, pageId, blockId, o
   const { toast } = useToast();
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState("1024x1024");
-  const [styleHint, setStyleHint] = useState("");
+  const [styleHint, setStyleHint] = useState("none");
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -38,7 +38,7 @@ export function AIImageModal({ open, onOpenChange, projectId, pageId, blockId, o
         blockId,
         prompt,
         size,
-        styleHint: styleHint || undefined,
+        styleHint: styleHint === "none" ? undefined : styleHint,
       });
       return await response.json();
     },
@@ -51,7 +51,7 @@ export function AIImageModal({ open, onOpenChange, projectId, pageId, blockId, o
       onOpenChange(false);
       onSuccess?.(data.url, data.assetId);
       setPrompt("");
-      setStyleHint("");
+      setStyleHint("none");
     },
     onError: (error: any) => {
       const message = error.message || "Failed to generate image. Please try again.";
@@ -129,7 +129,7 @@ export function AIImageModal({ open, onOpenChange, projectId, pageId, blockId, o
                   <SelectValue placeholder="Select style..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   <SelectItem value="photographic">Photographic</SelectItem>
                   <SelectItem value="illustration">Illustration</SelectItem>
                   <SelectItem value="minimal">Minimal</SelectItem>

@@ -14,9 +14,9 @@ export function SmartSearch() {
   const [, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
-  const [starred, setStarred] = useState<string>("");
+  const [type, setType] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
+  const [starred, setStarred] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: results = [], isLoading } = useQuery<Project[]>({
@@ -53,12 +53,12 @@ export function SmartSearch() {
   };
 
   const clearFilters = () => {
-    setType("");
-    setStatus("");
-    setStarred("");
+    setType("all");
+    setStatus("all");
+    setStarred("all");
   };
 
-  const hasFilters = type || status || starred;
+  const hasFilters = type !== "all" || status !== "all" || starred !== "all";
 
   if (!isOpen) {
     return (
@@ -145,7 +145,7 @@ export function SmartSearch() {
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="ebook">eBook</SelectItem>
                   <SelectItem value="course">Online Course</SelectItem>
                   <SelectItem value="checklist">Checklist</SelectItem>
@@ -162,7 +162,7 @@ export function SmartSearch() {
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="archived">Archived</SelectItem>
@@ -176,7 +176,7 @@ export function SmartSearch() {
                   <SelectValue placeholder="All projects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All projects</SelectItem>
+                  <SelectItem value="all">All projects</SelectItem>
                   <SelectItem value="true">Starred only</SelectItem>
                   <SelectItem value="false">Not starred</SelectItem>
                 </SelectContent>
