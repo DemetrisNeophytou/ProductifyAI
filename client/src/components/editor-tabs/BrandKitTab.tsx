@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Save, Palette, Loader2, Image as ImageIcon } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface GoogleFont {
   family: string;
@@ -32,6 +34,7 @@ interface BrandKitTabProps {
 }
 
 export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTabProps) {
+  const { toast } = useToast();
   const [headingFont, setHeadingFont] = useState(currentBrandKit?.fonts.heading || "Inter");
   const [bodyFont, setBodyFont] = useState(currentBrandKit?.fonts.body || "Open Sans");
   const [colors, setColors] = useState<string[]>(currentBrandKit?.colors || defaultColors);
@@ -61,18 +64,55 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
     setColors(newColors);
   };
 
+  const applyBrandKitMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/brand/apply", {
+        projectId,
+        colors,
+        fonts: {
+          heading: headingFont,
+          body: bodyFont,
+        },
+        logoUrl: logoUrl || undefined,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to apply brand kit");
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Brand kit applied!",
+        description: `Updated ${data.sectionsUpdated} sections with your brand styling.`,
+      });
+
+      // Call onChange callback if provided
+      if (onChange) {
+        onChange({
+          logoUrl: logoUrl || undefined,
+          fonts: { heading: headingFont, body: bodyFont },
+          colors,
+        });
+      }
+
+      // Invalidate project sections to refresh UI
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "sections"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to apply brand kit",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
-    const brandKit: BrandKit = {
-      logoUrl: logoUrl || undefined,
-      fonts: {
-        heading: headingFont,
-        body: bodyFont,
-      },
-      colors,
-    };
-    if (onChange) {
-      onChange(brandKit);
-    }
+    applyBrandKitMutation.mutate();
   };
 
   const loadGoogleFont = (fontName: string) => {
@@ -220,9 +260,23 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
         </Card>
       </div>
 
-      <Button onClick={handleSave} className="w-full gap-2" data-testid="button-save-brand-kit">
-        <Save className="h-4 w-4" />
-        Apply Brand Kit
+      <Button 
+        onClick={handleSave} 
+        className="w-full gap-2" 
+        disabled={applyBrandKitMutation.isPending}
+        data-testid="button-save-brand-kit"
+      >
+        {applyBrandKitMutation.isPending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Applying...
+          </>
+        ) : (
+          <>
+            <Save className="h-4 w-4" />
+            Apply Brand Kit
+          </>
+        )}
       </Button>
 
       <div className="text-xs text-muted-foreground border-t pt-3">
