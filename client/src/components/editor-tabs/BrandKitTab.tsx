@@ -17,6 +17,7 @@ interface GoogleFont {
 const defaultColors = ["#8B5CF6", "#EC4899", "#F59E0B"];
 
 interface BrandKit {
+  logoUrl?: string;
   fonts: {
     heading: string;
     body: string;
@@ -50,6 +51,7 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
       setHeadingFont(currentBrandKit.fonts.heading);
       setBodyFont(currentBrandKit.fonts.body);
       setColors(currentBrandKit.colors);
+      setLogoUrl(currentBrandKit.logoUrl || "");
     }
   }, [currentBrandKit]);
 
@@ -61,6 +63,7 @@ export function BrandKitTab({ projectId, currentBrandKit, onChange }: BrandKitTa
 
   const handleSave = () => {
     const brandKit: BrandKit = {
+      logoUrl: logoUrl || undefined,
       fonts: {
         heading: headingFont,
         body: bodyFont,
