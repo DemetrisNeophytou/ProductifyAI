@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExportDialog } from "@/components/ExportDialog";
 import { AIRestyleModal } from "@/components/AIRestyleModal";
 import { AIImageModal } from "@/components/AIImageModal";
+import { EditorSidePanel } from "@/components/EditorSidePanel";
 import RichTextEditor from "@/components/RichTextEditor";
 import {
   GripVertical,
@@ -95,6 +96,30 @@ export default function CanvaEditor() {
     queryKey: ["/api/projects", id, "sections"],
     enabled: !!id,
   });
+
+  const { data: brandKit } = useQuery<{
+    fonts: { heading: string; body: string };
+    colors: string[];
+  }>({
+    queryKey: ["/api/brand-kit"],
+  });
+
+  useEffect(() => {
+    if (brandKit) {
+      if (brandKit.colors && brandKit.colors.length >= 2) {
+        setBrandColors({
+          primary: brandKit.colors[0],
+          secondary: brandKit.colors[1],
+        });
+      }
+      if (brandKit.fonts) {
+        setBrandFonts({
+          heading: brandKit.fonts.heading || "Inter",
+          body: brandKit.fonts.body || "Georgia",
+        });
+      }
+    }
+  }, [brandKit]);
 
   const [localSections, setLocalSections] = useState<Section[]>([]);
   const [dirtyFlags, setDirtyFlags] = useState<Record<string, boolean>>({});
@@ -769,6 +794,72 @@ export default function CanvaEditor() {
         projectId={id!}
         onSuccess={(imageUrl, assetId) => {
           queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+        }}
+      />
+
+      <EditorSidePanel
+        projectId={id!}
+        currentBrandKit={brandKit}
+        onInsertPhoto={async (url, source) => {
+          try {
+            await apiRequest("POST", `/api/photos/insert`, {
+              projectId: id,
+              src: url,
+              source,
+            });
+            
+            await apiRequest("POST", `/api/projects/${id}/sections`, {
+              projectId: id,
+              title: "Image",
+              type: "image",
+              content: { html: `<img src="${url}" alt="Inserted photo" style="max-width: 100%;" />` },
+              order: localSections.length,
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+            toast({ title: "Photo added", description: "Photo has been inserted into your document" });
+          } catch (error) {
+            toast({ 
+              title: "Error", 
+              description: "Failed to insert photo",
+              variant: "destructive" 
+            });
+          }
+        }}
+        onInsertGraphic={(svgMarkup, color) => {
+          apiRequest("POST", `/api/projects/${id}/sections`, {
+            projectId: id,
+            title: "Icon",
+            type: "text",
+            content: { 
+              html: `<div style="display: inline-flex; align-items: center; justify-content: center;">${svgMarkup}</div>` 
+            },
+            order: localSections.length,
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/projects", id, "sections"] });
+            toast({ title: "Icon added", description: "Icon has been inserted" });
+          }).catch(() => {
+            toast({ 
+              title: "Error", 
+              description: "Failed to insert icon",
+              variant: "destructive" 
+            });
+          });
+        }}
+        onBrandKitChange={async (newBrandKit) => {
+          try {
+            await apiRequest("PUT", `/api/brand-kit`, newBrandKit);
+            setBrandColors({ primary: newBrandKit.colors[0], secondary: newBrandKit.colors[1] });
+            setBrandFonts({ heading: newBrandKit.fonts.heading, body: newBrandKit.fonts.body });
+            queryClient.invalidateQueries({ queryKey: ["/api/brand-kit"] });
+            toast({ title: "Brand kit updated", description: "Your brand kit has been applied to the editor" });
+          } catch (error) {
+            toast({ 
+              title: "Error", 
+              description: "Failed to update brand kit",
+              variant: "destructive" 
+            });
+          }
         }}
       />
     </div>

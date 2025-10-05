@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,9 +78,18 @@ export function GraphicsTab({ onInsert }: GraphicsTabProps) {
       )
     : allIcons;
 
-  const handleInsertIcon = (iconName: string) => {
+  const handleInsertIcon = (icon: typeof allIcons[0]) => {
     if (onInsert) {
-      onInsert(iconName, selectedColor);
+      const Icon = icon.Icon;
+      const svgMarkup = renderToStaticMarkup(
+        <Icon 
+          size={32}
+          color={selectedColor}
+          strokeWidth={2}
+        />
+      );
+      
+      onInsert(svgMarkup, selectedColor);
     }
   };
 
@@ -138,7 +148,7 @@ export function GraphicsTab({ onInsert }: GraphicsTabProps) {
           {filteredIcons.map((icon) => (
             <button
               key={icon.name}
-              onClick={() => handleInsertIcon(icon.name)}
+              onClick={() => handleInsertIcon(icon)}
               className="aspect-square rounded-lg border bg-card hover-elevate active-elevate-2 flex items-center justify-center group"
               title={icon.name}
               data-testid={`icon-${icon.name}`}

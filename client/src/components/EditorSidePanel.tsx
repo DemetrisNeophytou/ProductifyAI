@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,17 @@ export function EditorSidePanel({
 }: EditorSidePanelProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("photos");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -32,13 +43,19 @@ export function EditorSidePanel({
         <Button
           variant="outline"
           size="default"
-          className="fixed right-0 top-1/2 -translate-y-1/2 rounded-l-lg rounded-r-none z-40"
+          className={isMobile 
+            ? "fixed bottom-4 right-4 rounded-full z-40 h-14 w-14" 
+            : "fixed right-0 top-1/2 -translate-y-1/2 rounded-l-lg rounded-r-none z-40"
+          }
           data-testid="button-open-asset-panel"
         >
           <Palette className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:w-[400px] p-0">
+      <SheetContent 
+        side={isMobile ? "bottom" : "right"} 
+        className={isMobile ? "h-[80vh] p-0" : "w-full sm:w-[400px] p-0"}
+      >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-lg font-semibold">Content Library</h2>
