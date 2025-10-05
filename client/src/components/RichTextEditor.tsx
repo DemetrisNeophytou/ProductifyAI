@@ -130,6 +130,27 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
       >
         <AlignRight className="h-4 w-4" />
       </Button>
+      <div className="w-px h-6 bg-border mx-1" />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+        data-testid="button-undo-editor"
+      >
+        <Undo className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+        data-testid="button-redo-editor"
+      >
+        <Redo className="h-4 w-4" />
+      </Button>
     </div>
   );
 };
