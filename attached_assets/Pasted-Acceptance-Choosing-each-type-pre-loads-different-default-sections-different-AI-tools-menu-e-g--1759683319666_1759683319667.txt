@@ -1,0 +1,37 @@
+Acceptance: Choosing each type pre-loads different default sections, different AI tools menu (e.g., “Outline/Chapters” for eBook, “Modules/Lessons” for Course), and different export targets.
+
+2) Editor actions must work (no dead buttons)
+	•	Bug: AI Tools panel shows but has no actions; AI Re-Style, AI Image, Undo/Redo, Settings do nothing.
+	•	Fix: Wire actions to backend routes; add guards:
+	•	AI Tools: /api/ai/content (generate/polish/expand/shorten), with projectId, sectionId, tone, audience.
+	•	AI Re-Style: /api/ai/restyle (tones: professional/casual/inspirational/educational/conversational).
+	•	AI Image:
+	•	“Regenerate” → /api/images/generate?q=… using Pexels primary, Pixabay fallback.
+	•	“Upload” must open file chooser and persist to uploads/ (or S3/Bucket) and insert into the selected block.
+	•	Undo/Redo: implement editor history stack (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) and toolbar buttons.
+	•	Settings: real modal with per-project options (page size A4/Letter, margins, export DPI, default fonts).
+	•	Guard: When no section is selected, disable AI tabs and show hint. Do not throw runtime error.
+
+3) Images must actually work
+	•	Bug: “Regenerate Image” and “Upload Image” do nothing.
+	•	Fix:
+	•	Confirm env keys exist and are used:
+	•	PEXELS_API_KEY, PIXABAY_API_KEY
+	•	Add server routes:
+	•	GET /api/images/search?provider=pexels|pixabay&q=…
+	•	POST /api/images/upload (multipart) → returns URL; insert image into selected block.
+	•	Handle empty results gracefully with a toast (no crashes).
+
+4) Brand Kit feels empty — expand + Google Fonts
+	•	Improve Brand Kit:
+	•	Colors: Primary, Secondary, Accent, Text, Background, Link.
+	•	Fonts: Google Fonts picker for headings/body (load via CSS import). Persist in brand + apply globally.
+	•	Spacing/Radius presets (Compact, Cozy, Spacious).
+	•	“Apply Brand Kit” should restyle current project immediately (headings, buttons, block spacing).
+	•	Routes/State: Persist brand in user profile + project snapshot.
+
+5) AI Suggestions quality & safety
+	•	Replace placeholder tips with real suggestions from /api/ai/suggestions (hook intro, add examples, strengthen CTA, simplify jargon). Use selected section content as input. Add rate-limit + error toasts.
+
+6) Fix the Select crash
+	•	We still hit:
