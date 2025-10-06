@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "../server/routes";
-import { serveStatic, log } from "../server/vite";
+import { log } from "../server/vite";
 import { seedPhase5Features } from "../server/seed-phase5";
 
 const app = express();
@@ -51,7 +51,6 @@ async function setupApp() {
       throw err;
     });
 
-    serveStatic(app);
     initialized = true;
   }
   return app;
