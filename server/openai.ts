@@ -141,7 +141,7 @@ export async function chatWithCoach(message: string, userId: string): Promise<st
       model: "gpt-5",
       messages,
       max_completion_tokens: 8192,
-      temperature: 0.4,
+      temperature: 1,
     });
 
     const content = response.choices[0].message.content || "";
@@ -187,7 +187,7 @@ export async function chatWithCoachStream(message: string, userId: string) {
       model: "gpt-5",
       messages,
       max_completion_tokens: 8192,
-      temperature: 0.4,
+      temperature: 1,
       stream: true,
     });
 
