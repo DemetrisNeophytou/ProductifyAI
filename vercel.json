@@ -1,24 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/public",
-  "routes": [
+  "builds": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     }
   ],
-  "functions": {
-    "api/index.js": {
-      "memory": 1024,
-      "maxDuration": 30
+  "routes": [
+    {
+      "src": "^/api/(.*)$",
+      "dest": "api/index.ts"
+    },
+    {
+      "src": "^(?!/api/).*",
+      "dest": "/index.html"
     }
-  }
+  ]
 }
