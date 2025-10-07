@@ -1,0 +1,131 @@
+
+⸻
+
+📌 PRODUCT BRIEF — “AI Genius Studio” (AI-first Canva for digital products)
+
+Goal: Deliver an AI-first creation experience (like Canva’s ease, but for digital products) that can auto-generate ebooks, courses, funnels/landing pages, and social assets from a short prompt, with full visual editing and 1-click export/publish.
+Important: Never mention competitors or external creators in the UI. Only our brand.
+
+⸻
+
+1) UX & NAVIGATION (MVP)
+
+Add a bottom navigation bar (mobile & desktop responsive):
+	•	Home (AI Mission Control)
+	•	Projects
+	•	Create ( + ) — floating purple button in the center
+	•	Templates
+	•	Profile / Pro
+
+Left sidebar (hamburger) for desktop:
+	•	Templates, Photos, Graphics, Brand Kit, Starred, Help, Settings
+
+Acceptance criteria
+	•	Bottom bar and sidebar work across all routes
+	•	Current route highlighted; keyboard shortcuts: C opens Create modal, / focuses search
+
+⸻
+
+2) “CREATE ( + )” — AI QUICK ACTIONS
+
+On press +, open a modal with AI actions:
+	•	Generate Ebook (topic, audience, tone) → creates multi-page, fully designed ebook
+	•	Generate Course (topic, outcome) → modules, lessons, worksheets
+	•	Generate Funnel Page (offer name/price/benefits) → landing + checkout block
+	•	Generate Social Pack (IG story/post, Reels cover, Pinterest pin)
+	•	Upload (images/docs), Custom size
+
+Each action:
+	•	Accepts short prompt
+	•	Shows a 5–10s preview loader
+	•	Creates a project with editable blocks (text, image, CTA)
+
+Acceptance criteria
+	•	User can create any of the above from one prompt
+	•	A finished, styled layout opens in the editor without asking user to paste intro text
+
+⸻
+
+3) TEMPLATES (AI-powered)
+
+Tabs: For You (AI), Business, Social, Ebooks & Courses, Funnels.
+Template card shows thumbnail, pages count, and “AI-match%” badge.
+Preview opens with “Use Template” and “Use with AI” (autofills content).
+
+Acceptance criteria
+	•	At least 30 starter templates across categories
+	•	“Use with AI” auto-fills copy, images, and branding choices
+
+⸻
+
+4) EDITOR (Canvas + Blocks)
+
+Editor features:
+	•	Left: Pages panel (reorder, add, duplicate)
+	•	Canvas: drag/drop, resize, smart guides, undo/redo
+	•	Right: Properties (Typography, Colors, Spacing, Shadows, Image tools)
+	•	Block types: Heading, Paragraph, Image, Gallery, CTA, List, Quote, Table, Icon
+	•	AI on any block: “Rewrite”, “Shorter/Longer”, “Change tone”, “Translate”
+	•	Brand Kit: user logo, color palette, fonts (applied to the whole project)
+	•	Export: PDF (ebook), PNG/JPG (images), HTML (landing), zip (course)
+
+Acceptance criteria
+	•	Every block is editable
+	•	Global brand kit applies instantly
+	•	Exports work (PDF for ebooks ≥ 20 pages)
+
+⸻
+
+5) ASSETS LIBRARY (Photos/Graphics)
+	•	Search Photos (Unsplash/Pexels integration or internal storage)
+	•	AI Image Generation (/api/ai/image): prompt → image → insert to canvas
+	•	Collections (auto-tagged by project and topic)
+
+Acceptance criteria
+	•	Drag photo onto an image frame to replace it
+	•	Generate image from prompt and insert in 1 click
+
+⸻
+
+6) PROJECTS & FOLDERS
+	•	“Recents”, “All”, “Starred”
+	•	Folders: Ebooks, Courses, Funnels, Social
+	•	Search supports natural language: e.g., “ebooks about mindset last week”
+
+Acceptance criteria
+	•	CRUD for folders/projects
+	•	Search by title, tags, content
+
+⸻
+
+7) ANALYTICS (Lite)
+	•	In Project details: views, exports, publish status, last edited
+	•	Home: “Next best action” (finish draft, add CTA, publish)
+
+⸻
+
+IMPLEMENTATION PLAN (PHASED)
+
+Phase 1 — MVP Shell (2–3 weeks)
+	1.	Bottom nav + sidebar + routes
+	2.	Create(+) modal with 4 AI actions (ebook, course, funnel, social)
+	3.	Templates gallery (30+ seeds), “Use with AI”
+	4.	Editor (pages, blocks, properties, brand kit)
+	5.	Exports: PDF/PNG
+	6.	Stripe paywall (Plus/Pro gating)
+
+Phase 2 — Smart Layer (2–3 weeks)
+	1.	AI auto-layout + copy for every block
+	2.	AI image generation + stock photos
+	3.	Projects search + folders + starred
+	4.	Brand Kit full application + presets
+
+Phase 3 — Pro Features (2–3 weeks)
+	1.	Collaboration (share view; later realtime)
+	2.	Version history / autosave snapshots
+	3.	Growth tips (AI checks for CTA, contrast, readability)
+	4.	Publish to hosted page (private link) + share links
+
+⸻
+
+DATA MODEL (Supabase / Postgres

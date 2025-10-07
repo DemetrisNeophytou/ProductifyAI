@@ -1,0 +1,104 @@
+Thanks for the progress so far. I need to make sure the application is fully professional, fast, and truly valuable for users who want to build digital products. Please do the following updates and improvements:
+
+
+
+
+
+1. AI Performance & Expertise
+
+
+
+
+
+Make the AI faster in responses (optimize API calls, reduce unnecessary delays).
+Improve the AI persona to act as a true Digital Product Strategist & Monetization Coach, with the main mission:
+Help users generate €100,000+ per year from digital products, even if they have zero experience.
+
+The AI should clearly explain to users:
+“You don’t need to be an expert to create and sell digital products. I’ll guide you step by step.”
+
+Train/tune the AI prompts so it always speaks with confidence, clarity, and step-by-step strategies.
+
+
+
+
+
+
+2. Subscriptions & Plans (Stripe)
+
+
+
+
+
+Integrate the Plus and Pro plans (both Monthly & Quarterly options).
+Add a 3-day free trial for new users before subscription is required.
+After the trial ends, users must choose Plus or Pro.
+Ensure that access is cut off if a subscription expires or fails.
+
+
+
+
+
+
+3. Clear Plan Differentiation (Pricing Table)
+
+
+
+
+
+Add a pricing comparison page inside the app:
+Plus Plan (€24.99/mo): Essential tools for product creation → generate outlines, write chapters, export to PDF, basic strategies.
+Pro Plan (€59.99/3mo): Advanced tools → pricing strategies, sales funnels, launch plans, premium templates, priority access.
+
+Make this comparison table visible both at sign-up and in the settings/billing section.
+
+
+
+
+
+
+4. Onboarding Flow
+
+
+
+
+
+When new users sign up:
+Show welcome message → explain trial and purpose of the AI.
+Make it clear: “This AI is here to help you make money from digital products, even if you have no expertise.”
+After trial → redirect to subscription page with Plus vs Pro comparison.
+
+
+
+
+
+
+
+5. Professional Features
+
+
+
+
+
+Add a dashboard where users can:
+See their active plan (Trial, Plus, Pro).
+Upgrade from Plus → Pro at any time.
+Manage billing through Stripe.
+
+Add customer support link (email/WhatsApp/Telegram).
+Allow PDF exports of strategies and product outlines.
+Add a progress tracker so users can mark steps as completed (ex: define audience, set pricing, launch funnel).
+
+
+
+
+
+
+6. Marketing & Retention
+
+
+
+
+
+After each session, the AI should give a next action step (ex: “Now define your audience. Here’s a simple template.”).
+Encourage users to stay subscribed by showing tangible results (ex: progress % completed, estimated launch timeline).

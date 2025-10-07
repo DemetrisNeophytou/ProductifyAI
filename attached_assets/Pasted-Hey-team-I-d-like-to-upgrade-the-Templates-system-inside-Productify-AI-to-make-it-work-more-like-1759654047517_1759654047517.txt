@@ -1,0 +1,60 @@
+Hey team 👋
+
+I’d like to upgrade the Templates system inside Productify AI to make it work more like Canva — but connected with my current AI “Create Product” workflow.
+
+Here’s exactly what I’d like to implement:
+
+⸻
+
+1️⃣ Template Discovery Page
+	•	Add a “Templates” tab in the main bottom navigation (keep it consistent with “Home”, “Projects”, “Pro”, etc.).
+	•	When users open this tab, they should see:
+	•	For You – AI-recommended templates based on their previous projects or onboarding answers.
+	•	Category Tabs (scrollable) – eBook, Workbook, Presentation, Course Slides, Landing Page, Funnel Page, Instagram Post, etc.
+	•	Explore Templates Grid – display visual previews with cover + template name.
+	•	Search Bar at the top: “Search thousands of templates”.
+
+⸻
+
+2️⃣ Template Preview & Edit Flow
+	•	When a user clicks on a template:
+	•	Open a preview modal with options:
+	•	“Use this template”
+	•	“Preview”
+	•	“Save to Favorites”
+	•	On “Use this template”, automatically start the AI product creation process (instead of asking the user to manually write the introduction, chapters, etc.).
+	•	The AI should generate a ready-to-edit version with example text, structure, and placeholder images — similar to how Canva loads a design.
+
+⸻
+
+3️⃣ Connect With “Create Product” Workflow
+	•	Link the template system with the AI Create Product module.
+	•	When the user chooses a template, it should automatically:
+	•	Pass their inputs (title, niche, target audience, etc.) to the AI.
+	•	Generate the full digital product (eBook, workbook, course, funnel page, etc.) with images + text + layout pre-filled.
+	•	Open it directly in the editor for instant customization.
+
+⸻
+
+4️⃣ Personalization & Smart Recommendations
+	•	Add “Starred” templates (user favorites).
+	•	Add “Recently Used” templates.
+	•	Add dynamic sections:
+	•	“Trending Templates”
+	•	“New Templates”
+	•	“Inspired by Your Projects”.
+
+⸻
+
+5️⃣ Future Upgrade Hook
+
+Later we’ll connect the Plus and Pro plans to unlock:
+	•	Premium templates
+	•	AI-enhanced design generation (text + visuals together)
+	•	Team collaboration features.
+
+⸻
+
+6️⃣ Goal
+
+The goal is to make the user feel that Productify AI can do everything Canva does, but with built-in AI automation that creates entire digital products (not just visuals).

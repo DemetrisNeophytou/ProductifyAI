@@ -1,0 +1,102 @@
+Plans & Access (Plus vs Pro)
+	•	Plus (€24.99/mo)
+	•	Up to 10 products/projects
+	•	20k AI tokens/month (configurable)
+	•	Core Builders (Idea Finder, Product Outline, Content Writer, Offer Builder)
+	•	Basic Funnel & Launch Plan (one-page funnel + 5-day launch plan)
+	•	Community access (read/write)
+	•	Pro (€49.99/mo or €119.99/quarter)
+	•	Unlimited products/projects
+	•	100k AI tokens/month (configurable)
+	•	Advanced Builders (Deep Research, Step-by-Step Execution Plans, Multi-format content: email+social+sales page)
+	•	Advanced Funnel Kit (opt-in + sales + checkout copy + upsell/downsell copy)
+	•	Priority AI speed (lower temperature + streaming + higher rate limits)
+	•	Priority community badge & priority support
+
+Trial: 3-day free trial for any new subscription (handled by Stripe).
+
+Implementation Notes
+	•	We already have Stripe products/prices. Use live Price IDs in client/src/pages/Pricing.tsx.
+	•	Backend validates plan by Stripe Customer → active subscription → price lookup.
+	•	Feature gates via role/plan in user session (e.g., plan: 'plus' | 'pro').
+	•	Token quotas stored in DB per user per month; reset monthly (cron).
+
+⸻
+
+2) End-to-End User Flow (must be frictionless)
+	1.	Landing → Sign up (email/password or OAuth).
+	2.	Trial CTA → Stripe Checkout (3-day trial) → return to app.
+	3.	Onboarding wizard (4 steps):
+	•	Niche & goal (experience, interests, available time)
+	•	Product type (ebook, course, template, micro-SaaS/app)
+	•	Audience assumptions (beginner/intermediate/pro; B2B/B2C)
+	•	Monetization preference (low-ticket €17-€47, mid €97-€297, high €497+)
+	4.	Dashboard shows:
+	•	“Next 3 Actions” (always 3 concrete tasks)
+	•	Trial/subscription status card + upgrade/extend CTAs
+	•	Quick links to Builders and Community
+	5.	Builders produce outputs → user saves to Project
+	6.	Funnel & Launch outputs → downloadable docs + copy/paste blocks
+	7.	Community (left nav) → post, comment, like
+	8.	Billing Portal for manage/upgrade/cancel (Stripe Portal)
+
+⸻
+
+3) Core Features (MVP—must build now)
+
+A. Idea Finder (Non-expert friendly)
+	•	Input: user interests, constraints, audience guess.
+	•	Output: 5 niche ideas with “Why it works”, ICP, pain points, proof keywords.
+	•	Action button: “Pick this idea” → creates a Project.
+
+B. Product Outline Builder
+	•	Select product type → generates outline with module/chapters and learning outcomes.
+	•	Plus: basic outline; Pro: deep outline with step-by-step execution plan.
+
+C. Content Writer
+	•	Generates chapter drafts, checklists, worksheets, scripts.
+	•	Pro adds multi-format pack: email series, social posts, sales bullets, FAQs.
+
+D. Offer Builder (Pricing & Bonuses)
+	•	Recommends price anchors (e.g., €47/€97/€197) with value justification and bonus ideas.
+	•	Outputs structured offer sheet (problem → promise → proof → price → bonuses → guarantee).
+
+E. Funnel & Launch Planner
+	•	Plus: 1-page funnel (lead magnet + CTA) and 5-day launch plan.
+	•	Pro: full funnel copy (opt-in, sales page blocks, checkout bullets, upsell/downsell copy) and 10-day launch plan.
+
+F. Community (left nav “Community”)
+	•	Feed with posts, comments, likes.
+	•	Rate limiting + spam protection.
+	•	Pro users flagged with badge; pinned “Wins” thread.
+
+G. Billing & Account
+	•	Stripe Checkout with 3-day trial.
+	•	Stripe Customer Portal.
+	•	“My Usage” (tokens & projects) visible.
+	•	Plan upgrade path (Plus → Pro).
+
+⸻
+
+4) Quality & Speed (make the AI feel like ChatGPT)
+
+Non-negotiable performance goals
+	•	First token under 1.2s for most completions.
+	•	Streaming responses in chat & builders.
+	•	Retries with exponential backoff on 5xx.
+	•	Clear error to user with “Try again” button.
+
+Implementation
+	•	Use streaming for all long completions.
+	•	temperature: Plus 0.7 (creative), Pro 0.5 (decisive).
+	•	Prompt templates (server-side) — see below.
+	•	Context window control: keep system & user brief; truncate history smartly.
+	•	Caching for deterministic small tools (e.g., price table examples).
+	•	Rate limiting (already added) and per-plan concurrency caps.
+	•	Background jobs (queue) for heavy “Deep Research” (Pro only) with status polling.
+
+⸻
+
+5) Prompts (server-side, maintained centrally)
+
+Create /server/prompts/ with JSON or TS modules. Examples:

@@ -1,0 +1,37 @@
+Goal:
+Build a unified, reliable AI Agent system inside ProductifyAI that works like Replit’s agents: users trigger tasks (content, images, video, analytics, etc.), the agent estimates credits, runs tools, streams progress, and returns structured results that plug into the editor or project. Must be production-ready (retries, logs, metrics, errors, cancellations).
+
+⸻
+
+1) Core principles
+	•	Deterministic UX: Every button does something visible: estimate → confirm → run → progress → result or clear error with retry.
+	•	Idempotent + safe: All runs have jobId + idempotencyKey. No double charges.
+	•	Tool-first: Agents call internal tools (content, images, video, data) instead of “hallucinating”.
+	•	Credit-aware: Every action shows cost, blocks when credits < cost, and logs usage.
+	•	Observable: Each job has status, steps, timestamps, and logs you can view later.
+
+⸻
+
+2) Agent catalog (initial set)
+
+Implement as modular agents that share one runner:
+	1.	Idea Finder – finds 5 validated niches from a brief.
+	2.	Offer Crafter – creates pricing tiers, bonuses, promise, guarantee.
+	3.	Outline Builder – chapter/module outline for ebooks/courses/templates.
+	4.	Content Writer – writes & improves blocks (expand, shorten, polish, translate).
+	5.	Image Agent – search (Pexels/Pixabay), select, or generate from prompt; attach to section.
+	6.	Video Agent (MVP) – create short clips (script + captions + aspect ratio + thumbnail).
+	7.	Analytics Agent – summarizes performance, recommendations.
+	8.	AI Coach – dialog-style mentor that references the above agents and the user’s project data.
+
+Each agent returns structured JSON, not free text, so the UI can render outputs.
+
+⸻
+
+3) UX flow (shared across agents)
+	1.	User clicks an action (e.g., “Polish Content”, “Generate Images”).
+	2.	System estimates credits (e.g., 2–5 credits) → Confirm.
+	3.	Run job → show progress modal with step logs (“collect context → call LLM → call Pexels → write result”).
+	4.	On success: update editor (text block, image slot, video asset).
+	5.	On fail: show actionable error & Retry (with backoff).
+	6.	Always log result + credit usage in /credits/history.

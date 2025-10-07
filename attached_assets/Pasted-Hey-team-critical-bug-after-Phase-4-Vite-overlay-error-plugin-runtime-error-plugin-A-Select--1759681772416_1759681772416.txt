@@ -1,0 +1,29 @@
+Hey team — critical bug after Phase 4:
+
+Vite overlay error:
+[plugin:runtime-error-plugin] A <Select.Item /> must have a value prop that is not an empty string. This is because the Select value can be set to an empty string to clear the selection and show the placeholder.
+
+Steps to reproduce (any of these trigger it):
+1. Open Create → Basic Info / Details and interact with the dropdowns (e.g., Tone of voice, Product type).
+2. In the Editor, switch tabs (AI Tools / AI Image / Brand Kit / AI Suggestions) when no block is selected.
+3. Sometimes happens on first load after “Create Product”.
+
+Please hot-fix with the following guardrails:
+• Ensure all Select options are rendered with non-empty value (e.g. "professional", "casual", etc.).
+• Initialize state with a valid default (no empty string for controlled Selects).const [tone, setTone] = useState<'professional'|'casual'|'inspirational'|'educational'|'conversational'>('professional');
+When mapping options, skip falsy entries:
+{options.filter(Boolean).map(o => (
+<Select.Item key={o.value} value={o.value}>{o.label}</Select.Item>
+))}
+For Radix / shadcn Select, always provide value + onValueChange and never pass ''.
+<Select value={tone} onValueChange={setTone}>
+• If there’s no selected block in the editor, disable AI tabs and show a small hint “Select a section on the left to use AI tools” (prevent null refs).
+• Add a global error boundary so the UI doesn’t crash on minor errors; show a friendly toast instead.
+• Keep Vite overlay enabled in dev, but ensure production build is clean (no console errors).
+
+Regression tests to add:
+• E2E: create product → go through all 4 steps → open editor → switch between AI Tools / AI Image / Brand Kit / AI Suggestions with and without a selected block.
+• Verify Pexels/Pixabay image actions work when API keys are present; otherwise show a clear “Connect API key” notice (no crash).
+• Verify Stripe keys & credits banner render without hitting any Select defaults.
+
+Please fix and push, then share a brief QA checklist + GIF of the flow working.

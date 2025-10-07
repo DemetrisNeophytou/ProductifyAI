@@ -1,0 +1,53 @@
+Provide 3–5 templates per category with good sample blocks.
+
+	2.	API
+	•	Implement GET /api/templates with query params: q, type, tag, page, pageSize (default 20).
+	•	Implement GET /api/templates/[id] to return full template (including blocks).
+	•	Add simple in-memory search (title/tags/description) + pagination. If we have Supabase/DB, wire it; else read from templates.json.
+	•	Add cache headers (60s) and graceful error handling.
+	3.	UI (Templates page)
+	•	On load call /api/templates?page=1&pageSize=20 and render cards (title, type pill, thumbnail).
+	•	Search box: debounced (300ms) calls to /api/templates?q=....
+	•	Filters: Type dropdown + tag chips. Persist selection in URL query.
+	•	States:
+	•	Loading skeleton grid
+	•	Empty state with “No templates found” + Clear filters button
+	•	Error state with retry
+	4.	Template Preview
+	•	Clicking a card opens drawer/modal with: title, type, description, tag pills, preview of outline/first 5 blocks, and buttons:
+	•	Use Template → calls mutation to create a new Project with the template’s blocks and navigates to the Editor.
+	•	Preview full → optional full page route /templates/[slug].
+	5.	Use Template → Project creation
+	•	Add POST /api/projects/from-template expecting { templateId, title? }.
+	•	Server clones blocks into a new project record (or local store) with correct productType, sets initial metadata, returns projectId.
+	•	Redirect to /projects/[id]/edit.
+	6.	Images & thumbnails
+	•	For now, use local /public/templates/*.jpg thumbnails. If AI/stock images are used, respect keys via ENV and handle rate limits; but never block the UI if keys are missing—show a placeholder image.
+	7.	Editor compatibility
+	•	Ensure the created project opens with blocks populated and all editor actions work (AI Tools, Save, Export, etc.). If any block type is unsupported, replace with a safe fallback.
+	8.	Quality checks
+	•	Keyboard navigation, focus traps in modal, and responsive grid (2/3/4 columns).
+	•	No console errors. Type-safe interfaces.
+	•	Unit tests for search and /api/projects/from-template mapper.
+	•	Log analytics events (console or stub): template_view, template_use, with templateId, productType.
+
+Tech details / where to add things
+	•	Next.js (app router):
+	•	app/api/templates/route.ts (list)
+	•	app/api/templates/[id]/route.ts (details)
+	•	app/api/projects/from-template/route.ts (create project)
+	•	UI:
+	•	app/templates/page.tsx (grid, search, filters)
+	•	app/templates/[slug]/page.tsx (optional full preview)
+	•	Components: TemplateCard.tsx, TemplatePreview.tsx, TemplateFilters.tsx
+	•	Provide README.md section “Templates” explaining fields and how to add more.
+
+Bugs to fix (current)
+	•	Clicking a template does nothing → wire onClick to open Preview with data from /api/templates/[id].
+	•	Search returns nothing → implement backend filter + front-end debounce.
+	•	Empty grid on first load → ensure initial fetch fires and renders loading skeletons, then data.
+	•	If Select crashes: add default value props to all select components and guard against empty strings.
+
+Done when
+	•	I can open Templates, search “fitness”, see results, open a card, press Use Template, and land in the Editor with pre-filled blocks matching that template. No errors in console.
+	•	README updated and at least 30 templates seeded.
