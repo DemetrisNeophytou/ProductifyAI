@@ -18,7 +18,7 @@ Configure these environment variables in your Vercel project settings (Settings 
 
 - **`ISSUER_URL`** (Required)
   - Replit Auth issuer URL
-  - Example: `https://replit.com`
+  - Example: `https://replit.com/oidc`
   - Needed at: Runtime
 
 ### AI Services
@@ -48,6 +48,14 @@ Configure these environment variables in your Vercel project settings (Settings 
   - Pixabay API key for stock photos
   - Example: Get from https://pixabay.com/api/docs/
   - Needed at: Runtime
+
+## Frontend Variables
+
+- **`VITE_STRIPE_PUBLIC_KEY`** (Required)
+  - Stripe publishable key for frontend checkout
+  - Example: `pk_live_...` or `pk_test_...`
+  - Needed at: Build time & Runtime
+  - Used in: Pricing page checkout
 
 ## Optional Variables
 
