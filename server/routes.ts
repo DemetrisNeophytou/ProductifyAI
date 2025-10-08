@@ -56,6 +56,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // General rate limiting for all API routes
   app.use('/api', generalApiLimiter);
 
+  // Simple health check endpoint
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true });
+  });
+
   // Auth routes
   app.get("/api/auth/user", isAuthenticated, async (req: AuthRequest, res) => {
     try {
