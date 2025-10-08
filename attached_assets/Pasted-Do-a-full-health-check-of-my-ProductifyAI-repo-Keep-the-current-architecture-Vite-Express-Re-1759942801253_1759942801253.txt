@@ -1,0 +1,35 @@
+Do a full health check of my “ProductifyAI” repo. Keep the current architecture (Vite + Express + React).
+	2.	Verify all env vars exist both in code and Replit Secrets. If something is missing, create it with the values below. Never hard-code in repo; only Replit Secrets.
+
+Required Secrets (add/update):
+	•	ISSUER_URL = https://replit.com/oidc
+	•	NEXT_PUBLIC_SUPABASE_URL = <MY_SUPABASE_URL>
+	•	NEXT_PUBLIC_SUPABASE_ANON_KEY = <MY_SUPABASE_ANON_KEY>
+	•	VITE_STRIPE_PUBLIC_KEY = <MY_STRIPE_PUBLISHABLE_KEY>
+	•	STRIPE_WEBHOOK_SECRET = <MY_STRIPE_WEBHOOK_SECRET>
+
+If any of the Supabase or Stripe values are missing, pause and ask me only for those specific values. Otherwise continue.
+	3.	Make sure the server starts cleanly: run npm run dev. Fix any build/runtime issues. There is a PostCSS “from option not passed” warning — silence it safely (either set from: undefined in the PostCSS pipeline or pin compatible PostCSS/Autoprefixer versions) without breaking styles.
+	4.	Prisma/Supabase sanity: if Prisma is used, ensure prisma and @prisma/client are installed and postinstall: "prisma generate" exists in package.json. Run npx prisma generate if needed.
+	5.	Create a QA checklist and run it:
+	•	Ping health endpoints / core APIs (projects search, analytics summary, ai-agents credits).
+	•	Verify database connectivity (Supabase) and that at least one simple query returns data.
+	•	Smoke-test the UI loads on / with no console errors.
+	•	Report bundle size and suggest code-splitting if >2.5MB.
+	6.	Stripe setup (safe in dev):
+	•	If I didn’t supply real keys, set temporary placeholders so dev build runs.
+	•	Generate a note with exact steps for me to grab VITE_STRIPE_PUBLIC_KEY and STRIPE_WEBHOOK_SECRET from Stripe Dashboard (Webhooks → endpoint → signing secret).
+	7.	Documentation:
+	•	Update/create AUDIT_REPORT.md, QUICK_START_FIXES.md, and VERCEL_ENV_VARS.md with final, exact env var names used by the codebase and step-by-step run/deploy.
+	8.	Optional deploy to Vercel (do this if local dev is clean):
+	•	Create a production build.
+	•	Connect repo to Vercel and manually add the same env vars there (use VERCEL_ENV_VARS.md).
+	•	Trigger a deployment and return the live URL.
+
+Deliverables back to me:
+	•	What you changed (files/commits).
+	•	The exact list of Secrets that were added/updated.
+	•	Confirmation screenshots/logs: dev server running + Vercel build passing.
+	•	Any remaining items I must do in Stripe (with direct links/paths).
+
+Do not refactor features; focus on stability, secrets, warnings, health checks, and optional deploy. Keep it concise and actionable.
