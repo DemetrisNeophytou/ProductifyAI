@@ -12,46 +12,62 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Plus, Crown, Coins } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CommandBar } from "@/components/CommandBar";
 import { FloatingAICoach } from "@/components/FloatingAICoach";
 import { BottomNav } from "@/components/BottomNav";
 import { SmartSearch } from "@/components/SmartSearch";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+
+// Eager-loaded critical routes (auth & landing)
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
-import NewProject from "@/pages/NewProject";
-import ProjectEditor from "@/pages/ProjectEditor";
-import CanvaEditor from "@/pages/CanvaEditor";
-import ProjectPages from "@/pages/ProjectPages";
-import WizardCreateProduct from "@/pages/WizardCreateProduct";
-import Products from "@/pages/Products";
-import BrandKit from "@/pages/BrandKit";
-import Assets from "@/pages/Assets";
-import AICoach from "@/pages/AICoach";
 import Pricing from "@/pages/Pricing";
-import Community from "@/pages/Community";
-import Settings from "@/pages/Settings";
-import IdeaFinder from "@/pages/IdeaFinder";
-import OutlineBuilder from "@/pages/OutlineBuilder";
-import ContentWriter from "@/pages/ContentWriter";
-import OfferBuilder from "@/pages/OfferBuilder";
-import FunnelPlanner from "@/pages/FunnelPlanner";
-import Onboarding from "@/pages/Onboarding";
-import Templates from "@/pages/Templates";
-import AIBuilders from "@/pages/AIBuilders";
-import AIChatBuilder from "@/pages/AIChatBuilder";
-import Billing from "@/pages/Billing";
-import SuccessStories from "@/pages/SuccessStories";
-import Analytics from "@/pages/Analytics";
-import Referrals from "@/pages/Referrals";
-import AiAgents from "@/pages/AiAgents";
-import VideoBuilder from "@/pages/VideoBuilder";
-import JobDetails from "@/pages/JobDetails";
+
+// Lazy-loaded routes to reduce initial bundle size
+const NewProject = lazy(() => import("@/pages/NewProject"));
+const ProjectEditor = lazy(() => import("@/pages/ProjectEditor"));
+const CanvaEditor = lazy(() => import("@/pages/CanvaEditor"));
+const ProjectPages = lazy(() => import("@/pages/ProjectPages"));
+const WizardCreateProduct = lazy(() => import("@/pages/WizardCreateProduct"));
+const Products = lazy(() => import("@/pages/Products"));
+const BrandKit = lazy(() => import("@/pages/BrandKit"));
+const Assets = lazy(() => import("@/pages/Assets"));
+const AICoach = lazy(() => import("@/pages/AICoach"));
+const Community = lazy(() => import("@/pages/Community"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const IdeaFinder = lazy(() => import("@/pages/IdeaFinder"));
+const OutlineBuilder = lazy(() => import("@/pages/OutlineBuilder"));
+const ContentWriter = lazy(() => import("@/pages/ContentWriter"));
+const OfferBuilder = lazy(() => import("@/pages/OfferBuilder"));
+const FunnelPlanner = lazy(() => import("@/pages/FunnelPlanner"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const Templates = lazy(() => import("@/pages/Templates"));
+const AIBuilders = lazy(() => import("@/pages/AIBuilders"));
+const AIChatBuilder = lazy(() => import("@/pages/AIChatBuilder"));
+const Billing = lazy(() => import("@/pages/Billing"));
+const SuccessStories = lazy(() => import("@/pages/SuccessStories"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
+const Referrals = lazy(() => import("@/pages/Referrals"));
+const AiAgents = lazy(() => import("@/pages/AiAgents"));
+const VideoBuilder = lazy(() => import("@/pages/VideoBuilder"));
+const JobDetails = lazy(() => import("@/pages/JobDetails"));
+
+// Loading fallback component with minimal skeleton
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false);
@@ -127,7 +143,8 @@ function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
-    <Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
@@ -290,7 +307,8 @@ function Router() {
         </>
       )}
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </Suspense>
   );
 }
 
