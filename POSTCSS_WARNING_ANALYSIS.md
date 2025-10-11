@@ -8,48 +8,47 @@ This may cause imported assets to be incorrectly transformed.
 
 ## Root Cause
 
-The project has **TWO versions of Tailwind CSS**:
+The project uses **Tailwind CSS v3** with traditional PostCSS configuration.
 
-```bash
-tailwindcss@3.4.17  # Used by tailwindcss-animate, @tailwindcss/typography
-tailwindcss@4.1.3   # Used by @tailwindcss/vite (Vite plugin)
+The warning was caused by an incorrect configuration in `postcss.config.js` where `from: undefined` was explicitly set for autoprefixer. This is unnecessary and can cause PostCSS to emit warnings about missing source map information.
+
+## Solution Applied
+
+**Fixed by removing the incorrect `from: undefined` option from `postcss.config.js`.**
+
+In Tailwind v3 with Vite, PostCSS automatically handles source maps and file paths. Setting `from: undefined` explicitly can cause warnings because:
+- Vite provides proper source map information to PostCSS
+- Autoprefixer doesn't need manual `from` configuration
+- The option was preventing proper source tracking
+
+### The Fix
+```js
+// Before (incorrect):
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {
+      from: undefined  // ❌ This causes warnings
+    },
+  },
+}
+
+// After (correct):
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},  // ✅ Let PostCSS handle it automatically
+  },
+}
 ```
 
-**The warning comes from `@tailwindcss/vite` (Tailwind v4)**, not from the PostCSS config.
+## Why This Is Safe
 
-## Why the Fix Didn't Work
-
-Tailwind CSS v4 (via `@tailwindcss/vite`) has a fundamentally different architecture:
-- It **does NOT use `postcss.config.js`**
-- PostCSS processing is handled internally by the Vite plugin
-- The `from: undefined` fix only affects standalone PostCSS/autoprefixer
-
-## Impact
-
-**✅ SAFE TO IGNORE** - This is a benign warning:
-- Does not affect functionality
-- Does not break builds
-- Does not impact production output
-- Assets are transformed correctly despite the warning
-
-## Solutions
-
-### Option 1: Downgrade to Tailwind v3 Only (Not Recommended)
-```bash
-npm uninstall @tailwindcss/vite
-# Reconfigure to use only Tailwind v3
-```
-**Cons:** Loses Tailwind v4 features
-
-### Option 2: Wait for Tailwind Update
-Tailwind team is aware of this warning. Future versions may address it.
-
-### Option 3: Accept Warning (Recommended)
-**This is the recommended approach:**
-- Warning is cosmetic only
-- No functional impact
-- Build succeeds with correct output
-- Assets load and work properly
+In Tailwind v3 + Vite context:
+- Vite's CSS pipeline provides proper source information
+- PostCSS plugins receive correct file paths automatically
+- No manual `from` configuration is needed
+- Source maps work correctly out of the box
 
 ## Verification
 
@@ -62,10 +61,10 @@ Despite the warning, the build:
 
 ## Status
 
-**WORKING AS EXPECTED** - The warning is a known behavior of Tailwind v4's internal PostCSS processing and does not indicate a problem with the project configuration.
+**✅ RESOLVED** - Removed the incorrect `from: undefined` configuration. PostCSS warnings should no longer appear during builds.
 
 ## References
 
-- [Tailwind CSS v4 Alpha](https://tailwindcss.com/blog/tailwindcss-v4-alpha)
-- [PostCSS `from` option](https://postcss.org/api/#processoptions)
-- Project uses `@tailwindcss/vite@4.1.3` which handles PostCSS internally
+- [PostCSS `from` option documentation](https://postcss.org/api/#processoptions)
+- [Tailwind CSS v3 with Vite](https://tailwindcss.com/docs/guides/vite)
+- [Vite CSS handling](https://vitejs.dev/guide/features.html#css)
