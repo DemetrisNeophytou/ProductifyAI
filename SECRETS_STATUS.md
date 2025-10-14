@@ -1,5 +1,5 @@
 # 🔐 Secrets Status & Configuration Guide
-
+import 'dotenv/config';
 **Last Updated:** October 8, 2025  
 **Project:** Productify AI
 
@@ -111,8 +111,11 @@ client/src/pages/Pricing.tsx:10
 **Where Used:**
 ```typescript
 server/db.ts:14
-  export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+import dotenv from "dotenv";
+dotenv.config();
 
+console.log("DATABASE_URL:",process.env.DATABASE_URL);
+  export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 server/replitAuth.ts:30
   conString: process.env.DATABASE_URL
 ```
