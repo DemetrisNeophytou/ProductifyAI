@@ -196,8 +196,21 @@ router.post('/:channelId/message', async (req, res) => {
       });
     }
 
-    // Check access level
     const userPlan = (user.plan || 'free') as PlanTier;
+
+    // FREE PLAN: READ-ONLY for ALL channels
+    if (userPlan === 'free') {
+      return res.status(403).json({
+        ok: false,
+        error: 'Community posting requires Plus or Pro plan',
+        userPlan: 'free',
+        requiredPlan: 'plus',
+        upgradeUrl: '/upgrade?feature=community',
+        message: 'Free users can read messages. Upgrade to Plus to post and participate in discussions.',
+      });
+    }
+
+    // Check channel access level for Plus/Pro users
     const canAccess =
       channel.accessLevel === 'public' ||
       (channel.accessLevel === 'plus' && (userPlan === 'plus' || userPlan === 'pro')) ||

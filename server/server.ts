@@ -34,6 +34,8 @@ import subscriptionRouter from "./routes/subscription";
 import communityRouter from "./routes/community";
 import aiExpertRouter from "./routes/aiExpert";
 import marketplaceOrdersRouter from "./routes/marketplace-orders";
+import listingsRouter from "./routes/listings";
+import { blockFreeCreation } from "./middleware/freePlanGuard";
 
 const app = express();
 
@@ -115,6 +117,15 @@ app.use("/api/ai", aiExpertRouter);
 
 // Marketplace orders with commission
 app.use("/api/marketplace", marketplaceOrdersRouter);
+
+// Marketplace listings (Free users allowed)
+app.use("/api/marketplace", listingsRouter);
+
+// Block Free users from creation tools
+app.use("/api/editor", blockFreeCreation);
+app.use("/api/canvas", blockFreeCreation);
+app.use("/api/media", blockFreeCreation);
+// AI routes already have plan checks in aiExpert.ts
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT
