@@ -18,6 +18,11 @@ export interface Layer {
   zIndex: number;
   locked?: boolean;
   visible?: boolean;
+  groupId?: string; // Parent group ID
+  isGroup?: boolean; // Is this a group container
+  isLocked?: boolean; // Alternative naming for consistency
+  isHidden?: boolean; // Alternative naming for consistency
+  blur?: number; // Blur effect
   style?: {
     background?: string;
     borderRadius?: number;
@@ -29,6 +34,7 @@ export interface Layer {
     color?: string;
     textAlign?: "left" | "center" | "right";
     padding?: number;
+    shadow?: string;
   };
   content?: string;
   assetUrl?: string;
