@@ -28,6 +28,7 @@ import publishRouter from "./routes/publish";
 import exportRouter from "./routes/export";
 import kbRouter from "./routes/kb";
 import adminRouter, { requireAdmin } from "./routes/admin";
+import ragRouter from "./routes/rag";
 
 const app = express();
 
@@ -97,6 +98,7 @@ app.use("/api/projects", publishRouter);
 app.use("/api/projects", exportRouter);
 app.use("/api/kb", kbRouter);
 app.use("/api/admin", requireAdmin, adminRouter);
+app.use("/api/rag", ragRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT
