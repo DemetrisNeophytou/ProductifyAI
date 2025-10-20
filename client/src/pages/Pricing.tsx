@@ -1,324 +1,322 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Crown, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { loadStripe } from '@stripe/stripe-js';
-import { apiRequest } from "@/lib/queryClient";
+/**
+ * Pricing Page
+ * Display subscription plans and features
+ */
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Check, Zap, Crown, Gift } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'wouter';
 
-interface SubscriptionStatus {
-  hasAccess: boolean;
-  canCreateProject: boolean;
-  canUseAI: boolean;
-  projectsUsed: number;
-  projectsLimit: number;
-  aiTokensUsed: number;
-  aiTokensLimit: number;
-  tier: string;
-}
+const plans = [
+  {
+    id: 'free',
+    name: 'Free',
+    price: '€0',
+    period: '/forever',
+    description: 'Start building on the marketplace',
+    icon: Gift,
+    features: [
+      'Marketplace access',
+      '3 projects',
+      '0 AI tokens',
+      '7% marketplace commission',
+      'Community: Public chat',
+      'Basic support',
+    ],
+    limits: 'Limited features',
+    cta: 'Current Plan',
+    highlighted: false,
+  },
+  {
+    id: 'plus',
+    name: 'Plus',
+    price: '€24',
+    period: '/month',
+    description: 'Full AI features with 3-day trial',
+    icon: Zap,
+    trial: '3-day free trial',
+    features: [
+      'Full AI features',
+      '10 projects',
+      '20,000 AI tokens/month',
+      '500 AI credits',
+      '4% marketplace commission',
+      'Community: Creators Hub',
+      'Email support',
+      'Priority queue',
+    ],
+    limits: 'Perfect for creators',
+    cta: 'Start Free Trial',
+    highlighted: true,
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '€49',
+    period: '/month',
+    description: 'Unlimited access for professionals',
+    icon: Crown,
+    features: [
+      'Unlimited AI access',
+      'Unlimited projects',
+      'Unlimited AI tokens',
+      '2,000 AI credits',
+      '1% marketplace commission',
+      'Community: Pro Founders Lounge',
+      'Priority 24/7 support',
+      'White-label options',
+      'API access',
+      'Custom integrations',
+    ],
+    limits: 'For power users',
+    cta: 'Go Pro',
+    highlighted: false,
+  },
+];
 
 export default function Pricing() {
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const [isAnnual, setIsAnnual] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
-  const { data: subscriptionStatus, isLoading } = useQuery<SubscriptionStatus>({
-    queryKey: ['/api/subscription/status'],
-  });
+  const handleSubscribe = async (planId: string) => {
+    if (!user) {
+      window.location.href = '/login?redirect=/pricing';
+      return;
+    }
 
-  const checkoutMutation = useMutation({
-    mutationFn: async ({ plan, billingPeriod }: { plan: string; billingPeriod: string }) => {
-      const response = await apiRequest('POST', '/api/stripe/create-checkout-session', {
-        plan,
-        billingPeriod,
+    if (planId === 'free') {
+      return; // Already on free plan
+    }
+
+    try {
+      // Create checkout session
+      const response = await fetch(`${API_BASE}/api/stripe/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan: planId,
+          userId: user.id,
+        }),
       });
-      return await response.json();
-    },
-    onSuccess: async (data: any) => {
-      if (data.url) {
-        window.location.href = data.url;
+
+      const data = await response.json();
+
+      if (data.ok && data.data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        alert('Failed to start checkout. Please try again.');
       }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Checkout Failed",
-        description: error.message || "Failed to start checkout",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubscribe = (plan: 'plus' | 'pro', billingPeriod: 'monthly' | 'quarterly') => {
-    checkoutMutation.mutate({ plan, billingPeriod });
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('An error occurred. Please try again.');
+    }
   };
-
-  const formatLimit = (limit: number) => {
-    return limit === -1 ? 'Unlimited' : limit.toString();
-  };
-
-  const getDaysRemaining = () => {
-    return 3;
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loading-spinner" />
-      </div>
-    );
-  }
-
-  const isOnTrial = subscriptionStatus?.tier === 'trial';
 
   return (
-    <div className="container max-w-6xl mx-auto px-4 py-12">
-      {/* Speed metrics for unauthenticated users */}
-      {!subscriptionStatus?.tier && (
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <span className="text-sm font-semibold text-primary" data-testid="text-speed-metrics">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
-          </div>
-          <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
-            Build Your €100k+ Digital Product Business
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-description">
-            Specialized AI that creates complete digital products for you—not generic ChatGPT advice.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+      {/* Header */}
+      <div className="container mx-auto px-4 py-16 text-center">
+        <Badge variant="outline" className="mb-4">
+          Pricing Plans
+        </Badge>
+        <h1 className="text-5xl font-bold mb-4">
+          Choose Your Plan
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Start free, upgrade when you need more. All plans include marketplace access.
+        </p>
+
+        {/* Annual/Monthly Toggle */}
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <span className={!isAnnual ? 'font-semibold' : 'text-muted-foreground'}>Monthly</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAnnual(!isAnnual)}
+            className="relative"
+          >
+            <div className={`w-12 h-6 rounded-full transition-colors ${isAnnual ? 'bg-primary' : 'bg-muted'}`}>
+              <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${isAnnual ? 'translate-x-6' : ''}`} />
+            </div>
+          </Button>
+          <span className={isAnnual ? 'font-semibold' : 'text-muted-foreground'}>
+            Annual <Badge variant="secondary" className="ml-2">Save 20%</Badge>
+          </span>
         </div>
-      )}
-      
-      {isOnTrial && (
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <span className="text-sm font-semibold text-primary">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
-          </div>
-          <Badge variant="secondary" className="mb-4" data-testid="badge-trial">
-            {getDaysRemaining()}-Day Free Trial Active
-          </Badge>
-          <h1 className="text-4xl font-bold mb-4" data-testid="heading-trial">
-            Build Your €100k+ Digital Product Business
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-4" data-testid="text-trial-message">
-            You're on a 3-day trial with full access. No credit card required.
-          </p>
-          <p className="text-base text-muted-foreground max-w-2xl mx-auto" data-testid="text-trial-subtitle">
-            <strong className="text-foreground">You don't need to be an expert.</strong> Our AI Monetization Coach guides you step-by-step to create and sell digital products that generate €100,000+ per year.
-          </p>
-        </div>
-      )}
-
-      {!isOnTrial && subscriptionStatus?.tier && (
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-            <span className="text-sm font-semibold text-primary">10x Faster • €1,440/Quarter Saved • GPT-5 Powered</span>
-          </div>
-          <h1 className="text-4xl font-bold mb-4" data-testid="heading-pricing">
-            Invest in the Right Tool
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2" data-testid="text-current-plan">
-            Current plan: <strong className="text-foreground capitalize">{subscriptionStatus.tier}</strong>
-          </p>
-          <p className="text-sm text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-tagline">
-            The quality of your tools determines the quality of your outcomes. Choose specialized.
-          </p>
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-8 mb-12">
-        <Card className="relative" data-testid="card-plan-plus">
-          <CardHeader>
-            <div className="flex items-center justify-between mb-2">
-              <Zap className="h-8 w-8 text-primary" />
-              <Badge variant="secondary" data-testid="badge-popular">Popular</Badge>
-            </div>
-            <CardTitle className="text-3xl" data-testid="heading-plus-title">Plus</CardTitle>
-            <CardDescription data-testid="text-plus-description">
-              Essential tools to create & sell your first products
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <div className="text-4xl font-bold mb-2" data-testid="text-plus-price">
-                €24.99<span className="text-lg font-normal text-muted-foreground">/month</span>
-              </div>
-              <p className="text-sm text-muted-foreground" data-testid="text-plus-billing">
-                Everything you need to launch products that sell
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start gap-3" data-testid="feature-plus-builders">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Core Builders (Idea, Outline, Content, Offer)</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-funnel">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Basic Funnel & 5-Day Launch Plan</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-export">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Professional PDF/DOCX exports</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-community">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Community access (read & write)</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-projects">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Up to {formatLimit(10)} products</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-plus-tokens">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>{formatLimit(20000)} AI tokens/month</span>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4">
-              <Button 
-                className="w-full" 
-                size="lg"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('plus', 'monthly')}
-                data-testid="button-plus-monthly"
-              >
-                {checkoutMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Monthly - €24.99/month'
-                )}
-              </Button>
-              <Button 
-                className="w-full" 
-                size="lg"
-                variant="outline"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('plus', 'quarterly')}
-                data-testid="button-plus-quarterly"
-              >
-                {checkoutMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  '3-Month - €59.99/quarter'
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative border-primary" data-testid="card-plan-pro">
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-            <Badge className="bg-primary text-primary-foreground" data-testid="badge-best-value">
-              <Crown className="h-3 w-3 mr-1" />
-              Best Value
-            </Badge>
-          </div>
-          <CardHeader>
-            <div className="flex items-center justify-between mb-2">
-              <Crown className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-3xl" data-testid="heading-pro-title">Pro</CardTitle>
-            <CardDescription data-testid="text-pro-description">
-              Scale to €100k+ with advanced strategies
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <div className="text-4xl font-bold mb-2" data-testid="text-pro-price">
-                €49.99<span className="text-lg font-normal text-muted-foreground">/month</span>
-              </div>
-              <p className="text-sm text-muted-foreground" data-testid="text-pro-billing">
-                Full access to all Pro features
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start gap-3" data-testid="feature-pro-everything">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="font-semibold">Everything in Plus, plus:</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-advanced">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Advanced Builders (Deep Research, Step-by-Step Plans)</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-multiformat">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Multi-format content (Email + Social + Sales Copy)</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-funnels">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Advanced Funnel Kit (Opt-in + Sales + Upsell/Downsell)</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-launch">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>10-Day Launch Plan with automation</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-speed">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Priority AI speed & higher rate limits</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-projects">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Unlimited products</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-tokens">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>{formatLimit(100000)} AI tokens/month</span>
-              </div>
-              <div className="flex items-start gap-3" data-testid="feature-pro-support">
-                <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <span>Priority Community Badge & Priority Support</span>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4">
-              <Button 
-                className="w-full" 
-                size="lg"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('pro', 'monthly')}
-                data-testid="button-pro-monthly"
-              >
-                {checkoutMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Monthly - €49.99/month'
-                )}
-              </Button>
-              <Button 
-                className="w-full" 
-                size="lg"
-                variant="outline"
-                disabled={checkoutMutation.isPending}
-                onClick={() => handleSubscribe('pro', 'quarterly')}
-                data-testid="button-pro-quarterly"
-              >
-                {checkoutMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  '3-Month - €119.99/quarter'
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="text-center text-sm text-muted-foreground" data-testid="text-cancel-anytime">
-        <p>Cancel anytime. No questions asked.</p>
-        <p className="mt-2">All plans include a 30-day money-back guarantee.</p>
+      {/* Pricing Cards */}
+      <div className="container mx-auto px-4 pb-16">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan) => {
+            const Icon = plan.icon;
+            const isCurrentPlan = user?.plan === plan.id;
+
+            return (
+              <Card
+                key={plan.id}
+                className={`relative ${
+                  plan.highlighted
+                    ? 'border-2 border-primary shadow-xl scale-105'
+                    : 'border'
+                }`}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="px-6 py-1 text-sm">Most Popular</Badge>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pb-8">
+                  <div className="flex justify-center mb-4">
+                    <div className={`p-3 rounded-full ${
+                      plan.highlighted ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                    }`}>
+                      <Icon className="h-8 w-8" />
+                    </div>
+                  </div>
+                  
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardDescription className="mt-2">{plan.description}</CardDescription>
+                  
+                  {plan.trial && (
+                    <Badge variant="secondary" className="mt-4">
+                      {plan.trial}
+                    </Badge>
+                  )}
+                  
+                  <div className="mt-6">
+                    <span className="text-5xl font-bold">{plan.price}</span>
+                    <span className="text-muted-foreground">{plan.period}</span>
+                  </div>
+                  
+                  {isAnnual && plan.id !== 'free' && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Billed annually: {plan.id === 'plus' ? '€230/year' : '€470/year'}
+                    </p>
+                  )}
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {plan.features.map((feature, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </CardContent>
+
+                <CardFooter className="flex flex-col gap-4">
+                  <Button
+                    onClick={() => handleSubscribe(plan.id)}
+                    disabled={isCurrentPlan}
+                    className="w-full"
+                    variant={plan.highlighted ? 'default' : 'outline'}
+                    size="lg"
+                  >
+                    {isCurrentPlan ? 'Current Plan' : plan.cta}
+                  </Button>
+                  
+                  {!isCurrentPlan && user && user.plan !== plan.id && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      {plan.id === 'free' ? 'Downgrade anytime' : 'Upgrade instantly'}
+                    </p>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="container mx-auto px-4 pb-16">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">What happens after the 3-day trial?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  After 3 days, your Plus subscription starts automatically. If you cancel before the trial ends, you'll be downgraded to the Free plan with no charges.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">How do marketplace commissions work?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  When you sell on the marketplace, ProductifyAI takes a small commission: 7% on Free, 4% on Plus, and just 1% on Pro. The rest goes directly to you via Stripe Connect.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Can I change plans anytime?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Yes! Upgrade instantly or downgrade at the end of your billing period. No long-term contracts or commitments.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">What are AI credits used for?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  AI credits power features like content generation, image creation, and the Digital Products Expert assistant. Each action costs 1-5 credits depending on complexity.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="container mx-auto px-4 pb-16">
+        <Card className="max-w-4xl mx-auto bg-primary text-primary-foreground">
+          <CardContent className="p-12 text-center">
+            <h2 className="text-3xl font-bold mb-4">
+              Ready to build your digital empire?
+            </h2>
+            <p className="text-lg mb-8 opacity-90">
+              Join thousands of creators using ProductifyAI to launch and scale their digital products.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => handleSubscribe('plus')}
+              >
+                Start Free Trial
+              </Button>
+              <Link href="/marketplace">
+                <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary">
+                  Browse Marketplace
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

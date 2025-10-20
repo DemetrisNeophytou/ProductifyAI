@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   aiTokensUsed: integer("ai_tokens_used").default(0),
   aiTokensLimit: integer("ai_tokens_limit").default(5000), // Free: 0, Plus: 20000, Pro: unlimited (-1)
   credits: integer("credits").default(100), // AI action credits - Free: 0, Plus: 500, Pro: 2000
+  commissionRate: integer("commission_rate").default(7), // Free: 7%, Plus: 4%, Pro: 1%
+  stripeConnectAccountId: varchar("stripe_connect_account_id"), // For sellers receiving payments
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
