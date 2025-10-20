@@ -1,339 +1,437 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, CreditCard, Activity, Shield, HelpCircle, Sparkles, ExternalLink } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { 
+  User, 
+  CreditCard, 
+  Bell, 
+  Shield, 
+  Palette,
+  Key,
+  Mail,
+  Save,
+  ExternalLink,
+  Crown,
+  Sparkles
+} from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 
-interface User {
-  id?: string;
-  email?: string;
+interface UserProfile {
+  id: string;
+  email: string;
   firstName?: string;
   lastName?: string;
+  bio?: string;
+  avatarUrl?: string;
   subscriptionTier?: string;
-  subscriptionPeriodEnd?: string;
-  trialEndDate?: string;
-  stripeCustomerId?: string;
-}
-
-interface Usage {
-  aiTokensUsed?: number;
-  aiTokensLimit?: number;
-  projectsUsed?: number;
-  projectsLimit?: number;
-  tier?: string;
 }
 
 export default function Settings() {
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [productUpdates, setProductUpdates] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
 
-  const { data: user, isLoading: userLoading } = useQuery<User>({
+  // Fetch user profile
+  const { data: user, isLoading: userLoading } = useQuery<UserProfile>({
     queryKey: ["/api/auth/user"],
+    queryFn: async () => {
+      // Mock data for now
+      return {
+        id: "1",
+        email: "user@example.com",
+        firstName: "John",
+        lastName: "Doe",
+        bio: "Digital product creator",
+        subscriptionTier: "pro"
+      };
+    }
   });
 
-  const { data: usage, isLoading: usageLoading } = useQuery<Usage>({
-    queryKey: ["/api/usage"],
-  });
-
-  const { data: subscription, isLoading: subLoading } = useQuery({
-    queryKey: ["/api/subscription/status"],
-  });
-
-  const portalMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch("/api/subscription/portal", {
-        method: "POST",
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: Partial<UserProfile>) => {
+      const response = await fetch("/api/auth/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to open billing portal");
-      }
-      return res.json();
+      if (!response.ok) throw new Error("Failed to update profile");
+      return response.json();
     },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.open(data.url, "_blank");
-      }
+    onSuccess: () => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
     },
-    onError: (error: Error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const getTierBadgeVariant = (tier: string) => {
-    switch (tier) {
-      case "pro":
-        return "default";
-      case "plus":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
-
-  const getTierLabel = (tier?: string) => {
-    if (!tier) return "Trial";
-    return tier.charAt(0).toUpperCase() + tier.slice(1);
-  };
-
-  const getTrialDaysLeft = () => {
-    if (!user?.trialEndDate) return null;
-    const daysLeft = Math.ceil((new Date(user.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    return daysLeft > 0 ? daysLeft : 0;
-  };
-
-  const formatDate = (date?: string | null) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+  const handleSaveProfile = () => {
+    updateProfileMutation.mutate({
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+      bio: user?.bio,
     });
   };
 
   return (
-    <div className="container max-w-6xl p-6 space-y-8">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold" data-testid="heading-settings">Settings</h1>
-        <p className="text-muted-foreground mt-2">Manage your account and subscription</p>
+        <h1 className="text-4xl font-bold">Settings</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your account settings and preferences
+        </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card data-testid="card-account">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              <CardTitle>Account</CardTitle>
-            </div>
-            <CardDescription>Your account information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {userLoading ? (
-              <>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </>
-            ) : (
-              <>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p className="text-sm" data-testid="text-user-email">{user?.email || "Not available"}</p>
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+          <TabsTrigger value="profile">
+            <User className="mr-2 h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="account">
+            <Shield className="mr-2 h-4 w-4" />
+            Account
+          </TabsTrigger>
+          <TabsTrigger value="billing">
+            <CreditCard className="mr-2 h-4 w-4" />
+            Billing
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Bell className="mr-2 h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="appearance">
+            <Palette className="mr-2 h-4 w-4" />
+            Appearance
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Profile Tab */}
+        <TabsContent value="profile" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Information</CardTitle>
+              <CardDescription>
+                Update your personal information and public profile
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {userLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-20 w-full" />
                 </div>
+              ) : (
+                <>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        defaultValue={user?.firstName}
+                        placeholder="John"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        defaultValue={user?.lastName}
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      defaultValue={user?.email}
+                      disabled
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Email cannot be changed directly. Contact support if needed.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      defaultValue={user?.bio}
+                      placeholder="Tell us about yourself..."
+                      rows={4}
+                    />
+                  </div>
+
+                  <Button onClick={handleSaveProfile} disabled={updateProfileMutation.isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Account Tab */}
+        <TabsContent value="account" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Security</CardTitle>
+              <CardDescription>
+                Manage your password and security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input id="currentPassword" type="password" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input id="newPassword" type="password" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input id="confirmPassword" type="password" />
+              </div>
+              <Button>
+                <Key className="mr-2 h-4 w-4" />
+                Update Password
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>API Keys</CardTitle>
+              <CardDescription>
+                Manage your API keys for integrations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div>
+                    <div className="font-medium">Production API Key</div>
+                    <div className="text-sm text-muted-foreground font-mono">
+                      pk_••••••••••••••••
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Reveal
+                  </Button>
+                </div>
+                <Button variant="outline">
+                  <Key className="mr-2 h-4 w-4" />
+                  Generate New Key
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Billing Tab */}
+        <TabsContent value="billing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Plan</CardTitle>
+              <CardDescription>
+                Manage your subscription and billing information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-6 rounded-lg border bg-primary/5">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p className="text-sm" data-testid="text-user-name">
-                    {user?.firstName && user?.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : "Not set"}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <span className="text-lg font-semibold">Pro Plan</span>
+                    <Badge>Active</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Unlimited projects • Advanced AI features • Priority support
                   </p>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                <Button variant="outline">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Manage Billing
+                </Button>
+              </div>
 
-        <Card data-testid="card-subscription">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <CardTitle>Subscription</CardTitle>
-            </div>
-            <CardDescription>Manage your subscription plan</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {subLoading ? (
-              <>
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-4 w-full" />
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <Badge variant={getTierBadgeVariant(usage?.tier || "trial")} data-testid="badge-subscription-tier">
-                    {getTierLabel(usage?.tier)}
-                  </Badge>
-                  {usage?.tier === "trial" && getTrialDaysLeft() !== null && (
-                    <span className="text-sm text-muted-foreground" data-testid="text-trial-days">
-                      {getTrialDaysLeft()} days left
-                    </span>
-                  )}
-                </div>
-                
-                {user?.subscriptionPeriodEnd && usage?.tier !== "trial" && (
+              <Separator />
+
+              <div>
+                <h4 className="font-medium mb-4">Usage This Month</h4>
+                <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Next renewal</p>
-                    <p className="text-sm" data-testid="text-renewal-date">
-                      {formatDate(user.subscriptionPeriodEnd)}
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm">Projects</span>
+                      <span className="text-sm text-muted-foreground">12 / Unlimited</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary w-1/4" />
+                    </div>
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                  {usage?.tier === "trial" && (
-                    <Button
-                      size="sm"
-                      onClick={() => (window.location.href = "/pricing")}
-                      data-testid="button-upgrade"
-                    >
-                      Upgrade to Plus or Pro
-                    </Button>
-                  )}
-                  {usage?.tier !== "trial" && user?.stripeCustomerId && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => portalMutation.mutate()}
-                      disabled={portalMutation.isPending}
-                      data-testid="button-billing-portal"
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      {portalMutation.isPending ? "Opening..." : "Manage Subscription"}
-                    </Button>
-                  )}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-usage">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              <CardTitle>Usage</CardTitle>
-            </div>
-            <CardDescription>Track your resource usage</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {usageLoading ? (
-              <>
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">AI Tokens</p>
-                    <p className="text-sm text-muted-foreground" data-testid="text-ai-tokens-usage">
-                      {usage?.aiTokensUsed?.toLocaleString() || 0} / {usage?.aiTokensLimit === -1 ? "Unlimited" : (usage?.aiTokensLimit?.toLocaleString() || "0")}
-                    </p>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm">AI Generations</span>
+                      <span className="text-sm text-muted-foreground">45 / 1000</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary w-1/20" />
+                    </div>
                   </div>
-                  <Progress 
-                    value={usage?.aiTokensLimit === -1 ? 0 : ((usage?.aiTokensUsed || 0) / (usage?.aiTokensLimit || 1)) * 100} 
-                    className="h-2"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Projects</p>
-                    <p className="text-sm text-muted-foreground" data-testid="text-projects-usage">
-                      {usage?.projectsUsed || 0} / {usage?.projectsLimit === -1 ? "Unlimited" : (usage?.projectsLimit || 0)}
-                    </p>
-                  </div>
-                  <Progress 
-                    value={usage?.projectsLimit === -1 ? 0 : ((usage?.projectsUsed || 0) / (usage?.projectsLimit || 1)) * 100} 
-                    className="h-2"
-                  />
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-ai-coach">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle>AI Coach</CardTitle>
-            </div>
-            <CardDescription>Productify Coach AI powered by GPT-4o</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm">
-              Get personalized guidance on creating and monetizing digital products with our AI coach powered by the latest OpenAI technology.
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => (window.location.href = "/ai-coach")}
-              data-testid="button-go-to-coach"
-            >
-              Go to AI Coach
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-security">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <CardTitle>Security</CardTitle>
-            </div>
-            <CardDescription>API keys and security settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Connected Services</p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">OpenAI API</span>
-                  <Badge variant="outline" className="text-xs">
-                    Configured
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Stripe Payments</span>
-                  <Badge variant="outline" className="text-xs">
-                    Active
-                  </Badge>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        <Card data-testid="card-support">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-primary" />
-              <CardTitle>Support</CardTitle>
-            </div>
-            <CardDescription>Get help and resources</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm">
-              Need assistance? Visit our community or contact support for help with your digital product creation journey.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => (window.location.href = "/community")}
-                data-testid="button-community"
-              >
-                Community
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Notifications</CardTitle>
+              <CardDescription>
+                Choose what emails you want to receive
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="emailNotifications">Email Notifications</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive notifications about your account activity
+                  </p>
+                </div>
+                <Switch
+                  id="emailNotifications"
+                  checked={emailNotifications}
+                  onCheckedChange={setEmailNotifications}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="productUpdates">Product Updates</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified about new features and updates
+                  </p>
+                </div>
+                <Switch
+                  id="productUpdates"
+                  checked={productUpdates}
+                  onCheckedChange={setProductUpdates}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="marketingEmails">Marketing Emails</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Receive tips, guides, and promotional content
+                  </p>
+                </div>
+                <Switch
+                  id="marketingEmails"
+                  checked={marketingEmails}
+                  onCheckedChange={setMarketingEmails}
+                />
+              </div>
+
+              <Button>
+                <Mail className="mr-2 h-4 w-4" />
+                Save Preferences
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => (window.location.href = "/help")}
-                data-testid="button-help"
-              >
-                Help Center
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme</CardTitle>
+              <CardDescription>
+                Customize the look and feel of the application
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label>Color Theme</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => theme === "dark" && toggleTheme()}
+                    className={`p-6 rounded-lg border-2 transition-all ${
+                      theme === "light"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="aspect-video bg-white rounded mb-3 border" />
+                    <div className="font-medium">Light Mode</div>
+                    <div className="text-xs text-muted-foreground">Clean and bright</div>
+                  </button>
+                  <button
+                    onClick={() => theme === "light" && toggleTheme()}
+                    className={`p-6 rounded-lg border-2 transition-all ${
+                      theme === "dark"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="aspect-video bg-slate-900 rounded mb-3 border" />
+                    <div className="font-medium">Dark Mode</div>
+                    <div className="text-xs text-muted-foreground">Easy on the eyes</div>
+                  </button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label>Font Size</Label>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Adjust the text size across the application
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">Small</Button>
+                  <Button variant="default" size="sm">Medium</Button>
+                  <Button variant="outline" size="sm">Large</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
