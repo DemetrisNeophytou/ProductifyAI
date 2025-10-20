@@ -12,10 +12,10 @@ import { Logger } from '../utils/logger';
 
 const router = Router();
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client (only if configured)
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 interface SearchResult {
   id: string;
@@ -42,6 +42,20 @@ router.post('/query', async (req, res) => {
     }
 
     Logger.info(`RAG query: ${query}`);
+
+    // Check if OpenAI is configured
+    if (!openai) {
+      return res.json({
+        ok: true,
+        data: {
+          query,
+          results: [],
+          count: 0,
+        },
+        mock: true,
+        message: 'OpenAI not configured - RAG unavailable',
+      });
+    }
 
     // Generate embedding for query
     const queryEmbeddingResponse = await openai.embeddings.create({

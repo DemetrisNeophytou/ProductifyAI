@@ -13,10 +13,10 @@ import { PlanTier } from '../config/stripe';
 
 const router = Router();
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI (only if configured)
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // Usage limits by plan
 const USAGE_LIMITS = {
@@ -143,6 +143,23 @@ ${ragContext ? `\n=== KNOWLEDGE BASE CONTEXT ===\n${ragContext}\n===============
 ${context ? `\n=== ADDITIONAL CONTEXT ===\n${context}\n==========================\n` : ''}
 
 Answer the user's question using the knowledge base context when relevant, and cite your sources.`;
+
+    // Check if OpenAI is configured
+    if (!openai) {
+      return res.json({
+        ok: true,
+        data: {
+          response: 'AI Expert is currently unavailable. Please configure OPENAI_API_KEY to enable this feature.',
+          sources: [],
+          usage: {
+            queriesUsed: 0,
+            queriesRemaining: limit === -1 ? 'unlimited' : limit,
+            tokensUsed: 0,
+          },
+        },
+        mock: true,
+      });
+    }
 
     // Step 3: Generate AI response
     const completion = await openai.chat.completions.create({
