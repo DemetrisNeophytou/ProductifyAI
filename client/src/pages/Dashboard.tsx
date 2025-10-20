@@ -1,55 +1,44 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+/**
+ * ProductifyAI Dashboard - AI Intelligence Hub
+ * Interactive analytics with live insights, trends, and performance metrics
+ */
+
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
   Sparkles, 
-  Video, 
-  FileText, 
-  TrendingUp, 
+  Video,
+  TrendingUp,
   DollarSign,
-  Users,
-  Activity,
-  ArrowUpRight,
-  Clock,
   Eye,
-  Edit,
-  MoreHorizontal
-} from "lucide-react";
-import { Link } from "wouter";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Zap,
+  BarChart3,
+} from 'lucide-react';
+import { Link } from 'wouter';
+import { AnimatedStatCard } from '@/components/dashboard/AnimatedStatCard';
+import { ActivityTimeline } from '@/components/dashboard/ActivityTimeline';
+import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
+import { AISummaryModal } from '@/components/dashboard/AISummaryModal';
+import { getMockStats, getGreeting } from '@/utils/mockStats';
 
 interface Product {
   id: number;
-  ownerId: number;
   title: string;
-  kind: string;
-  price: string;
-  published: boolean;
+  type: string;
+  status: string;
   createdAt: string;
 }
 
-interface Stats {
-  totalProducts: number;
-  publishedProducts: number;
-  totalRevenue: number;
-  totalViews: number;
-}
-
 export default function Dashboard() {
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
+  const [statsVisible, setStatsVisible] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
   // Fetch products
-  const { data: productsData, isLoading: productsLoading } = useQuery<{ success: boolean; data: Product[] }>({
-    queryKey: ["/products"],
+  const { data: productsData } = useQuery<{ success: boolean; data: Product[] }>({
+    queryKey: ['/products'],
     queryFn: async () => {
       const response = await fetch(`${API_BASE}/products`);
       return response.json();
@@ -57,298 +46,199 @@ export default function Dashboard() {
   });
 
   const products = productsData?.data || [];
+  const stats = getMockStats();
 
-  // Calculate stats
-  const stats: Stats = {
-    totalProducts: products.length,
-    publishedProducts: products.filter(p => p.published).length,
-    totalRevenue: 0, // Placeholder
-    totalViews: 0, // Placeholder
-  };
-
-  // Recent activity (mock data)
-  const recentActivity = [
-    { id: 1, action: "Created", item: "AI Marketing Guide", time: "2 hours ago", icon: Plus },
-    { id: 2, action: "Published", item: "Video Course: React Basics", time: "5 hours ago", icon: Eye },
-    { id: 3, action: "Edited", item: "Email Templates Pack", time: "1 day ago", icon: Edit },
-    { id: 4, action: "Generated", item: "AI Product Ideas", time: "2 days ago", icon: Sparkles },
-  ];
+  // Trigger stat animations on mount
+  useEffect(() => {
+    const timeout = setTimeout(() => setStatsVisible(true), 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <div className="container mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Welcome back! Here's what's happening with your products.
+        <div className="space-y-1">
+          <h1 className="text-4xl font-bold animate-in fade-in slide-in-from-left-4 duration-500">
+            {getGreeting()}! 👋
+          </h1>
+          <p className="text-muted-foreground animate-in fade-in slide-in-from-left-4 duration-500 delay-100">
+            Here's what's happening with your products and AI activity
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+          <AISummaryModal />
           <Link href="/ai-builders">
-            <Button>
+            <Button variant="outline">
               <Sparkles className="mr-2 h-4 w-4" />
-              AI Generator
+              AI Tools
             </Button>
           </Link>
           <Link href="/create">
-            <Button variant="outline">
+            <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Create Product
+              Create
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {productsLoading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
-              <>
-                <div className="text-3xl font-bold">{stats.totalProducts}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stats.publishedProducts} published
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      {/* Animated Stats Grid */}
+      {statsVisible && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <AnimatedStatCard
+            title="Total Revenue"
+            value={stats.revenue.value}
+            trend={stats.revenue.trend}
+            icon={DollarSign}
+            sparkline={stats.revenue.sparkline}
+            prefix="$"
+            decimals={2}
+            delay={0}
+          />
+          <AnimatedStatCard
+            title="AI Generations"
+            value={stats.aiGenerations.value}
+            trend={stats.aiGenerations.trend}
+            icon={Sparkles}
+            sparkline={stats.aiGenerations.sparkline}
+            delay={100}
+          />
+          <AnimatedStatCard
+            title="Active Products"
+            value={stats.activeProducts.value}
+            trend={stats.activeProducts.trend}
+            icon={BarChart3}
+            sparkline={stats.activeProducts.sparkline}
+            delay={200}
+          />
+          <AnimatedStatCard
+            title="Total Views"
+            value={stats.totalViews.value}
+            trend={stats.totalViews.trend}
+            icon={Eye}
+            sparkline={stats.totalViews.sparkline}
+            delay={300}
+          />
+        </div>
+      )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-green-600 mt-1 flex items-center">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Coming soon
-            </p>
-          </CardContent>
-        </Card>
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.totalViews}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Analytics coming soon
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI Generations</CardTitle>
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Use AI to create
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Recent Products */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Recent Products</CardTitle>
-              <CardDescription>Your latest digital products</CardDescription>
-            </div>
-            <Link href="/products">
-              <Button variant="ghost" size="sm">
-                View all
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {productsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : products.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">No products yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Create your first digital product to get started
-                </p>
-                <Link href="/create">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Product
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {products.slice(0, 4).map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Quick Actions */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold">Quick Actions</h2>
+              <div className="grid gap-4">
+                <Link href="/ai-builders">
+                  <div className="group p-6 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent hover:border-primary hover:shadow-lg transition-all duration-200 cursor-pointer">
                     <div className="flex items-center gap-4">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
+                      <div className="p-3 bg-primary rounded-lg group-hover:scale-110 transition-transform">
+                        <Sparkles className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <div className="font-medium">{product.title}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-2">
-                          <span>{product.kind}</span>
-                          <span>•</span>
-                          <span>${product.price}</span>
-                        </div>
+                        <h3 className="font-semibold text-lg">AI Generator</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Create layouts with AI assistance
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={product.published ? "default" : "secondary"}>
-                        {product.published ? "Published" : "Draft"}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Publish</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </Link>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Your latest actions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={activity.id} className="flex gap-3">
-                    <div className="p-2 bg-muted rounded-lg h-fit">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {activity.action} <span className="text-muted-foreground">•</span>{" "}
-                        {activity.item}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {activity.time}
-                      </p>
+                <Link href="/video-builder">
+                  <div className="group p-6 rounded-xl border border-secondary/30 bg-gradient-to-br from-secondary/10 to-transparent hover:border-secondary hover:shadow-lg transition-all duration-200 cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-secondary rounded-lg group-hover:scale-110 transition-transform">
+                        <Video className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Video Builder</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Create engaging video content
+                        </p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+                </Link>
+
+                <Link href="/analytics">
+                  <div className="group p-6 rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent hover:border-blue-500 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Deep Analytics</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Track performance metrics
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-primary/50 hover:border-primary transition-colors cursor-pointer">
-          <Link href="/ai-builders">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Sparkles className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">AI Generator</CardTitle>
-                  <CardDescription>Create with AI</CardDescription>
+            {/* Activity Timeline */}
+            <ActivityTimeline />
+          </div>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <AnalyticsCharts />
+        </TabsContent>
+
+        {/* Activity Tab */}
+        <TabsContent value="activity" className="space-y-6">
+          <ActivityTimeline />
+        </TabsContent>
+      </Tabs>
+
+      {/* Recent Products (if any) */}
+      {products.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">Recent Products</h2>
+            <Link href="/products">
+              <Button variant="ghost" size="sm">
+                View all →
+              </Button>
+            </Link>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {products.slice(0, 3).map((product, index) => (
+              <div
+                key={product.id}
+                className="p-4 rounded-lg border hover:shadow-md transition-all duration-200 cursor-pointer"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <h3 className="font-medium mb-1">{product.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2">{product.type}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(product.createdAt).toLocaleDateString()}
+                  </span>
+                  <Link href={`/editor/${product.id}`}>
+                    <Button variant="ghost" size="sm">
+                      Edit
+                    </Button>
+                  </Link>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Transform ideas into complete products using AI
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-
-        <Card className="border-secondary/50 hover:border-secondary transition-colors cursor-pointer">
-          <Link href="/video-builder">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-secondary/10 rounded-lg">
-                  <Video className="h-6 w-6 text-secondary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Video Builder</CardTitle>
-                  <CardDescription>Create videos</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Generate engaging videos from your scripts
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-
-        <Card className="border-accent hover:border-accent-foreground transition-colors cursor-pointer">
-          <Link href="/analytics">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-accent rounded-lg">
-                  <Activity className="h-6 w-6 text-accent-foreground" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Analytics</CardTitle>
-                  <CardDescription>Track performance</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Monitor your product metrics and growth
-              </p>
-            </CardContent>
-          </Link>
-        </Card>
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
