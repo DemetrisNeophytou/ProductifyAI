@@ -32,6 +32,8 @@ import Pricing from "@/pages/Pricing";
 const NewProject = lazy(() => import("@/pages/NewProject"));
 const ProjectEditor = lazy(() => import("@/pages/ProjectEditor"));
 const CanvaEditor = lazy(() => import("@/pages/CanvaEditor"));
+const VisualEditor = lazy(() => import("@/pages/VisualEditor"));
+const MediaGallery = lazy(() => import("@/pages/MediaGallery"));
 const ProjectPages = lazy(() => import("@/pages/ProjectPages"));
 const WizardCreateProduct = lazy(() => import("@/pages/WizardCreateProduct"));
 const Products = lazy(() => import("@/pages/Products"));
@@ -193,6 +195,14 @@ function Router() {
               <ProjectEditor />
             )}
           </Route>
+                  <Route path="/editor/:projectId">
+                    {(params) => (
+                      <ProjectEditor />
+                    )}
+                  </Route>
+                  <Route path="/media">
+                    <MediaGallery />
+                  </Route>
           <Route path="/create">
             <DashboardLayout>
               <WizardCreateProduct />

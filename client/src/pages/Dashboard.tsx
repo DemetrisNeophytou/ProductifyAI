@@ -1,302 +1,601 @@
-import { useEffect, useState } from "react";
-import { 
-  Sparkles, 
-  Plus, 
-  ArrowRight, 
-  Lightbulb, 
-  MessageSquare,
-  FileText,
-  TrendingUp,
-  Download,
-  Eye,
-  Clock
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Plus, Sparkles, Video, BarChart3, Settings, LogOut, BookOpen, FileText, PlayCircle, Image, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Project } from "@shared/schema";
-import { OnboardingModal } from "@/components/OnboardingModal";
+import MediaGallery from "./MediaGallery";
+import AnalyticsDashboard from "./AnalyticsDashboard";
+
+interface Product {
+  id: number;
+  ownerId: number;
+  title: string;
+  kind: string;
+  price: string;
+  published: boolean;
+  createdAt: string;
+}
+
+interface AIGeneration {
+  idea: string;
+  productType: string;
+}
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [aiGeneration, setAiGeneration] = useState<AIGeneration>({
+    idea: "",
+    productType: "eBook"
+  });
+  const [videoScript, setVideoScript] = useState("");
+  const [activeTab, setActiveTab] = useState("products");
+  const [showMediaGallery, setShowMediaGallery] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const { toast } = useToast();
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    if (!hasSeenOnboarding && isAuthenticated && !authLoading) {
-      setShowOnboarding(true);
+  const API_BASE = "http://localhost:5050";
+
+  // Fetch all products
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/products`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setProducts(data.data);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [isAuthenticated, authLoading]);
+  };
 
-  const handleCloseOnboarding = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
-    setShowOnboarding(false);
+  // Generate AI Product
+  const generateAIProduct = async () => {
+    if (!aiGeneration.idea.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter an idea for your product",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/ai/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idea: aiGeneration.idea,
+          userId: 1, // TODO: Get from auth
+          productType: aiGeneration.productType,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Success!",
+          description: `AI generated "${data.data.product.title}"`,
+        });
+        setAiGeneration({ idea: "", productType: "eBook" });
+        setAiModalOpen(false);
+        fetchProducts();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate AI product",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate Video
+  const generateVideo = async () => {
+    if (!videoScript.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a script for your video",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/video/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          script: videoScript,
+          template: "modern",
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Video Generated!",
+          description: `${data.data.summary.totalScenes} scenes created (${data.data.summary.estimatedDuration})`,
+        });
+        setVideoScript("");
+        setVideoModalOpen(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate video",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
+    fetchProducts();
+  }, []);
+
+  const sidebarItems = [
+    { id: "products", label: "Products", icon: BookOpen },
+    { id: "ai-generator", label: "AI Generator", icon: Sparkles },
+    { id: "video-builder", label: "Video Builder", icon: Video },
+    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "media-gallery", label: "Media Gallery", icon: Image, action: () => setShowMediaGallery(true) },
+    { id: "analytics-dashboard", label: "Analytics Dashboard", icon: TrendingUp, action: () => setShowAnalytics(true) },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const getProductIcon = (kind: string) => {
+    switch (kind) {
+      case "eBook": return FileText;
+      case "course": return BookOpen;
+      case "template": return FileText;
+      case "video-pack": return PlayCircle;
+      default: return FileText;
     }
-  }, [isAuthenticated, authLoading, toast]);
-
-  const { data: projects = [] } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-    enabled: isAuthenticated,
-  });
-
-  const { data: analytics } = useQuery<{
-    totalEvents: number;
-    views: number;
-    exports: number;
-    aiGenerations: number;
-  }>({
-    queryKey: ["/api/analytics/summary"],
-    enabled: isAuthenticated,
-  });
-
-  // Get the most recent project
-  const lastProject = projects.length > 0 ? projects[0] : null;
-  
-  // Calculate simple progress
-  const totalSteps = 5;
-  let completedSteps = 0;
-  
-  if (lastProject) {
-    const metadata = lastProject.metadata as any;
-    if (metadata?.idea) completedSteps++;
-    if (metadata?.outline) completedSteps++;
-    if (metadata?.content) completedSteps++;
-    if (metadata?.offer) completedSteps++;
-    if (metadata?.funnel) completedSteps++;
-  }
-
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div className="p-8 flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-      <OnboardingModal open={showOnboarding} onClose={handleCloseOnboarding} />
-      
-      {/* Welcome Section */}
-      <div className="space-y-2">
-        <h1 className="text-3xl md:text-4xl font-bold" data-testid="heading-dashboard-title">
-          Welcome back, {(user as any)?.email?.split('@')[0] || 'Creator'}
-        </h1>
-        <p className="text-base md:text-lg text-muted-foreground" data-testid="text-dashboard-subtitle">
-          {lastProject 
-            ? "Ready to continue your journey" 
-            : "Let's create your first digital product"
-          }
-        </p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-card border-r">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold">ProductifyAI</h1>
+            <p className="text-sm text-muted-foreground">Digital Product Creator</p>
+          </div>
+          
+          <nav className="px-4 space-y-2">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => item.action ? item.action() : setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                    activeTab === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
-      {/* Continue or Create CTA */}
-      {lastProject ? (
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 hover-elevate cursor-pointer" data-testid="card-continue-project">
-          <Link href={`/projects/${lastProject.id}/edit`}>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-xl mb-1">Continue your last project</CardTitle>
-                  <CardDescription className="text-base">
-                    "{lastProject.title}"
-                  </CardDescription>
-                </div>
-                <ArrowRight className="h-5 w-5 text-primary flex-shrink-0" />
-              </div>
-            </CardHeader>
-          </Link>
-        </Card>
-      ) : (
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 hover-elevate cursor-pointer" data-testid="card-create-first">
-          <Link href="/create">
-            <CardHeader>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-xl mb-1">Create your first product</CardTitle>
-                  <CardDescription className="text-base">
-                    Start with AI-powered templates in minutes
-                  </CardDescription>
-                </div>
-                <Plus className="h-6 w-6 text-primary flex-shrink-0" />
-              </div>
-            </CardHeader>
-          </Link>
-        </Card>
-      )}
+          <div className="absolute bottom-4 left-4 right-4">
+            <Button variant="outline" className="w-full" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
 
-      {/* 2️⃣ Quick Progress Tracker (compact) */}
-      {projects.length > 0 && (
-        <Card data-testid="card-progress-tracker">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Progress Tracker</CardTitle>
-              <span className="text-sm text-muted-foreground" data-testid="text-progress-steps">
-                {completedSteps}/{totalSteps} Steps
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-primary h-full transition-all duration-500 rounded-full"
-                  style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
-                  data-testid="progress-bar"
-                />
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          {activeTab === "products" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold">Your Products</h2>
+                  <p className="text-muted-foreground">
+                    Manage your digital products and create new ones
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate with AI
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+
+                  <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        <Video className="h-4 w-4 mr-2" />
+                        Create Video
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {completedSteps === 0 && "Just getting started - let's build your outline!"}
-                {completedSteps > 0 && completedSteps < totalSteps && `${totalSteps - completedSteps} steps remaining - you're making great progress!`}
-                {completedSteps === totalSteps && "Ready to launch! All steps completed."}
-              </p>
-              {completedSteps < totalSteps && (
-                <Link href="/create">
-                  <Button size="sm" variant="outline" className="w-full" data-testid="button-continue-progress">
-                    Continue <ArrowRight className="h-3 w-3 ml-2" />
-                  </Button>
-                </Link>
+
+              {/* Products Grid */}
+              {loading && products.length === 0 ? (
+                <div className="flex items-center justify-center p-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : products.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No products yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first digital product using AI
+                    </p>
+                    <Button onClick={() => setAiModalOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Generate with AI
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {products.map((product) => {
+                    const Icon = getProductIcon(product.kind);
+                    return (
+                      <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Icon className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <CardTitle className="text-lg">{product.title}</CardTitle>
+                                <CardDescription>{product.kind}</CardDescription>
+                              </div>
+                            </div>
+                            <Badge variant={product.published ? "default" : "secondary"}>
+                              {product.published ? "Published" : "Draft"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <div className="flex justify-between">
+                              <span>Price:</span>
+                              <span className="font-semibold">${product.price}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Created:</span>
+                              <span>{new Date(product.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* 3️⃣ Insights Section (compact Week at a Glance) */}
-      <Card data-testid="card-insights">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Week at a Glance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center space-y-1" data-testid="stat-projects">
-              <div className="text-2xl font-bold">{projects.length}</div>
-              <div className="text-xs text-muted-foreground">Projects</div>
-            </div>
-            <div className="text-center space-y-1" data-testid="stat-views">
-              <div className="text-2xl font-bold flex items-center justify-center gap-1">
-                <Eye className="h-4 w-4 text-muted-foreground" />
-                {analytics?.views || 0}
+          {activeTab === "ai-generator" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold">AI Product Generator</h2>
+                <p className="text-muted-foreground">
+                  Transform your ideas into complete digital products
+                </p>
               </div>
-              <div className="text-xs text-muted-foreground">Views</div>
+              
+              <Card className="max-w-2xl">
+                <CardHeader>
+                  <CardTitle>Generate New Product</CardTitle>
+                  <CardDescription>
+                    Enter your idea and let AI create a complete product structure
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="idea">Product Idea</Label>
+                    <Textarea
+                      id="idea"
+                      placeholder="e.g., A comprehensive guide to productivity for remote workers..."
+                      value={aiGeneration.idea}
+                      onChange={(e) => setAiGeneration({ ...aiGeneration, idea: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="productType">Product Type</Label>
+                    <select
+                      id="productType"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={aiGeneration.productType}
+                      onChange={(e) => setAiGeneration({ ...aiGeneration, productType: e.target.value })}
+                    >
+                      <option value="eBook">eBook</option>
+                      <option value="course">Course</option>
+                      <option value="template">Template</option>
+                      <option value="video-pack">Video Pack</option>
+                    </select>
+                  </div>
+
+                  <Button onClick={generateAIProduct} disabled={loading} className="w-full">
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 mr-2" />
+                    )}
+                    Generate Product
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-            <div className="text-center space-y-1" data-testid="stat-exports">
-              <div className="text-2xl font-bold flex items-center justify-center gap-1">
-                <Download className="h-4 w-4 text-muted-foreground" />
-                {analytics?.exports || 0}
+          )}
+
+          {activeTab === "video-builder" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold">Video Builder</h2>
+                <p className="text-muted-foreground">
+                  Create engaging videos from your scripts
+                </p>
               </div>
-              <div className="text-xs text-muted-foreground">Exports</div>
+              
+              <Card className="max-w-2xl">
+                <CardHeader>
+                  <CardTitle>Create Video</CardTitle>
+                  <CardDescription>
+                    Enter your script and generate video scenes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="script">Video Script</Label>
+                    <Textarea
+                      id="script"
+                      placeholder="Enter your video script here. The AI will break it down into scenes..."
+                      value={videoScript}
+                      onChange={(e) => setVideoScript(e.target.value)}
+                      rows={6}
+                    />
+                  </div>
+
+                  <Button onClick={generateVideo} disabled={loading} className="w-full">
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Video className="h-4 w-4 mr-2" />
+                    )}
+                    Generate Video
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
 
-      {/* Quick Actions / AI Tools (3 main buttons) */}
-      <Card data-testid="card-quick-actions">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3">
-            <Button asChild className="w-full justify-start h-auto py-3" data-testid="button-create-product">
-              <Link href="/create">
-                <div className="flex items-center gap-3 w-full">
-                  <div className="h-10 w-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
-                    <Plus className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold">Create New Product</div>
-                    <div className="text-xs opacity-90">Start from scratch or use a template</div>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-            
-            <Button asChild variant="outline" className="w-full justify-start h-auto py-3" data-testid="button-generate-content">
-              <Link href="/builders/content">
-                <div className="flex items-center gap-3 w-full">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold">Generate Content</div>
-                    <div className="text-xs text-muted-foreground">AI-powered content creation</div>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-            
-            <Button asChild variant="outline" className="w-full justify-start h-auto py-3" data-testid="button-ai-coach">
-              <Link href="/ai-coach">
-                <div className="flex items-center gap-3 w-full">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold">AI Coach</div>
-                    <div className="text-xs text-muted-foreground">Get expert guidance 24/7</div>
-                  </div>
-                </div>
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          {activeTab === "analytics" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold">Analytics</h2>
+                <p className="text-muted-foreground">
+                  Track your product performance
+                </p>
+              </div>
+              
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{products.length}</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Published</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {products.filter(p => p.published).length}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">$0.00</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
 
-      {/* Quick Link to More Tools */}
-      <div className="text-center py-4" data-testid="section-more-tools">
-        <p className="text-sm text-muted-foreground mb-3">
-          Need more tools? Explore our full AI toolkit
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Link href="/builders/idea-finder">
-            <Button variant="ghost" size="sm" data-testid="link-idea-finder">
-              <Lightbulb className="h-3 w-3 mr-1" />
-              Idea Finder
-            </Button>
-          </Link>
-          <Link href="/builders/offer">
-            <Button variant="ghost" size="sm" data-testid="link-offer-builder">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Offer Builder
-            </Button>
-          </Link>
-          <Link href="/analytics">
-            <Button variant="ghost" size="sm" data-testid="link-analytics">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Analytics
-            </Button>
-          </Link>
-          <Link href="/ai-agents">
-            <Button variant="ghost" size="sm" data-testid="link-ai-agents">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI Agents
-            </Button>
-          </Link>
-          <Link href="/video-builder">
-            <Button variant="ghost" size="sm" data-testid="link-video-builder">
-              <FileText className="h-3 w-3 mr-1" />
-              Video Builder
-            </Button>
-          </Link>
+          {activeTab === "settings" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-3xl font-bold">Settings</h2>
+                <p className="text-muted-foreground">
+                  Manage your account and preferences
+                </p>
+              </div>
+              
+              <Card className="max-w-2xl">
+                <CardHeader>
+                  <CardTitle>Account Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" placeholder="user@example.com" />
+                  </div>
+                  <div>
+                    <Label htmlFor="name">Display Name</Label>
+                    <Input id="name" placeholder="Your Name" />
+                  </div>
+                  <Button>Save Changes</Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* AI Generation Modal */}
+      <Dialog open={aiModalOpen} onOpenChange={setAiModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Generate AI Product</DialogTitle>
+            <DialogDescription>
+              Describe your idea and AI will create a complete product structure.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="modal-idea">Product Idea</Label>
+              <Textarea
+                id="modal-idea"
+                placeholder="e.g., A guide to productivity for remote workers..."
+                value={aiGeneration.idea}
+                onChange={(e) => setAiGeneration({ ...aiGeneration, idea: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="modal-type">Product Type</Label>
+              <select
+                id="modal-type"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={aiGeneration.productType}
+                onChange={(e) => setAiGeneration({ ...aiGeneration, productType: e.target.value })}
+              >
+                <option value="eBook">eBook</option>
+                <option value="course">Course</option>
+                <option value="template">Template</option>
+                <option value="video-pack">Video Pack</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={generateAIProduct} disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Generate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Video Generation Modal */}
+      <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create Video</DialogTitle>
+            <DialogDescription>
+              Enter your script to generate video scenes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="modal-script">Video Script</Label>
+              <Textarea
+                id="modal-script"
+                placeholder="Enter your video script here..."
+                value={videoScript}
+                onChange={(e) => setVideoScript(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVideoModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={generateVideo} disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Video className="h-4 w-4 mr-2" />
+              )}
+              Generate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Media Gallery Modal */}
+      <Dialog open={showMediaGallery} onOpenChange={setShowMediaGallery}>
+        <DialogContent className="max-w-6xl h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Media Gallery</DialogTitle>
+            <DialogDescription>
+              Generate and manage AI-created media assets
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <MediaGallery />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analytics Dashboard Modal */}
+      <Dialog open={showAnalytics} onOpenChange={setShowAnalytics}>
+        <DialogContent className="max-w-6xl h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Analytics Dashboard</DialogTitle>
+            <DialogDescription>
+              Track and analyze your product performance
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <AnalyticsDashboard />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

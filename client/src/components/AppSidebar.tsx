@@ -1,4 +1,4 @@
-import { Home, Plus, FileText, BarChart3, MessageCircle, Palette, Users, Settings, LogOut, Sparkles, Video } from "lucide-react";
+import { Home, Plus, FileText, BarChart3, MessageCircle, Palette, Users, Settings, LogOut, Sparkles, Video, Image } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,11 @@ const mainItems = [
     title: "My Products",
     url: "/products",
     icon: FileText,
+  },
+  {
+    title: "Media",
+    url: "/media",
+    icon: Image,
   },
   {
     title: "Analytics",

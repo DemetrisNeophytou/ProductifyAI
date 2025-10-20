@@ -241,23 +241,44 @@ export const blocks = pgTable("blocks", {
   index("idx_blocks_page_order").on(table.pageId, table.order),
 ]);
 
+// Project Blocks - Canvas data for visual editor (NEW)
+export const projectBlocks = pgTable("project_blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  canvasData: jsonb("canvas_data").notNull(), // Fabric.js canvas JSON data
+  version: integer("version").notNull().default(1),
+  isAutoSave: integer("is_auto_save").default(0), // 0 = manual save, 1 = auto save
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_project_blocks_project").on(table.projectId),
+  index("idx_project_blocks_version").on(table.projectId, table.version),
+]);
+
 // Assets - Images, files, and other media
 export const assets = pgTable("assets", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   projectId: varchar("project_id").references(() => projects.id, { onDelete: "set null" }),
-  type: varchar("type", { length: 50 }).notNull(), // image, logo, cover, file
+  type: varchar("type", { length: 50 }).notNull(), // image, logo, cover, file, video
   url: text("url").notNull(),
   filename: text("filename").notNull(),
+  license: varchar("license", { length: 40 }).default("generated"),
+  attribution: text("attribution"),
   metadata: jsonb("metadata").$type<{
     size?: number;
     mimeType?: string;
     width?: number;
     height?: number;
-    source?: 'upload' | 'pexels' | 'pixabay' | 'openai' | 'replicate';
-    license?: string;
+    source?: 'upload' | 'pexels' | 'pixabay' | 'openai' | 'replicate' | 'dall-e' | 'midjourney';
     blockId?: string;
     aiPrompt?: string;
+    generationParams?: {
+      model?: string;
+      style?: string;
+      quality?: string;
+      size?: string;
+    };
   }>(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -302,6 +323,12 @@ export const insertBlockSchema = createInsertSchema(blocks).omit({
   updatedAt: true,
 }).extend({
   type: z.enum(blockTypes),
+});
+
+export const insertProjectBlockSchema = createInsertSchema(projectBlocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertAssetSchema = createInsertSchema(assets).omit({
@@ -406,6 +433,9 @@ export type InsertPage = z.infer<typeof insertPageSchema>;
 
 export type Block = typeof blocks.$inferSelect;
 export type InsertBlock = z.infer<typeof insertBlockSchema>;
+
+export type ProjectBlock = typeof projectBlocks.$inferSelect;
+export type InsertProjectBlock = z.infer<typeof insertProjectBlockSchema>;
 
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
