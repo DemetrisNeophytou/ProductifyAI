@@ -13,6 +13,7 @@
     "check": "tsc",
     "db:gen": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "eval": "tsx eval/evalRunner.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:ci": "vitest run"

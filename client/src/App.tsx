@@ -60,6 +60,7 @@ const VideoBuilder = lazy(() => import("@/pages/VideoBuilder"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
 const StyleGuide = lazy(() => import("@/pages/StyleGuide"));
 const VisualEditorNew = lazy(() => import("@/pages/VisualEditor"));
+const AdminEvaluation = lazy(() => import("@/pages/AdminEvaluation"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -323,6 +324,11 @@ function Router() {
           </Route>
           <Route path="/editor/:projectId">
             <VisualEditorNew />
+          </Route>
+          <Route path="/admin/evaluation">
+            <DashboardLayout>
+              <AdminEvaluation />
+            </DashboardLayout>
           </Route>
         </>
       )}

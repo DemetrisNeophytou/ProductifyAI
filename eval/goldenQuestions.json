@@ -1,0 +1,251 @@
+[
+  {
+    "id": "pricing_1",
+    "category": "Pricing",
+    "question": "What are 3 effective pricing strategies for digital templates?",
+    "expected_topics": ["pricing", "value-based", "tiered", "templates"],
+    "min_checklist_items": 3,
+    "difficulty": "easy"
+  },
+  {
+    "id": "pricing_2",
+    "category": "Pricing",
+    "question": "How should I price my first ebook if I have no audience?",
+    "expected_topics": ["pricing", "ebook", "testing", "value"],
+    "min_checklist_items": 2,
+    "difficulty": "medium"
+  },
+  {
+    "id": "pricing_3",
+    "category": "Pricing",
+    "question": "Should I use payment plans for my $497 course?",
+    "expected_topics": ["pricing", "payment plans", "conversion"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "launch_1",
+    "category": "Launch",
+    "question": "How do I launch my first online course with zero budget?",
+    "expected_topics": ["launch", "marketing", "email", "organic"],
+    "min_checklist_items": 5,
+    "difficulty": "medium"
+  },
+  {
+    "id": "launch_2",
+    "category": "Launch",
+    "question": "What's a good email sequence for launching a digital product?",
+    "expected_topics": ["email", "launch", "sequence", "conversion"],
+    "min_checklist_items": 4,
+    "difficulty": "easy"
+  },
+  {
+    "id": "launch_3",
+    "category": "Launch",
+    "question": "How long should my product launch last?",
+    "expected_topics": ["launch", "timeline", "scarcity"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "marketplace_1",
+    "category": "Marketplace",
+    "question": "How do I write a compelling marketplace listing for my ebook?",
+    "expected_topics": ["marketplace", "copywriting", "conversion"],
+    "min_checklist_items": 4,
+    "difficulty": "easy"
+  },
+  {
+    "id": "marketplace_2",
+    "category": "Marketplace",
+    "question": "What makes a product stand out on a marketplace?",
+    "expected_topics": ["marketplace", "thumbnail", "pricing", "reviews"],
+    "min_checklist_items": 3,
+    "difficulty": "medium"
+  },
+  {
+    "id": "seo_1",
+    "category": "SEO",
+    "question": "How can I optimize my product page for SEO?",
+    "expected_topics": ["seo", "keywords", "content", "metadata"],
+    "min_checklist_items": 4,
+    "difficulty": "medium"
+  },
+  {
+    "id": "seo_2",
+    "category": "SEO",
+    "question": "What keywords should I target for selling digital planners?",
+    "expected_topics": ["seo", "keywords", "research"],
+    "min_checklist_items": 3,
+    "difficulty": "hard"
+  },
+  {
+    "id": "refunds_1",
+    "category": "Support",
+    "question": "Should I offer a money-back guarantee on digital products?",
+    "expected_topics": ["refunds", "guarantee", "conversion"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "refunds_2",
+    "category": "Support",
+    "question": "How do I handle refund requests professionally?",
+    "expected_topics": ["refunds", "support", "customer service"],
+    "min_checklist_items": 3,
+    "difficulty": "medium"
+  },
+  {
+    "id": "analytics_1",
+    "category": "Analytics",
+    "question": "What metrics should I track for my digital product business?",
+    "expected_topics": ["analytics", "metrics", "kpi", "roi"],
+    "min_checklist_items": 5,
+    "difficulty": "easy"
+  },
+  {
+    "id": "analytics_2",
+    "category": "Analytics",
+    "question": "How do I calculate ROI for my course creation?",
+    "expected_topics": ["analytics", "roi", "revenue"],
+    "min_checklist_items": 2,
+    "difficulty": "medium"
+  },
+  {
+    "id": "branding_1",
+    "category": "Branding",
+    "question": "How important is a professional thumbnail for my product?",
+    "expected_topics": ["branding", "thumbnail", "conversion"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "branding_2",
+    "category": "Branding",
+    "question": "What should my product cover include?",
+    "expected_topics": ["branding", "design", "visual"],
+    "min_checklist_items": 4,
+    "difficulty": "easy"
+  },
+  {
+    "id": "growth_1",
+    "category": "Growth",
+    "question": "How do I get my first 100 customers?",
+    "expected_topics": ["growth", "marketing", "audience"],
+    "min_checklist_items": 5,
+    "difficulty": "hard"
+  },
+  {
+    "id": "growth_2",
+    "category": "Growth",
+    "question": "What are effective upsell strategies for digital products?",
+    "expected_topics": ["growth", "upsell", "revenue"],
+    "min_checklist_items": 3,
+    "difficulty": "medium"
+  },
+  {
+    "id": "licensing_1",
+    "category": "Legal",
+    "question": "What license should I use for my templates?",
+    "expected_topics": ["licensing", "legal", "commercial use"],
+    "min_checklist_items": 2,
+    "difficulty": "medium"
+  },
+  {
+    "id": "licensing_2",
+    "category": "Legal",
+    "question": "Can customers resell my digital product?",
+    "expected_topics": ["licensing", "resale", "rights"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "content_1",
+    "category": "Content",
+    "question": "How long should my online course be?",
+    "expected_topics": ["course", "content", "length"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "content_2",
+    "category": "Content",
+    "question": "What makes a good ebook outline?",
+    "expected_topics": ["ebook", "outline", "structure"],
+    "min_checklist_items": 4,
+    "difficulty": "easy"
+  },
+  {
+    "id": "delivery_1",
+    "category": "Delivery",
+    "question": "What's the best way to deliver digital products to customers?",
+    "expected_topics": ["delivery", "automation", "download"],
+    "min_checklist_items": 3,
+    "difficulty": "medium"
+  },
+  {
+    "id": "validation_1",
+    "category": "Validation",
+    "question": "How do I validate my product idea before building it?",
+    "expected_topics": ["validation", "research", "audience"],
+    "min_checklist_items": 4,
+    "difficulty": "medium"
+  },
+  {
+    "id": "validation_2",
+    "category": "Validation",
+    "question": "What's the minimum viable product for testing demand?",
+    "expected_topics": ["validation", "mvp", "testing"],
+    "min_checklist_items": 3,
+    "difficulty": "hard"
+  },
+  {
+    "id": "automation_1",
+    "category": "Automation",
+    "question": "How can I automate my digital product sales?",
+    "expected_topics": ["automation", "sales", "workflow"],
+    "min_checklist_items": 4,
+    "difficulty": "medium"
+  },
+  {
+    "id": "social_1",
+    "category": "Marketing",
+    "question": "Which social media platform is best for promoting ebooks?",
+    "expected_topics": ["social media", "marketing", "platform"],
+    "min_checklist_items": 2,
+    "difficulty": "medium"
+  },
+  {
+    "id": "bundles_1",
+    "category": "Pricing",
+    "question": "Should I bundle my products or sell separately?",
+    "expected_topics": ["bundles", "pricing", "value"],
+    "min_checklist_items": 3,
+    "difficulty": "medium"
+  },
+  {
+    "id": "testimonials_1",
+    "category": "Social Proof",
+    "question": "How do I get testimonials for a brand new product?",
+    "expected_topics": ["testimonials", "social proof", "beta"],
+    "min_checklist_items": 4,
+    "difficulty": "medium"
+  },
+  {
+    "id": "email_1",
+    "category": "Marketing",
+    "question": "How many emails should be in my product launch sequence?",
+    "expected_topics": ["email", "launch", "sequence"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  },
+  {
+    "id": "conversion_1",
+    "category": "Conversion",
+    "question": "What's a good conversion rate for a digital product sales page?",
+    "expected_topics": ["conversion", "sales page", "benchmark"],
+    "min_checklist_items": 2,
+    "difficulty": "easy"
+  }
+]
+
