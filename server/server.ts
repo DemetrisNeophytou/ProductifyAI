@@ -171,6 +171,17 @@ app.get("/health/db", async (_req, res) => {
 // SERVER STARTUP
 // =============================================================================
 
+// Validate environment in production
+if (process.env.NODE_ENV === 'production') {
+  try {
+    const { validateProductionEnv } = await import('./utils/validateEnv.js');
+    validateProductionEnv();
+  } catch (error: any) {
+    console.error('❌ Environment validation failed:', error.message);
+    process.exit(1);
+  }
+}
+
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => {
   Logger.info("🚀 Starting ProductifyAI server...");
