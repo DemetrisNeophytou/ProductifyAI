@@ -37,6 +37,9 @@ import marketplaceOrdersRouter from "./routes/marketplace-orders";
 import listingsRouter from "./routes/listings";
 import { blockFreeCreation } from "./middleware/freePlanGuard";
 import healthRouter from "./routes/health";
+import meRouter from "./routes/me";
+import usageRouter from "./routes/usage";
+import aiFeedbackRouter from "./routes/aiFeedback";
 
 const app = express();
 
@@ -127,6 +130,14 @@ app.use("/api/editor", blockFreeCreation);
 app.use("/api/canvas", blockFreeCreation);
 app.use("/api/media", blockFreeCreation);
 // AI routes already have plan checks in aiExpert.ts
+
+// =============================================================================
+// USER & USAGE ENDPOINTS
+// =============================================================================
+
+app.use("/api/me", meRouter);
+app.use("/api/usage", usageRouter);
+app.use("/api/ai/feedback", aiFeedbackRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT

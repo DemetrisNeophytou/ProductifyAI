@@ -238,12 +238,17 @@ function Router() {
               <Settings />
             </DashboardLayout>
           </Route>
+          <Route path="/profile">
+            <DashboardLayout>
+              <Profile />
+            </DashboardLayout>
+          </Route>
           <Route path="/settings/profile">
             <DashboardLayout>
               <Profile />
             </DashboardLayout>
           </Route>
-          <Route path="/settings/usage">
+          <Route path="/dashboard/usage">
             <DashboardLayout>
               <Usage />
             </DashboardLayout>
