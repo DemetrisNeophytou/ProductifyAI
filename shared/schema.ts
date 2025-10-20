@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  plan: varchar("plan", { length: 20 }).default("free"), // free, plus, pro
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("trial"), // trial, plus, pro
   subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trialing"), // trialing, active, cancelled, past_due, expired
   stripeCustomerId: varchar("stripe_customer_id"),
@@ -37,10 +38,10 @@ export const users = pgTable("users", {
   trialStartDate: timestamp("trial_start_date"),
   trialEndDate: timestamp("trial_end_date"),
   subscriptionPeriodEnd: timestamp("subscription_period_end"),
-  projectsLimit: integer("projects_limit").default(3), // Trial: 3, Plus: 10, Pro: unlimited (-1)
+  projectsLimit: integer("projects_limit").default(3), // Free: 3, Plus: 10, Pro: unlimited (-1)
   aiTokensUsed: integer("ai_tokens_used").default(0),
-  aiTokensLimit: integer("ai_tokens_limit").default(5000), // Trial: 5000, Plus: 20000, Pro: unlimited (-1)
-  credits: integer("credits").default(100), // AI action credits - Trial: 100, Plus: 500, Pro: 2000
+  aiTokensLimit: integer("ai_tokens_limit").default(5000), // Free: 0, Plus: 20000, Pro: unlimited (-1)
+  credits: integer("credits").default(100), // AI action credits - Free: 0, Plus: 500, Pro: 2000
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -931,3 +932,62 @@ export const insertAgentJobSchema = createInsertSchema(agentJobs).omit({
 
 export type AgentJob = typeof agentJobs.$inferSelect;
 export type InsertAgentJob = z.infer<typeof insertAgentJobSchema>;
+
+// Knowledge Base - Documents
+export const kbDocuments = pgTable("kb_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  topic: varchar("topic", { length: 100 }).notNull(),
+  tags: jsonb("tags").$type<string[]>().default(sql`'[]'::jsonb`),
+  source: varchar("source", { length: 255 }).notNull(), // filename or URL
+  content: text("content").notNull(), // Full markdown content
+  metadata: jsonb("metadata").$type<{ author?: string; version?: string; category?: string }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_kb_documents_topic").on(table.topic),
+  index("idx_kb_documents_source").on(table.source),
+]);
+
+// Knowledge Base - Chunks
+export const kbChunks = pgTable("kb_chunks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  docId: varchar("doc_id").notNull().references(() => kbDocuments.id, { onDelete: "cascade" }),
+  idx: integer("idx").notNull(), // Chunk index in document
+  content: text("content").notNull(),
+  tokens: integer("tokens").notNull(),
+  metadata: jsonb("metadata").$type<{ section?: string; heading?: string }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_kb_chunks_doc").on(table.docId),
+]);
+
+// Knowledge Base - Embeddings (pgvector)
+export const kbEmbeddings = pgTable("kb_embeddings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  chunkId: varchar("chunk_id").notNull().references(() => kbChunks.id, { onDelete: "cascade" }),
+  embedding: text("embedding").notNull(), // Store as JSON array string for compatibility
+  model: varchar("model", { length: 50 }).default("text-embedding-3-large"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_kb_embeddings_chunk").on(table.chunkId),
+]);
+
+// Usage Credits Tracking
+export const usageCredits = pgTable("usage_credits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  month: varchar("month", { length: 7 }).notNull(), // YYYY-MM
+  aiTokensUsed: integer("ai_tokens_used").default(0),
+  generationsUsed: integer("generations_used").default(0),
+  limitsJson: jsonb("limits_json").$type<{ aiTokens: number; generations: number }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_usage_credits_user_month").on(table.userId, table.month),
+]);
+
+export type KBDocument = typeof kbDocuments.$inferSelect;
+export type KBChunk = typeof kbChunks.$inferSelect;
+export type KBEmbedding = typeof kbEmbeddings.$inferSelect;
+export type UsageCredit = typeof usageCredits.$inferSelect;
