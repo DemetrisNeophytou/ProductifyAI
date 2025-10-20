@@ -10,6 +10,13 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
+import {
+  sendTrialStartedEmail,
+  sendPaymentSucceededEmail,
+  sendPaymentFailedEmail,
+  sendPlanUpgradedEmail,
+  sendPlanDowngradedEmail,
+} from '../utils/mailer';
 
 const router = Router();
 
@@ -35,6 +42,19 @@ router.post('/checkout', async (req, res) => {
       return res.status(404).json({
         ok: false,
         error: 'User not found',
+      });
+    }
+
+    // Check if Stripe is configured
+    if (!stripe) {
+      Logger.warn('Stripe not configured - returning mock checkout URL');
+      return res.json({
+        ok: true,
+        data: {
+          sessionId: 'mock-session-id',
+          url: '/pricing?mock=true',
+        },
+        mock: true,
       });
     }
 
@@ -262,6 +282,64 @@ router.get('/status', async (req, res) => {
 });
 
 /**
+ * Create Stripe Customer Portal session
+ * POST /api/stripe/portal
+ */
+router.post('/portal', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        ok: false,
+        error: 'userId is required',
+      });
+    }
+
+    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+
+    if (!user || !user.stripeCustomerId) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No Stripe customer found',
+      });
+    }
+
+    // Check if Stripe is configured
+    if (!stripe) {
+      return res.json({
+        ok: true,
+        data: {
+          url: '/settings/profile?mock=true',
+        },
+        mock: true,
+      });
+    }
+
+    // Create portal session
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings/profile`,
+    });
+
+    Logger.info(`Customer portal created for user ${userId}`);
+
+    res.json({
+      ok: true,
+      data: {
+        url: session.url,
+      },
+    });
+  } catch (error: any) {
+    Logger.error('Create portal session error', error);
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * Cancel subscription
  * POST /api/subscription/cancel
  */
@@ -382,6 +460,24 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .where(eq(users.stripeCustomerId, customerId));
 
   Logger.info(`Updated user subscription: ${userId || customerId} -> ${plan} (${status})`);
+
+  // Send email notification
+  const [updatedUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.stripeCustomerId, customerId))
+    .limit(1);
+
+  if (updatedUser && updatedUser.email) {
+    const userName = updatedUser.firstName || 'there';
+    
+    if (subscription.status === 'trialing') {
+      const trialEnd = new Date(subscription.trial_end! * 1000);
+      await sendTrialStartedEmail(updatedUser.email, userName, trialEnd);
+    } else if (subscription.status === 'active' && status === 'active') {
+      await sendPlanUpgradedEmail(updatedUser.email, userName, plan);
+    }
+  }
 }
 
 /**
@@ -410,6 +506,18 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .where(eq(users.stripeCustomerId, customerId));
 
   Logger.info(`Subscription cancelled, downgraded to free: ${customerId}`);
+
+  // Send email notification
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.stripeCustomerId, customerId))
+    .limit(1);
+
+  if (user && user.email) {
+    const userName = user.firstName || 'there';
+    await sendPlanDowngradedEmail(user.email, userName, 'free');
+  }
 }
 
 /**
@@ -428,6 +536,18 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     .where(eq(users.stripeCustomerId, customerId));
 
   Logger.warn(`Payment failed for customer: ${customerId}`);
+
+  // Send email notification
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.stripeCustomerId, customerId))
+    .limit(1);
+
+  if (user && user.email) {
+    const userName = user.firstName || 'there';
+    await sendPaymentFailedEmail(user.email, userName);
+  }
 }
 
 export default router;

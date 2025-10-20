@@ -20,6 +20,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SmartSearch } from "@/components/SmartSearch";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { DevBanner } from "@/components/DevBanner";
 
 // Eager-loaded critical routes (auth & landing)
 import NotFound from "@/pages/not-found";
@@ -395,6 +396,7 @@ export default function App() {
           <TooltipProvider>
             <Router />
             <Toaster />
+            <DevBanner />
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>

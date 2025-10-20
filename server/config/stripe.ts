@@ -5,11 +5,22 @@
 
 import Stripe from 'stripe';
 
-// Initialize Stripe
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-  typescript: true,
-});
+// Check if Stripe is configured
+const STRIPE_ENABLED = !!process.env.STRIPE_SECRET_KEY;
+const MOCK_STRIPE = !STRIPE_ENABLED;
+
+// Initialize Stripe with fallback for development
+export const stripe = STRIPE_ENABLED
+  ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2024-11-20.acacia',
+      typescript: true,
+    })
+  : null;
+
+// Log Stripe status
+if (MOCK_STRIPE) {
+  console.log('⚠️  STRIPE_SECRET_KEY not configured - using mock mode');
+}
 
 // Plan Configuration
 export const PLANS = {

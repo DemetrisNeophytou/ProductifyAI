@@ -453,4 +453,4 @@ export default function VisualEditor() {
       </div>
     </div>
   );
-});
+}

@@ -36,6 +36,7 @@ import aiExpertRouter from "./routes/aiExpert";
 import marketplaceOrdersRouter from "./routes/marketplace-orders";
 import listingsRouter from "./routes/listings";
 import { blockFreeCreation } from "./middleware/freePlanGuard";
+import healthRouter from "./routes/health";
 
 const app = express();
 
@@ -130,6 +131,8 @@ app.use("/api/media", blockFreeCreation);
 // =============================================================================
 // HEALTH CHECK ENDPOINT
 // =============================================================================
+
+app.use("/api/health", healthRouter);
 
 app.get("/health/db", async (_req, res) => {
   try {

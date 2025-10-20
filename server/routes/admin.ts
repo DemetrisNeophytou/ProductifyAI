@@ -272,7 +272,7 @@ router.get('/revenue/stripe-summary', async (req, res) => {
     }
 
     // Fetch from Stripe (if configured)
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!stripe || !process.env.STRIPE_SECRET_KEY) {
       return res.json({
         ok: true,
         data: {
