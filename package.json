@@ -17,6 +17,7 @@
     "eval": "tsx eval/evalRunner.ts",
     "ingest:kb": "tsx scripts/ingest-knowledge-base.ts",
     "migrate:admin": "node server/run-admin-migration.js",
+    "pre-deploy": "tsx scripts/pre-deploy-check.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:ci": "vitest run"
