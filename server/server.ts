@@ -32,6 +32,7 @@ import ragRouter from "./routes/rag";
 import subscriptionRouter from "./routes/subscription";
 import communityRouter from "./routes/community";
 import aiExpertRouter from "./routes/aiExpert";
+import marketplaceOrdersRouter from "./routes/marketplace-orders";
 
 const app = express();
 
@@ -110,6 +111,9 @@ app.use("/api/subscription", subscriptionRouter);
 // Community and AI Expert routes
 app.use("/api/community", communityRouter);
 app.use("/api/ai", aiExpertRouter);
+
+// Marketplace orders with commission
+app.use("/api/marketplace", marketplaceOrdersRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT

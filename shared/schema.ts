@@ -1047,7 +1047,32 @@ export type KBDocument = typeof kbDocuments.$inferSelect;
 export type KBChunk = typeof kbChunks.$inferSelect;
 export type KBEmbedding = typeof kbEmbeddings.$inferSelect;
 export type UsageCredit = typeof usageCredits.$inferSelect;
+// Marketplace Orders
+export const orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  buyerId: varchar("buyer_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sellerId: varchar("seller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  productId: varchar("product_id"), // Reference to product
+  productTitle: varchar("product_title", { length: 255 }),
+  amount: integer("amount").notNull(), // Total amount in cents
+  subtotal: integer("subtotal").notNull(), // Amount before commission
+  commission: integer("commission").notNull(), // Platform commission in cents
+  commissionRate: integer("commission_rate").notNull(), // Commission percentage (7, 4, or 1)
+  sellerPayout: integer("seller_payout").notNull(), // Amount seller receives
+  buyerPlan: varchar("buyer_plan", { length: 20 }), // Plan at time of purchase
+  stripePaymentIntentId: varchar("stripe_payment_intent_id"),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, completed, refunded, failed
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_orders_buyer").on(table.buyerId),
+  index("idx_orders_seller").on(table.sellerId),
+  index("idx_orders_created").on(table.createdAt),
+]);
+
 export type Channel = typeof channels.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type AISession = typeof aiSessions.$inferSelect;
 export type AIUsageLog = typeof aiUsageLogs.$inferSelect;
+export type Order = typeof orders.$inferSelect;
