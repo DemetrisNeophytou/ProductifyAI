@@ -30,6 +30,8 @@ import kbRouter from "./routes/kb";
 import adminRouter, { requireAdmin } from "./routes/admin";
 import ragRouter from "./routes/rag";
 import subscriptionRouter from "./routes/subscription";
+import communityRouter from "./routes/community";
+import aiExpertRouter from "./routes/aiExpert";
 
 const app = express();
 
@@ -104,6 +106,10 @@ app.use("/api/rag", ragRouter);
 // Stripe subscription routes (webhook needs raw body, registered separately)
 app.use("/api/stripe", subscriptionRouter);
 app.use("/api/subscription", subscriptionRouter);
+
+// Community and AI Expert routes
+app.use("/api/community", communityRouter);
+app.use("/api/ai", aiExpertRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT

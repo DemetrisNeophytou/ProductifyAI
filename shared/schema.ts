@@ -991,7 +991,63 @@ export const usageCredits = pgTable("usage_credits", {
   index("idx_usage_credits_user_month").on(table.userId, table.month),
 ]);
 
+// Community Channels
+export const channels = pgTable("channels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 40 }).notNull().unique(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  description: text("description"),
+  accessLevel: varchar("access_level", { length: 20 }).notNull(), // public, plus, pro
+  isActive: integer("is_active").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Community Messages
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  channelId: varchar("channel_id").notNull().references(() => channels.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  isBot: integer("is_bot").default(0), // 0 = human, 1 = AI bot
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_messages_channel").on(table.channelId),
+  index("idx_messages_created").on(table.createdAt),
+]);
+
+// AI Expert Sessions
+export const aiSessions = pgTable("ai_expert_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  query: text("query").notNull(),
+  response: text("response").notNull(),
+  sources: jsonb("sources").$type<{ title: string; source: string; score: number }[]>(),
+  tokensUsed: integer("tokens_used").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_sessions_user").on(table.userId),
+  index("idx_ai_sessions_created").on(table.createdAt),
+]);
+
+// AI Usage Tracking
+export const aiUsageLogs = pgTable("ai_usage_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  month: varchar("month", { length: 7 }).notNull(), // YYYY-MM
+  queryCount: integer("query_count").default(0),
+  tokensUsed: integer("tokens_used").default(0),
+  resetDate: timestamp("reset_date").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_usage_user_month").on(table.userId, table.month),
+]);
+
 export type KBDocument = typeof kbDocuments.$inferSelect;
 export type KBChunk = typeof kbChunks.$inferSelect;
 export type KBEmbedding = typeof kbEmbeddings.$inferSelect;
 export type UsageCredit = typeof usageCredits.$inferSelect;
+export type Channel = typeof channels.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type AISession = typeof aiSessions.$inferSelect;
+export type AIUsageLog = typeof aiUsageLogs.$inferSelect;
