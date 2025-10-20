@@ -14,6 +14,10 @@ import {
   Home,
   Shield,
   ArrowLeft,
+  Users,
+  DollarSign,
+  Activity,
+  MessageCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -31,6 +35,30 @@ const adminNavItems = [
     description: 'System dashboard',
   },
   {
+    title: 'Users',
+    href: '/admin/users',
+    icon: Users,
+    description: 'User Management',
+  },
+  {
+    title: 'Revenue',
+    href: '/admin/revenue',
+    icon: DollarSign,
+    description: 'Stripe & Commissions',
+  },
+  {
+    title: 'AI Usage',
+    href: '/admin/usage',
+    icon: Activity,
+    description: 'Token Analytics',
+  },
+  {
+    title: 'Community',
+    href: '/admin/community',
+    icon: MessageCircle,
+    description: 'Chat Insights',
+  },
+  {
     title: 'Evaluation',
     href: '/admin/evaluation',
     icon: TestTube,
@@ -41,12 +69,6 @@ const adminNavItems = [
     href: '/admin/kb',
     icon: Database,
     description: 'Manage AI Memory',
-  },
-  {
-    title: 'Analytics',
-    href: '/admin/analytics',
-    icon: BarChart3,
-    description: 'Usage & Performance',
   },
   {
     title: 'Settings',

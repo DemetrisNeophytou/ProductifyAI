@@ -66,6 +66,10 @@ const AdminKB = lazy(() => import("@/pages/AdminKB"));
 const AdminOverview = lazy(() => import("@/pages/AdminOverview"));
 const AdminAnalytics = lazy(() => import("@/pages/AdminAnalytics"));
 const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
+const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
+const AdminRevenue = lazy(() => import("@/pages/AdminRevenue"));
+const AdminUsage = lazy(() => import("@/pages/AdminUsage"));
+const AdminCommunity = lazy(() => import("@/pages/AdminCommunity"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -348,6 +352,26 @@ function Router() {
           <Route path="/admin/analytics">
             <AdminLayout>
               <AdminAnalytics />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/users">
+            <AdminLayout>
+              <AdminUsers />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/revenue">
+            <AdminLayout>
+              <AdminRevenue />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/usage">
+            <AdminLayout>
+              <AdminUsage />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/community">
+            <AdminLayout>
+              <AdminCommunity />
             </AdminLayout>
           </Route>
           <Route path="/admin/settings">

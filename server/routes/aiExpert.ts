@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import { OpenAI } from 'openai';
 import { db } from '../db';
-import { users, aiSessions as aiExpertSessions, aiUsageLogs } from '@shared/schema';
+import { users, aiExpertSessions, aiUsageLogs } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
 import { PlanTier } from '../config/stripe';

@@ -29,6 +29,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role", { length: 20 }).default("user"), // user, admin
   plan: varchar("plan", { length: 20 }).default("free"), // free, plus, pro
   subscriptionTier: varchar("subscription_tier", { length: 20 }).default("trial"), // trial, plus, pro
   subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trialing"), // trialing, active, cancelled, past_due, expired
@@ -1016,7 +1017,7 @@ export const messages = pgTable("messages", {
 ]);
 
 // AI Expert Sessions
-export const aiSessions = pgTable("ai_expert_sessions", {
+export const aiExpertSessions = pgTable("ai_expert_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   query: text("query").notNull(),
@@ -1071,8 +1072,60 @@ export const orders = pgTable("orders", {
   index("idx_orders_created").on(table.createdAt),
 ]);
 
+// Subscriptions (for admin analytics)
+export const subscriptions = pgTable("subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stripeSubscriptionId: varchar("stripe_subscription_id").unique(),
+  plan: varchar("plan", { length: 20 }).notNull(), // free, plus, pro
+  status: varchar("status", { length: 20 }).notNull(), // active, past_due, canceled, trialing
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_subscriptions_user").on(table.userId),
+  index("idx_subscriptions_status").on(table.status),
+]);
+
+// AI Usage Tracking (granular per request)
+export const aiUsage = pgTable("ai_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  feature: varchar("feature", { length: 50 }).notNull(), // chat, builder, video, translate, rag, admin_view
+  model: varchar("model", { length: 50 }),
+  tokensIn: integer("tokens_in").default(0),
+  tokensOut: integer("tokens_out").default(0),
+  latencyMs: integer("latency_ms").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_usage_user").on(table.userId),
+  index("idx_ai_usage_feature").on(table.feature),
+  index("idx_ai_usage_created").on(table.createdAt),
+]);
+
+// AI Feedback (quality ratings)
+export const aiFeedback = pgTable("ai_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id"),
+  messageId: varchar("message_id"),
+  rating: integer("rating"), // 1-5 stars
+  helpful: integer("helpful"), // 0 or 1
+  notes: text("notes"),
+  citationCount: integer("citation_count").default(0),
+  hallucinationFlag: integer("hallucination_flag").default(0), // 0 or 1
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_ai_feedback_user").on(table.userId),
+  index("idx_ai_feedback_created").on(table.createdAt),
+]);
+
 export type Channel = typeof channels.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type AISession = typeof aiSessions.$inferSelect;
+export type AIExpertSession = typeof aiExpertSessions.$inferSelect;
 export type AIUsageLog = typeof aiUsageLogs.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type AIUsage = typeof aiUsage.$inferSelect;
+export type AIFeedback = typeof aiFeedback.$inferSelect;

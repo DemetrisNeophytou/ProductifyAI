@@ -27,7 +27,8 @@ import libraryRouter from "./routes/library";
 import publishRouter from "./routes/publish";
 import exportRouter from "./routes/export";
 import kbRouter from "./routes/kb";
-import adminRouter, { requireAdmin } from "./routes/admin";
+import adminRouter from "./routes/admin";
+import { isAdmin } from "./middleware/isAdmin";
 import ragRouter from "./routes/rag";
 import subscriptionRouter from "./routes/subscription";
 import communityRouter from "./routes/community";
@@ -101,7 +102,7 @@ app.use("/me/library", libraryRouter);
 app.use("/api/projects", publishRouter);
 app.use("/api/projects", exportRouter);
 app.use("/api/kb", kbRouter);
-app.use("/api/admin", requireAdmin, adminRouter);
+app.use("/api/admin", isAdmin, adminRouter);
 app.use("/api/rag", ragRouter);
 
 // Stripe subscription routes (webhook needs raw body, registered separately)
