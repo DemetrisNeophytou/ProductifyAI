@@ -19,6 +19,7 @@ import { FloatingAICoach } from "@/components/FloatingAICoach";
 import { BottomNav } from "@/components/BottomNav";
 import { SmartSearch } from "@/components/SmartSearch";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 // Eager-loaded critical routes (auth & landing)
 import NotFound from "@/pages/not-found";
@@ -62,6 +63,9 @@ const StyleGuide = lazy(() => import("@/pages/StyleGuide"));
 const VisualEditorNew = lazy(() => import("@/pages/VisualEditor"));
 const AdminEvaluation = lazy(() => import("@/pages/AdminEvaluation"));
 const AdminKB = lazy(() => import("@/pages/AdminKB"));
+const AdminOverview = lazy(() => import("@/pages/AdminOverview"));
+const AdminAnalytics = lazy(() => import("@/pages/AdminAnalytics"));
+const AdminSettings = lazy(() => import("@/pages/AdminSettings"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -326,15 +330,30 @@ function Router() {
           <Route path="/editor/:projectId">
             <VisualEditorNew />
           </Route>
+          <Route path="/admin">
+            <AdminLayout>
+              <AdminOverview />
+            </AdminLayout>
+          </Route>
           <Route path="/admin/evaluation">
-            <DashboardLayout>
+            <AdminLayout>
               <AdminEvaluation />
-            </DashboardLayout>
+            </AdminLayout>
           </Route>
           <Route path="/admin/kb">
-            <DashboardLayout>
+            <AdminLayout>
               <AdminKB />
-            </DashboardLayout>
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/analytics">
+            <AdminLayout>
+              <AdminAnalytics />
+            </AdminLayout>
+          </Route>
+          <Route path="/admin/settings">
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
           </Route>
         </>
       )}

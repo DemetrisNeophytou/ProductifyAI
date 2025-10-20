@@ -27,6 +27,7 @@ import libraryRouter from "./routes/library";
 import publishRouter from "./routes/publish";
 import exportRouter from "./routes/export";
 import kbRouter from "./routes/kb";
+import adminRouter, { requireAdmin } from "./routes/admin";
 
 const app = express();
 
@@ -95,6 +96,7 @@ app.use("/me/library", libraryRouter);
 app.use("/api/projects", publishRouter);
 app.use("/api/projects", exportRouter);
 app.use("/api/kb", kbRouter);
+app.use("/api/admin", requireAdmin, adminRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT
