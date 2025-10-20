@@ -4,7 +4,6 @@
  */
 
 import { Router } from 'express';
-import { OpenAI } from 'openai';
 import { db } from '../db';
 import { users, aiExpertSessions, aiUsageLogs } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -13,10 +12,16 @@ import { PlanTier } from '../config/stripe';
 
 const router = Router();
 
-// Initialize OpenAI (only if configured)
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+// Lazy load OpenAI
+let openai: any = null;
+async function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) return null;
+  if (!openai) {
+    const { OpenAI } = await import('openai');
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 // Usage limits by plan
 const USAGE_LIMITS = {
@@ -144,8 +149,9 @@ ${context ? `\n=== ADDITIONAL CONTEXT ===\n${context}\n=========================
 
 Answer the user's question using the knowledge base context when relevant, and cite your sources.`;
 
-    // Check if OpenAI is configured
-    if (!openai) {
+    // Step 3: Get OpenAI client and generate AI response
+    const client = await getOpenAI();
+    if (!client) {
       return res.json({
         ok: true,
         data: {
@@ -161,8 +167,7 @@ Answer the user's question using the knowledge base context when relevant, and c
       });
     }
 
-    // Step 3: Generate AI response
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: 'gpt-4o-mini', // or 'gpt-4o' for better quality
       messages: [
         { role: 'system', content: systemPrompt },

@@ -4,7 +4,6 @@
  */
 
 import { Router } from 'express';
-import { OpenAI } from 'openai';
 import { db } from '../db';
 import { kbEmbeddings, kbChunks, kbDocuments } from '@shared/schema';
 import { eq, sql } from 'drizzle-orm';
@@ -12,10 +11,16 @@ import { Logger } from '../utils/logger';
 
 const router = Router();
 
-// Initialize OpenAI client (only if configured)
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+// Lazy load OpenAI to avoid initialization errors
+let openai: any = null;
+async function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) return null;
+  if (!openai) {
+    const { OpenAI } = await import('openai');
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+}
 
 interface SearchResult {
   id: string;
@@ -43,8 +48,9 @@ router.post('/query', async (req, res) => {
 
     Logger.info(`RAG query: ${query}`);
 
-    // Check if OpenAI is configured
-    if (!openai) {
+    // Get OpenAI client
+    const client = await getOpenAI();
+    if (!client) {
       return res.json({
         ok: true,
         data: {
@@ -58,7 +64,7 @@ router.post('/query', async (req, res) => {
     }
 
     // Generate embedding for query
-    const queryEmbeddingResponse = await openai.embeddings.create({
+    const queryEmbeddingResponse = await client.embeddings.create({
       model: 'text-embedding-3-large',
       input: query,
       dimensions: 1536,
