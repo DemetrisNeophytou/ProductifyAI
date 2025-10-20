@@ -58,6 +58,7 @@ const Referrals = lazy(() => import("@/pages/Referrals"));
 const AiAgents = lazy(() => import("@/pages/AiAgents"));
 const VideoBuilder = lazy(() => import("@/pages/VideoBuilder"));
 const JobDetails = lazy(() => import("@/pages/JobDetails"));
+const StyleGuide = lazy(() => import("@/pages/StyleGuide"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -312,6 +313,11 @@ function Router() {
           <Route path="/builders/funnel">
             <DashboardLayout>
               <FunnelPlanner />
+            </DashboardLayout>
+          </Route>
+          <Route path="/style-guide">
+            <DashboardLayout>
+              <StyleGuide />
             </DashboardLayout>
           </Route>
         </>
