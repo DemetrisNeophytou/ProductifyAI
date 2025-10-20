@@ -28,6 +28,8 @@ import { EditorCanvas } from '@/components/editor/EditorCanvas';
 import { LayersPanel } from '@/components/editor/LayersPanel';
 import { PropertiesPanel } from '@/components/editor/PropertiesPanel';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { CanvasAssistant } from '@/components/ai/CanvasAssistant';
+import { AICommandPalette } from '@/components/ai/AICommandPalette';
 
 export default function VisualEditor() {
   const [match, params] = useRoute('/editor/:projectId');
@@ -38,6 +40,7 @@ export default function VisualEditor() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [saving, setSaving] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const {
     layers,
@@ -142,6 +145,12 @@ export default function VisualEditor() {
       if (e.key === 'Escape') {
         e.preventDefault();
         useEditorStore.getState().clearSelection();
+      }
+      
+      // Command Palette: Ctrl+K
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
       }
       
       // Center on selection: F
@@ -432,11 +441,15 @@ export default function VisualEditor() {
         </div>
       </div>
 
+      {/* AI Components */}
+      <CanvasAssistant />
+      <AICommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+
       {/* Keyboard Shortcuts Help (Hidden, for reference) */}
       <div className="sr-only" aria-live="polite">
         Keyboard shortcuts: Ctrl+Z (Undo), Ctrl+Y (Redo), Ctrl+D (Duplicate), 
-        Delete (Remove), Ctrl+S (Save), Ctrl+G (Toggle Grid), Escape (Deselect),
-        F (Center), Ctrl+0 (Zoom to Fit), Arrow Keys (Nudge)
+        Delete (Remove), Ctrl+S (Save), Ctrl+G (Toggle Grid), Ctrl+K (AI Commands),
+        Escape (Deselect), F (Center), Ctrl+0 (Zoom to Fit), Arrow Keys (Nudge)
       </div>
     </div>
   );
