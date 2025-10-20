@@ -71,6 +71,8 @@ const AdminUsers = lazy(() => import("@/pages/AdminUsers"));
 const AdminRevenue = lazy(() => import("@/pages/AdminRevenue"));
 const AdminUsage = lazy(() => import("@/pages/AdminUsage"));
 const AdminCommunity = lazy(() => import("@/pages/AdminCommunity"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const Usage = lazy(() => import("@/pages/Usage"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -234,6 +236,16 @@ function Router() {
           <Route path="/settings">
             <DashboardLayout>
               <Settings />
+            </DashboardLayout>
+          </Route>
+          <Route path="/settings/profile">
+            <DashboardLayout>
+              <Profile />
+            </DashboardLayout>
+          </Route>
+          <Route path="/settings/usage">
+            <DashboardLayout>
+              <Usage />
             </DashboardLayout>
           </Route>
           <Route path="/ai-coach">

@@ -1126,6 +1126,21 @@ export type AISession = typeof aiSessions.$inferSelect;
 export type AIExpertSession = typeof aiExpertSessions.$inferSelect;
 export type AIUsageLog = typeof aiUsageLogs.$inferSelect;
 export type Order = typeof orders.$inferSelect;
+// Admin Audit Logs
+export const adminLogs = pgTable("admin_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminUserId: varchar("admin_user_id").notNull().references(() => users.id),
+  action: varchar("action", { length: 100 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }),
+  entityId: varchar("entity_id"),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_admin_logs_admin").on(table.adminUserId),
+  index("idx_admin_logs_created").on(table.createdAt),
+]);
+
 export type Subscription = typeof subscriptions.$inferSelect;
 export type AIUsage = typeof aiUsage.$inferSelect;
 export type AIFeedback = typeof aiFeedback.$inferSelect;
+export type AdminLog = typeof adminLogs.$inferSelect;

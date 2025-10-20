@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { db } from '../db';
-import { users, subscriptions, orders, aiUsage, aiFeedback, messages, channels } from '@shared/schema';
+import { users, subscriptions, orders, aiUsage, aiFeedback, messages, channels, adminLogs } from '@shared/schema';
 import { eq, sql, and, gte, desc } from 'drizzle-orm';
 import { Logger } from '../utils/logger';
 import { stripe } from '../config/stripe';
@@ -219,6 +219,16 @@ router.patch('/users/:id/plan', async (req, res) => {
       .where(eq(users.id, id));
 
     Logger.info(`Admin updated user ${id} plan to ${plan}`);
+
+    // Log audit
+    const adminId = (req as any).user?.id || 'system';
+    await db.insert(adminLogs).values({
+      adminUserId: adminId,
+      action: 'plan_changed',
+      entityType: 'user',
+      entityId: id,
+      details: { oldPlan: 'unknown', newPlan: plan },
+    });
 
     res.json({ ok: true, message: 'Plan updated successfully' });
   } catch (error: any) {
@@ -678,6 +688,27 @@ router.get('/stats', async (req, res) => {
     res.json({ ok: true, data: stats });
   } catch (error: any) {
     Logger.error('Failed to fetch admin stats', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+/**
+ * Get audit logs
+ * GET /api/admin/logs/audit?limit=100
+ */
+router.get('/logs/audit', async (req, res) => {
+  try {
+    const { limit = 100 } = req.query;
+
+    const logs = await db
+      .select()
+      .from(adminLogs)
+      .orderBy(desc(adminLogs.createdAt))
+      .limit(Number(limit));
+
+    res.json({ ok: true, data: { logs } });
+  } catch (error: any) {
+    Logger.error('Get audit logs error', error);
     res.status(500).json({ ok: false, error: error.message });
   }
 });
