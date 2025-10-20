@@ -26,6 +26,7 @@ import checkoutRouter from "./routes/checkout";
 import libraryRouter from "./routes/library";
 import publishRouter from "./routes/publish";
 import exportRouter from "./routes/export";
+import kbRouter from "./routes/kb";
 
 const app = express();
 
@@ -93,6 +94,7 @@ app.use("/checkout", checkoutRouter);
 app.use("/me/library", libraryRouter);
 app.use("/api/projects", publishRouter);
 app.use("/api/projects", exportRouter);
+app.use("/api/kb", kbRouter);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT

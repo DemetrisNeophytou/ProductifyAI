@@ -942,11 +942,13 @@ export const kbDocuments = pgTable("kb_documents", {
   source: varchar("source", { length: 255 }).notNull(), // filename or URL
   content: text("content").notNull(), // Full markdown content
   metadata: jsonb("metadata").$type<{ author?: string; version?: string; category?: string }>(),
+  embeddingUpdatedAt: timestamp("embedding_updated_at"), // Track when embeddings were last computed
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_kb_documents_topic").on(table.topic),
   index("idx_kb_documents_source").on(table.source),
+  index("idx_kb_documents_updated").on(table.updatedAt),
 ]);
 
 // Knowledge Base - Chunks

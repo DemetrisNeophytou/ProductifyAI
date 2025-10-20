@@ -61,6 +61,7 @@ const JobDetails = lazy(() => import("@/pages/JobDetails"));
 const StyleGuide = lazy(() => import("@/pages/StyleGuide"));
 const VisualEditorNew = lazy(() => import("@/pages/VisualEditor"));
 const AdminEvaluation = lazy(() => import("@/pages/AdminEvaluation"));
+const AdminKB = lazy(() => import("@/pages/AdminKB"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -328,6 +329,11 @@ function Router() {
           <Route path="/admin/evaluation">
             <DashboardLayout>
               <AdminEvaluation />
+            </DashboardLayout>
+          </Route>
+          <Route path="/admin/kb">
+            <DashboardLayout>
+              <AdminKB />
             </DashboardLayout>
           </Route>
         </>

@@ -1,4 +1,4 @@
-import { Home, Plus, FileText, BarChart3, MessageCircle, Palette, Users, Settings, LogOut, Sparkles, Video, Image } from "lucide-react";
+import { Home, Plus, FileText, BarChart3, MessageCircle, Palette, Users, Settings, LogOut, Sparkles, Video, Image, Database, TestTube } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -80,6 +80,19 @@ const moreItems = [
   },
 ];
 
+const adminItems = [
+  {
+    title: "KB Admin",
+    url: "/admin/kb",
+    icon: Database,
+  },
+  {
+    title: "AI Evaluation",
+    url: "/admin/evaluation",
+    icon: TestTube,
+  },
+];
+
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth() as { user: User | undefined };
@@ -95,6 +108,9 @@ export function AppSidebar() {
   const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
     : user?.email || "User";
+
+  // Check if admin features are enabled
+  const isAdminEnabled = import.meta.env.VITE_EVAL_MODE === 'true';
 
   return (
     <Sidebar>
@@ -174,6 +190,34 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdminEnabled && (
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              <SidebarGroupLabel className="px-4 text-xs uppercase tracking-wide text-muted-foreground">
+                Admin
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {adminItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={location === item.url}>
+                        <Link 
+                          href={item.url}
+                          data-testid={`link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
       <SidebarFooter className="p-4">
         <div 
