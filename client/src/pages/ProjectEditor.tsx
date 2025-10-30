@@ -25,7 +25,7 @@ import {
   Triangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { fabric } from "fabric";
+// Dynamic import for fabric - will be loaded when component loads
 
 interface Project {
   id: string;
@@ -695,3 +695,4 @@ const ProjectEditor = () => {
 };
 
 export default ProjectEditor;
+
