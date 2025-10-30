@@ -152,6 +152,7 @@
     "kill-port": "^2.0.1",
     "postcss": "^8.4.47",
     "react-router-dom": "^7.9.4",
+    "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
