@@ -229,7 +229,7 @@ export default function AICoach() {
                 </div>
                 <h2 className="text-xl font-semibold mb-2" data-testid="text-welcome-title">Welcome to Productify Coach</h2>
                 <p className="text-muted-foreground max-w-md mb-2" data-testid="text-welcome-description">
-                  Not generic ChatGPT. A specialized AI built exclusively for digital product creators.
+                  Not a generic AI assistant. A specialized AI built exclusively for digital product creators.
                 </p>
                 <p className="text-xs text-muted-foreground max-w-md mb-6 font-semibold" data-testid="text-powered-by">
                   Powered by GPT-5

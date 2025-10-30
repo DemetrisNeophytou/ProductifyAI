@@ -29,7 +29,7 @@ export function LandingHero() {
         </h1>
         
         <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-4 font-medium">
-          ChatGPT is for everyday tasks. Productify AI is a specialized system built exclusively to create €100k+ digital product businesses.
+          Generic AI tools are for everyday tasks. Productify AI is a specialized system built exclusively to create €100k+ digital product businesses.
         </p>
         
         <div className="flex items-center justify-center gap-6 mb-8">

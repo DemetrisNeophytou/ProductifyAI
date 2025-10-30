@@ -49,7 +49,7 @@ export function FeatureSection() {
             <span className="text-sm font-semibold text-primary">Why Specialized Tools Win</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            ChatGPT Gives Advice.<br />
+            Basic AI Gives Advice.<br />
             Productify AI Builds Your Business.
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -81,7 +81,7 @@ export function FeatureSection() {
             <h3 className="text-2xl font-bold mb-4">The Specialized Advantage</h3>
             <div className="grid md:grid-cols-2 gap-6 text-left">
               <div>
-                <h4 className="font-semibold text-muted-foreground mb-3">Generic ChatGPT:</h4>
+                <h4 className="font-semibold text-muted-foreground mb-3">Generic AI Tools:</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Gives general advice</li>
                   <li>• You still need to figure out HOW</li>

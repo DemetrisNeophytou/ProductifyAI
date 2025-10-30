@@ -29,6 +29,8 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import Pricing from "@/pages/Pricing";
+import AuthCallback from "@/pages/AuthCallback";
+import ResetPassword from "@/pages/ResetPassword";
 
 // Lazy-loaded routes to reduce initial bundle size
 const NewProject = lazy(() => import("@/pages/NewProject"));
@@ -73,6 +75,8 @@ const AdminUsage = lazy(() => import("@/pages/AdminUsage"));
 const AdminCommunity = lazy(() => import("@/pages/AdminCommunity"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const Usage = lazy(() => import("@/pages/Usage"));
+const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("@/pages/TermsOfService"));
 
 // Loading fallback component with minimal skeleton
 function PageLoader() {
@@ -162,6 +166,10 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Switch>
+      {/* Auth routes - always accessible */}
+      <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/reset-password" component={ResetPassword} />
+      
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
@@ -399,7 +407,11 @@ function Router() {
           </Route>
         </>
       )}
-      <Route component={NotFound} />
+        {/* Legal pages - always accessible */}
+        <Route path="/privacy" component={PrivacyPolicy} />
+        <Route path="/terms" component={TermsOfService} />
+        
+        <Route component={NotFound} />
       </Switch>
     </Suspense>
   );
