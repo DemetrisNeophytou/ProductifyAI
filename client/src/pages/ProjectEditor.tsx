@@ -25,7 +25,7 @@ import {
   Triangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { fabric } from "fabric";
+// Dynamic import for fabric.js to avoid build issues - loaded only when component mounts`nlet fabric: any = null;
 
 interface Project {
   id: string;
@@ -67,13 +67,13 @@ const ProjectEditor = () => {
   const { toast } = useToast();
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const fabricCanvasRef = useRef<any>(null);
   
   const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [fabricLoaded, setFabricLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTool, setActiveTool] = useState<string>("select");
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
+  const [selectedObject, setSelectedObject] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   
@@ -92,12 +92,36 @@ const ProjectEditor = () => {
 
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
 
+
+  // Load fabric.js dynamically
+  useEffect(() => {
+    import("fabric").then((mod) => {
+      fabric = mod;
+      setFabricLoaded(true);
+    }).catch((err) => {
+      console.error("Failed to load fabric.js:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load canvas editor. Please refresh the page.",
+        variant: "destructive",
+      });
+    });
+  }, [toast]);
+
+  // Re-initialize canvas when fabric loads
+  useEffect(() => {
+    if (fabricLoaded && project) {
+      initializeCanvas(project);
+    }
+  }, [fabricLoaded, project]);
+
+
   // Load project data
   const loadProject = async () => {
     if (!projectId) return;
     
     try {
-      const response = await fetch(`${API_BASE}/api/projects/${projectId}`);
+        const response = await fetch(`${API_BASE}/api/projects/${projectId}`);
       const data = await response.json();
       
       if (data.ok) {
@@ -123,6 +147,7 @@ const ProjectEditor = () => {
 
   // Initialize Fabric.js canvas
   const initializeCanvas = (projectData: Project) => {
+    if (!canvasRef.current || !fabricLoaded || !fabric) return;
     if (!canvasRef.current) return;
 
     const canvas = new fabric.Canvas(canvasRef.current, {
