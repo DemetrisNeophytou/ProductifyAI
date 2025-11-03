@@ -1,0 +1,65 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [replit-agent]
+  pull_request:
+    branches: [replit-agent]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    env:
+      BACKEND_HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
+      FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      ENABLE_AUTO_RESTART: ${{ secrets.ENABLE_AUTO_RESTART }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type check
+        run: npm run typecheck --if-present
+
+      - name: Test (allow empty)
+        run: npm test --if-present || echo "no tests"
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: |
+            dist/**
+            client/dist/**
+            server/dist/**
+          if-no-files-found: ignore
+

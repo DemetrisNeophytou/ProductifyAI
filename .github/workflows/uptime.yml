@@ -1,0 +1,54 @@
+name: Uptime & Health
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    name: Health checks
+    runs-on: ubuntu-latest
+
+    env:
+      BACKEND_HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
+      FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Install runtime deps
+        run: npm ci --omit=dev
+
+      - name: Run healthcheck
+        run: node scripts/healthcheck.mjs
+        continue-on-error: true
+
+      - name: Upload JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uptime-report
+          path: ops/uptime/latest/report.json
+          if-no-files-found: warn
+
+      - name: Send alert (Resend)
+        if: failure() && env.RESEND_API_KEY != '' && env.ALERT_EMAIL_TO != ''
+        run: |
+          node -e "
+            const fs=require('fs');
+            const {RESEND_API_KEY,ALERT_EMAIL_TO}=process.env;
+            const body=fs.readFileSync('ops/uptime/latest/report.json','utf8');
+            const payload={ from:'noreply@productifyai.com', to:ALERT_EMAIL_TO, subject:'[Uptime] Health check FAILED', html:'<pre>'+body.replace(/</g,'&lt;')+'</pre>' };
+            fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify(payload)})
+              .then(r=>r.text()).then(t=>console.log(t)).catch(e=>{console.error(e);process.exit(1)});
+          "
+

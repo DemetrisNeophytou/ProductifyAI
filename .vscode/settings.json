@@ -1,0 +1,9 @@
+{
+  "yaml.validate": false,
+  "yaml.schemaStore.enable": true,
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+  },
+  "editor.codeActionsOnSave": { "source.fixAll": false },
+  "files.associations": { "*.yml": "yaml", "*.yaml": "yaml" }
+}
