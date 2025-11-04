@@ -1,14 +1,16 @@
-name: Uptime & Health
+name: Uptime & Health Monitoring
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch: {}
+    - cron: "*/5 * * * *"      # Health checks every 5 minutes
+    - cron: "55 23 * * *"      # Daily summary at 23:55 UTC
+  workflow_dispatch:
 
 jobs:
-  check:
-    name: Health checks
+  health:
+    name: Health Check
     runs-on: ubuntu-latest
+    if: github.event.schedule != '55 23 * * *' || github.event_name == 'workflow_dispatch'
 
     env:
       BACKEND_HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
@@ -19,36 +21,83 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: '22'
+          cache: npm
 
-      - name: Install runtime deps
-        run: npm ci --omit=dev
+      - name: Install dependencies
+        run: npm ci --omit=dev || true
 
       - name: Run healthcheck
+        id: healthcheck
         run: node scripts/healthcheck.mjs
         continue-on-error: true
 
-      - name: Upload JSON report
+      - name: Commit logs
+        run: |
+          git config user.name "uptime-bot"
+          git config user.email "actions@github.com"
+          git add ops/uptime || true
+          git commit -m "chore(uptime): health check logs [skip ci]" || echo "nothing to commit"
+          git push || echo "no push (PR context or no changes)"
+
+      - name: Upload report artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: uptime-report
+          name: uptime-report-${{ github.run_id }}
           path: ops/uptime/latest/report.json
           if-no-files-found: warn
 
-      - name: Send alert (Resend)
-        if: failure() && env.RESEND_API_KEY != '' && env.ALERT_EMAIL_TO != ''
+      - name: Send alert on failure
+        if: failure() && steps.healthcheck.outcome == 'failure'
+        run: node scripts/alert.mjs "health-check-failure" "ProductifyAI health check failed"
+
+  daily:
+    name: Daily Summary
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '55 23 * * *' || github.event_name == 'workflow_dispatch'
+
+    env:
+      BACKEND_HEALTH_URL: ${{ secrets.BACKEND_HEALTH_URL }}
+      FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --omit=dev || true
+
+      - name: Generate daily summary
+        run: node scripts/daily-summary.mjs
+
+      - name: Commit daily report
         run: |
-          node -e "
-            const fs=require('fs');
-            const {RESEND_API_KEY,ALERT_EMAIL_TO}=process.env;
-            const body=fs.readFileSync('ops/uptime/latest/report.json','utf8');
-            const payload={ from:'noreply@productifyai.com', to:ALERT_EMAIL_TO, subject:'[Uptime] Health check FAILED', html:'<pre>'+body.replace(/</g,'&lt;')+'</pre>' };
-            fetch('https://api.resend.com/emails',{method:'POST',headers:{'Authorization':'Bearer '+RESEND_API_KEY,'Content-Type':'application/json'},body:JSON.stringify(payload)})
-              .then(r=>r.text()).then(t=>console.log(t)).catch(e=>{console.error(e);process.exit(1)});
-          "
+          git config user.name "uptime-bot"
+          git config user.email "actions@github.com"
+          git add ops/uptime/REPORTS || true
+          git commit -m "chore(uptime): daily summary report [skip ci]" || echo "nothing to commit"
+          git push || echo "no push (PR context or no changes)"
+
+      - name: Upload daily report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-report-${{ github.run_id }}
+          path: ops/uptime/REPORTS/*.md
+          if-no-files-found: warn
 
