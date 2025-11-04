@@ -1,0 +1,184 @@
+# ============================================================================
+# CODEOWNERS - ProductifyAI
+# ============================================================================
+#
+# This file defines code ownership for automatic PR review assignments.
+# When a PR is opened that modifies files matching these patterns, the
+# specified owners will automatically be requested for review.
+#
+# Syntax:
+# -------
+# pattern  @username @team
+#
+# Patterns:
+# ---------
+# * = all files
+# *.js = all JS files
+# /docs/ = docs directory
+# /docs/* = files in docs (not subdirectories)
+# /docs/** = docs and all subdirectories
+#
+# Multiple Owners:
+# ----------------
+# /src/  @owner1 @owner2
+# At least one owner must approve
+#
+# Documentation:
+# --------------
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# ============================================================================
+
+# Default owners for everything (fallback)
+* @DemetrisNeophytou
+
+# ============================================================================
+# BACKEND
+# ============================================================================
+
+# All backend code
+/server/ @DemetrisNeophytou
+/api/ @DemetrisNeophytou
+
+# Database migrations (require careful review)
+/server/migrations/ @DemetrisNeophytou
+*.sql @DemetrisNeophytou
+
+# Database schema
+/shared/schema.ts @DemetrisNeophytou
+/drizzle/ @DemetrisNeophytou
+
+# Authentication & Security
+/server/routes/auth*.ts @DemetrisNeophytou
+/server/middleware/security.ts @DemetrisNeophytou
+/server/middleware/validation.ts @DemetrisNeophytou
+/server/middleware/sentry.ts @DemetrisNeophytou
+
+# API Routes
+/server/routes/ @DemetrisNeophytou
+
+# Services
+/server/services/ @DemetrisNeophytou
+
+# ============================================================================
+# FRONTEND
+# ============================================================================
+
+# All frontend code
+/client/ @DemetrisNeophytou
+
+# React components
+/client/src/components/ @DemetrisNeophytou
+
+# Pages
+/client/src/pages/ @DemetrisNeophytou
+
+# State management
+/client/src/stores/ @DemetrisNeophytou
+
+# ============================================================================
+# SECURITY & INFRASTRUCTURE
+# ============================================================================
+
+# GitHub Actions workflows
+/.github/workflows/ @DemetrisNeophytou
+
+# Dependabot configuration
+/.github/dependabot.yml @DemetrisNeophytou
+
+# Security policies
+/SECURITY.md @DemetrisNeophytou
+/docs/BACKEND_SECURITY.md @DemetrisNeophytou
+/docs/SUPABASE_SECURITY.md @DemetrisNeophytou
+
+# Docker configuration
+/Dockerfile* @DemetrisNeophytou
+/docker-compose.yml @DemetrisNeophytou
+
+# Environment configuration
+/.env.example @DemetrisNeophytou
+/env.example @DemetrisNeophytou
+
+# ============================================================================
+# CI/CD & DEPLOYMENT
+# ============================================================================
+
+# CI/CD scripts
+/scripts/ @DemetrisNeophytou
+
+# Deployment configuration
+/vercel.json @DemetrisNeophytou
+/render.yaml @DemetrisNeophytou
+
+# Build configuration
+/vite.config.ts @DemetrisNeophytou
+/tsconfig.json @DemetrisNeophytou
+/package.json @DemetrisNeophytou
+
+# ============================================================================
+# DOCUMENTATION
+# ============================================================================
+
+# All documentation
+/docs/ @DemetrisNeophytou
+/*.md @DemetrisNeophytou
+
+# API documentation
+/API_DOCS.md @DemetrisNeophytou
+
+# Deployment guides
+/DEPLOYMENT*.md @DemetrisNeophytou
+/DEPLOY*.md @DemetrisNeophytou
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+# Test files
+/test/ @DemetrisNeophytou
+*.test.ts @DemetrisNeophytou
+*.test.tsx @DemetrisNeophytou
+*.spec.ts @DemetrisNeophytou
+
+# Test configuration
+/vitest.config.ts @DemetrisNeophytou
+
+# ============================================================================
+# SPECIAL FILES
+# ============================================================================
+
+# Package management
+/package.json @DemetrisNeophytou
+/package-lock.json @DemetrisNeophytou
+
+# TypeScript configuration
+/tsconfig*.json @DemetrisNeophytou
+
+# Linting and formatting
+/.eslintrc* @DemetrisNeophytou
+/.prettierrc* @DemetrisNeophytou
+/.editorconfig @DemetrisNeophytou
+
+# Git configuration
+/.gitignore @DemetrisNeophytou
+/.gitattributes @DemetrisNeophytou
+
+# This file
+/CODEOWNERS @DemetrisNeophytou
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# - CODEOWNERS must be in the repository's root, docs/, or .github/ directory
+# - Patterns are matched from bottom to top (last match wins)
+# - Branch protection rules can require CODEOWNER approval
+# - Teams must have write access to be added as code owners
+#
+# To enable CODEOWNER approval requirement:
+# 1. Go to: Settings → Branches → Branch protection rules
+# 2. Add rule for 'main' or 'replit-agent'
+# 3. Enable "Require review from Code Owners"
+#
+# ============================================================================
+
