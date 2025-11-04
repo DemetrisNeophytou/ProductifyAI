@@ -1,0 +1,57 @@
+name: Gitleaks Secret Scanning
+
+on:
+  push:
+    branches: [main, replit-agent, auto/security-*]
+  pull_request:
+    branches: [main, replit-agent]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    name: Scan for Secrets
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive scan
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }} # Optional: for Gitleaks Pro
+
+      - name: Upload SARIF report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: gitleaks
+
+      - name: Send alert on secret detection
+        if: failure()
+        run: |
+          echo "🚨 SECURITY ALERT: Secrets detected in repository!"
+          echo "Review the Security tab for details."
+          echo "Action required: Rotate exposed credentials immediately."
+          
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f results.sarif ]; then
+            echo "📊 Gitleaks scan completed. Check Security tab for results."
+          else
+            echo "✅ No secrets detected in repository."
+          fi
+

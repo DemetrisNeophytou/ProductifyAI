@@ -1,0 +1,164 @@
+name: Security & Uptime Monitoring
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  uptime-check:
+    name: Uptime Health Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check Backend Health
+        id: backend
+        continue-on-error: true
+        run: |
+          if [ -z "${{ secrets.HEALTHCHECK_URL }}" ]; then
+            echo "⚠️ HEALTHCHECK_URL not configured"
+            echo "status=unconfigured" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "🔍 Checking backend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${{ secrets.HEALTHCHECK_URL }}" || echo "000")
+          echo "status_code=$RESPONSE" >> $GITHUB_OUTPUT
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Backend healthy (HTTP $RESPONSE)"
+            echo "status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Backend unhealthy (HTTP $RESPONSE)"
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Check Frontend Health
+        id: frontend
+        continue-on-error: true
+        run: |
+          if [ -z "${{ secrets.FRONTEND_URL }}" ]; then
+            echo "⚠️ FRONTEND_URL not configured"
+            echo "status=unconfigured" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "🔍 Checking frontend health..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "${{ secrets.FRONTEND_URL }}" || echo "000")
+          echo "status_code=$RESPONSE" >> $GITHUB_OUTPUT
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Frontend healthy (HTTP $RESPONSE)"
+            echo "status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Frontend unhealthy (HTTP $RESPONSE)"
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Send Email Alert (Resend)
+        if: |
+          (steps.backend.outputs.status == 'unhealthy' || steps.frontend.outputs.status == 'unhealthy') &&
+          github.event_name != 'workflow_dispatch'
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: |
+          if [ -z "$RESEND_API_KEY" ]; then
+            echo "⚠️ RESEND_API_KEY not configured, skipping email alert"
+            exit 0
+          fi
+          
+          BACKEND_STATUS="${{ steps.backend.outputs.status_code }}"
+          FRONTEND_STATUS="${{ steps.frontend.outputs.status_code }}"
+          
+          cat > alert.json <<EOF
+          {
+            "from": "ProductifyAI Security <security@productifyai.com>",
+            "to": ["${ALERT_EMAIL_TO}"],
+            "subject": "🚨 SECURITY ALERT: Service Down - ProductifyAI",
+            "html": "<h2>Service Health Alert</h2><p><strong>Backend:</strong> HTTP ${BACKEND_STATUS}</p><p><strong>Frontend:</strong> HTTP ${FRONTEND_STATUS}</p><p><strong>Timestamp:</strong> $(date -u +%Y-%m-%dT%H:%M:%SZ)</p><p>Please investigate immediately.</p>",
+            "text": "Service Health Alert\n\nBackend: HTTP ${BACKEND_STATUS}\nFrontend: HTTP ${FRONTEND_STATUS}\nTimestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)\n\nPlease investigate immediately."
+          }
+          EOF
+          
+          curl -X POST "https://api.resend.com/emails" \
+            -H "Authorization: Bearer ${RESEND_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d @alert.json
+            
+          echo "📧 Email alert sent"
+
+      - name: Send Webhook Alert
+        if: |
+          (steps.backend.outputs.status == 'unhealthy' || steps.frontend.outputs.status == 'unhealthy') &&
+          github.event_name != 'workflow_dispatch'
+        env:
+          UPTIME_WEBHOOK_URL: ${{ secrets.UPTIME_WEBHOOK_URL }}
+        run: |
+          if [ -z "$UPTIME_WEBHOOK_URL" ]; then
+            echo "⚠️ UPTIME_WEBHOOK_URL not configured, skipping webhook alert"
+            exit 0
+          fi
+          
+          BACKEND_STATUS="${{ steps.backend.outputs.status_code }}"
+          FRONTEND_STATUS="${{ steps.frontend.outputs.status_code }}"
+          
+          cat > webhook.json <<EOF
+          {
+            "alert_type": "service_down",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "backend": {
+              "status": "${BACKEND_STATUS}",
+              "url": "${{ secrets.HEALTHCHECK_URL }}"
+            },
+            "frontend": {
+              "status": "${FRONTEND_STATUS}",
+              "url": "${{ secrets.FRONTEND_URL }}"
+            },
+            "severity": "critical"
+          }
+          EOF
+          
+          curl -X POST "$UPTIME_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d @webhook.json
+            
+          echo "🔔 Webhook alert sent"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Uptime Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          BACKEND="${{ steps.backend.outputs.status }}"
+          FRONTEND="${{ steps.frontend.outputs.status }}"
+          
+          if [ "$BACKEND" = "healthy" ]; then
+            echo "| Backend | ✅ Healthy (${{ steps.backend.outputs.status_code }}) |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$BACKEND" = "unhealthy" ]; then
+            echo "| Backend | ❌ Unhealthy (${{ steps.backend.outputs.status_code }}) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Backend | ⚠️ Unconfigured |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "$FRONTEND" = "healthy" ]; then
+            echo "| Frontend | ✅ Healthy (${{ steps.frontend.outputs.status_code }}) |" >> $GITHUB_STEP_SUMMARY
+          elif [ "$FRONTEND" = "unhealthy" ]; then
+            echo "| Frontend | ❌ Unhealthy (${{ steps.frontend.outputs.status_code }}) |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Frontend | ⚠️ Unconfigured |" >> $GITHUB_STEP_SUMMARY
+          fi
+
