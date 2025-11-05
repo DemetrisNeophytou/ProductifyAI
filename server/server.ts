@@ -47,13 +47,38 @@ const app = express();
 // MIDDLEWARE CONFIGURATION
 // =============================================================================
 
+// =============================================================================
 // CORS Configuration
+// =============================================================================
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173'],
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      Logger.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`), false);
+    }
+  },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
+
 app.use(cors(corsOptions));
+
+// Log CORS configuration on startup
+Logger.info(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 
 // JSON and URL-encoded middleware
 app.use(express.json({ limit: '10mb' }));
@@ -85,6 +110,11 @@ app.get("/", (_req, res) => {
       files: "/api/files/*"
     }
   });
+});
+
+// Health check at root level (for monitoring)
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // API Routes

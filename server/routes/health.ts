@@ -13,6 +13,15 @@ import { Logger } from '../utils/logger';
 const router = Router();
 
 /**
+ * Kubernetes-style liveness probe
+ * GET /healthz (root level, not /api/health)
+ * Minimal response to indicate service is alive
+ */
+router.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+/**
  * Comprehensive health check
  * GET /api/health
  */
