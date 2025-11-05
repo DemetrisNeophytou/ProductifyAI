@@ -1,0 +1,29 @@
+I want to take Productify AI to the highest possible level within Replit’s capabilities, so that it feels more powerful, professional, and unique compared to competitors like Monetize. Please implement the following improvements:
+	1.	AI Model Upgrade
+	•	Connect the app to the latest OpenAI model (GPT-5 if available via API, otherwise GPT-4.1 with reasoning).
+	•	Ensure all AI features (AI Coach + builders) run on the strongest model with fast response times.
+	2.	AI Coach Improvements
+	•	Make the AI Coach more conversational and engaging (like ChatGPT here), not robotic or slow.
+	•	Personalization: the AI should adapt to each user’s goals (e.g. eBook, course, app) and remember their progress.
+	•	Add “Quick Wins” suggestions (e.g. small tasks users can finish in minutes to see results fast).
+	3.	Digital Product Builders
+	•	Ensure all builders (Idea Finder, Outline, Content, Offer, Funnel) are working smoothly without errors.
+	•	Add ready-made templates for eBooks, courses, landing pages, and funnels. Users should get a usable draft in 1–2 clicks.
+	•	Add simple integrations (export drafts to Google Docs, Notion, or Canva).
+	4.	User Experience
+	•	Fix all UI errors (e.g. invalid React child, HTTP token errors).
+	•	Improve design for a clean, modern “premium SaaS” look.
+	•	Add progress tracking + gamification (progress bars, achievements).
+	5.	Community & Support Features
+	•	Build a community hub inside the app (chat/forum style) so users can share progress and ask questions.
+	•	Simple onboarding flow: when users sign up, the AI asks a few questions and then creates a personalized action plan.
+	6.	Monetization & Pricing
+	•	Keep clear tier differentiation (Free, Plus, Pro).
+	•	For Pro, add extra perks: exclusive templates, faster AI, priority support.
+	•	Ensure Stripe integration works smoothly for subscriptions.
+	7.	Stability & Scaling
+	•	Optimize backend to avoid lag when AI features are used.
+	•	Add better error handling so users always get a helpful message instead of a crash.
+
+My main goal:
+👉 When someone sees or tries this app, they should say: “This is better than Monetize. It’s focused on digital products, faster, and gives me real results.”

@@ -1,0 +1,83 @@
+5) API endpoints (server)
+
+Create these Express routes (or keep existing server/routes.ts but align signatures):
+	•	POST /api/agent/run → accepts AgentRunRequest
+	•	If estimateOnly=true, return { estimatedCredits } and don’t charge.
+	•	Else: enqueue job, return { jobId, status:"queued" }.
+	•	GET /api/agent/status/:jobId → returns AgentRunResponse (live status).
+	•	POST /api/agent/cancel/:jobId → sets status to cancelled (idempotent).
+	•	GET /api/credits/balance → current credits.
+	•	POST /api/credits/purchase → Stripe Checkout (uses live price IDs).
+	•	GET /api/credits/history → last N usages (agent, cost, time, resultId).
+
+Queue/Worker: Use a lightweight job queue (e.g., BullMQ / simple in-memory with persistence) with retries (3x, exponential backoff), and timeouts per agent.
+
+⸻
+
+6) Credits & pricing rules
+	•	Keep a pricing table in code (easy to tweak):
+	•	ContentWriter: 1–3 credits per 500–1,500 tokens
+	•	Image search/insert: 1 credit
+	•	AI image generate: 3–5 credits
+	•	Video clip (script+thumb): 5–8 credits
+	•	Idea/Offer/Outline: 2–4 credits
+	•	Analytics summary: 1–2 credits
+	•	Estimation happens before run; show it in UI; block if not enough.
+	•	Consumption occurs only when status="succeeded" (idempotent with idempotencyKey).
+
+⸻
+
+7) Tooling integrations
+	•	Pexels/Pixabay: use my API keys already stored in secrets. Respect license; store source, url, attribution, query. If search fails, fallback to the other provider.
+	•	Stripe: use real STRIPE_SECRET_KEY and live PRICE_IDs; test “buy credits” end-to-end.
+	•	Model provider: use our env key. Add timeouts (45–60s) and truncation on huge prompts.
+
+⸻
+
+8) Editor wiring (must work!)
+	•	Buttons: AI Re-Style, AI Image, AI Suggestions, Improve Writing, Shorten, Expand, Translate → all call POST /api/agent/run with correct payloads.
+	•	Image panel: supports Upload / Search / Generate; after result, inserts image into the selected section.
+	•	Brand Kit: logo upload, color palette (primary/secondary/background), heading/body font (Google Fonts), and live preview on sample components.
+	•	Template Library: searchable, categories, preview card; on select → create project with the right page type (eBook, Course, Checklist, Lead Magnet, Workbook, Template) each with different default pages/blocks and export options.
+
+⸻
+
+9) Error handling & UX polish
+	•	On error: show friendly message + action (“Try again”, “Switch provider”, “Reduce length”).
+	•	Disable buttons while running; show spinner & step logs.
+	•	“View Logs” button in job toaster opens /jobs/:jobId.
+	•	Add keyboard shortcuts for editor (bold, italic, H1/H2, undo/redo).
+	•	Ensure mobile works: bottom nav, large tap targets, no overflow modals.
+
+⸻
+
+10) Acceptance criteria (checklist)
+	•	All editor AI buttons work and update blocks/sections.
+	•	Template Library shows items, search filters, and creates correct page types.
+	•	Image: Upload, Search (Pexels/Pixabay), Generate — all functional.
+	•	Video Agent MVP returns clip data (script, timing, thumbnail URL or placeholder).
+	•	Credit estimate → confirm → run → charge logged in /credits/history.
+	•	Stripe checkout buys credits; balance updates; insufficient credits flow blocks runs.
+	•	Jobs observable: /api/agent/status/:jobId shows steps and final output.
+	•	Errors are actionable; retries work; no silent failures.
+	•	Mobile UI tested (iOS Safari): no dead buttons, no layout breaks.
+	•	Code cleaned; unused files removed; ready for deploy to Vercel (build passes).
+
+⸻
+
+11) Implementation hints
+	•	Keep each agent as a module: agents/<name>.ts exporting estimate() and run().
+	•	Central runner validates input schema (Zod), handles credits, logging, retries.
+	•	Save outputs to DB by projectId (pages/blocks/images/videos tables).
+	•	Add an ENV readiness check page that validates all required keys at startup.
+
+⸻
+
+12) What to do right now (order)
+	1.	Wire Template Library (per-type pages & exports).
+	2.	Connect all AI editor buttons → endpoints.
+	3.	Fix Image panel (upload/search/generate).
+	4.	Implement unified runner + queue + credits.
+	5.	Stripe “Buy credits” test E2E.
+	6.	Add logs, retries, cancel.
+	7.	Mobile QA + acceptance checklist.

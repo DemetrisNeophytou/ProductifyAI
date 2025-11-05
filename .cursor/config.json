@@ -1,0 +1,28 @@
+{
+  "yaml": {
+    "validate": true,
+    "schemas": {
+      "https://json.schemastore.org/github-workflow.json": [
+        ".github/workflows/*.yml",
+        ".github/workflows/*.yaml"
+      ]
+    },
+    "customTags": [
+      "!And",
+      "!If",
+      "!Not",
+      "!Equals",
+      "!Or"
+    ],
+    "problems": {
+      "ignore": [
+        "Unrecognized named-value",
+        "Context access might be invalid"
+      ]
+    }
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true
+  }
+}

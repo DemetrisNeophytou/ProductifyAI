@@ -1,0 +1,626 @@
+// Comprehensive template catalog for Canva-style browsing experience
+import { ProductTemplate, PRODUCT_TEMPLATES } from './templates';
+
+export interface TemplateMetadata {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  type: 'ebook' | 'course' | 'checklist' | 'workbook' | 'guide' | 'leadmagnet' | 'template';
+  icon: string;
+  estimatedTime: string;
+  revenuePotential: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  downloads: number;
+  rating: number;
+  price: string;
+  tags: string[];
+  tier: 'free' | 'plus' | 'pro';
+  isTrending?: boolean;
+  isNew?: boolean;
+  previewImage?: string;
+  thumbnailUrl?: string;
+  slug?: string;
+  templateStructure?: ProductTemplate;
+}
+
+export const TEMPLATE_CATALOG: TemplateMetadata[] = [
+  {
+    id: "fitness-ebook",
+    title: "30-Day Fitness Transformation",
+    description: "Complete workout and nutrition guide for busy professionals",
+    category: "Health & Fitness",
+    type: "ebook",
+    icon: "Heart",
+    estimatedTime: "2 hours",
+    revenuePotential: "€5k-€15k/month",
+    difficulty: "beginner",
+    downloads: 1243,
+    rating: 4.9,
+    price: "€47",
+    tags: ["fitness", "wellness", "health", "nutrition"],
+    tier: "free",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "mindfulness-course",
+    title: "Mindfulness for Entrepreneurs",
+    description: "7-module course on stress management and focus",
+    category: "Personal Development",
+    type: "course",
+    icon: "Brain",
+    estimatedTime: "3 hours",
+    revenuePotential: "€10k-€30k/month",
+    difficulty: "intermediate",
+    downloads: 892,
+    rating: 4.8,
+    price: "€97",
+    tags: ["mindfulness", "stress-management", "productivity"],
+    tier: "plus",
+    isNew: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "social-media-checklist",
+    title: "Social Media Launch Checklist",
+    description: "Step-by-step product launch checklist for Instagram/TikTok",
+    category: "Marketing",
+    type: "checklist",
+    icon: "ListChecks",
+    estimatedTime: "1 hour",
+    revenuePotential: "€2k-€8k/month",
+    difficulty: "beginner",
+    downloads: 2105,
+    rating: 4.7,
+    price: "€27",
+    tags: ["social-media", "marketing", "launch", "instagram"],
+    tier: "free",
+    isTrending: true
+  },
+  {
+    id: "freelance-business",
+    title: "Freelancer's Business Toolkit",
+    description: "Templates, contracts, and systems for 6-figure freelancing",
+    category: "Business",
+    type: "workbook",
+    icon: "Briefcase",
+    estimatedTime: "4 hours",
+    revenuePotential: "€15k-€40k/month",
+    difficulty: "advanced",
+    downloads: 678,
+    rating: 5.0,
+    price: "€147",
+    tags: ["freelancing", "business", "contracts", "systems"],
+    tier: "pro",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "productivity-guide",
+    title: "The 4-Hour Workday System",
+    description: "Productivity framework for digital entrepreneurs",
+    category: "Productivity",
+    type: "guide",
+    icon: "Zap",
+    estimatedTime: "2 hours",
+    revenuePotential: "€8k-€20k/month",
+    difficulty: "intermediate",
+    downloads: 1567,
+    rating: 4.9,
+    price: "€67",
+    tags: ["productivity", "time-management", "efficiency"],
+    tier: "free",
+    isTrending: true
+  },
+  {
+    id: "online-course-creator",
+    title: "Online Course Creation Blueprint",
+    description: "Build and launch your first €10k course in 30 days",
+    category: "Education",
+    type: "course",
+    icon: "GraduationCap",
+    estimatedTime: "5 hours",
+    revenuePotential: "€20k-€50k/month",
+    difficulty: "advanced",
+    downloads: 543,
+    rating: 4.8,
+    price: "€197",
+    tags: ["course-creation", "education", "teaching", "online-business"],
+    tier: "pro",
+    isNew: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "email-marketing-ebook",
+    title: "Email Marketing Mastery",
+    description: "Build a €100k email list and automated funnel",
+    category: "Marketing",
+    type: "ebook",
+    icon: "Target",
+    estimatedTime: "3 hours",
+    revenuePotential: "€12k-€35k/month",
+    difficulty: "intermediate",
+    downloads: 1089,
+    rating: 4.7,
+    price: "€77",
+    tags: ["email-marketing", "list-building", "automation", "funnel"],
+    tier: "plus",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "remote-work-guide",
+    title: "Remote Work Success Guide",
+    description: "Work from anywhere while earning €100k+",
+    category: "Career",
+    type: "guide",
+    icon: "Home",
+    estimatedTime: "2 hours",
+    revenuePotential: "€6k-€18k/month",
+    difficulty: "beginner",
+    downloads: 1834,
+    rating: 4.6,
+    price: "€47",
+    tags: ["remote-work", "career", "digital-nomad", "freedom"],
+    tier: "free",
+    isTrending: true
+  },
+  {
+    id: "instagram-growth",
+    title: "Instagram Growth Accelerator",
+    description: "0 to 100k followers in 90 days (organic strategy)",
+    category: "Social Media",
+    type: "course",
+    icon: "TrendingUp",
+    estimatedTime: "3 hours",
+    revenuePotential: "€10k-€25k/month",
+    difficulty: "intermediate",
+    downloads: 1456,
+    rating: 4.8,
+    price: "€97",
+    tags: ["instagram", "social-media", "growth", "followers"],
+    tier: "plus",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "startup-checklist",
+    title: "Startup Launch Checklist",
+    description: "Complete checklist to launch your startup in 60 days",
+    category: "Business",
+    type: "checklist",
+    icon: "Rocket",
+    estimatedTime: "2 hours",
+    revenuePotential: "€5k-€12k/month",
+    difficulty: "intermediate",
+    downloads: 789,
+    rating: 4.9,
+    price: "€57",
+    tags: ["startup", "launch", "entrepreneurship", "business"],
+    tier: "free",
+    isNew: true
+  },
+  {
+    id: "passive-income-ebook",
+    title: "7 Passive Income Streams",
+    description: "Build multiple income sources that run on autopilot",
+    category: "Finance",
+    type: "ebook",
+    icon: "DollarSign",
+    estimatedTime: "3 hours",
+    revenuePotential: "€8k-€22k/month",
+    difficulty: "beginner",
+    downloads: 2341,
+    rating: 4.7,
+    price: "€67",
+    tags: ["passive-income", "finance", "automation", "wealth"],
+    tier: "plus",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "content-creation-workbook",
+    title: "Content Creator's Playbook",
+    description: "30-day content strategy for viral growth",
+    category: "Content Creation",
+    type: "workbook",
+    icon: "FileText",
+    estimatedTime: "2 hours",
+    revenuePotential: "€6k-€16k/month",
+    difficulty: "beginner",
+    downloads: 1678,
+    rating: 4.8,
+    price: "€47",
+    tags: ["content-creation", "strategy", "viral", "growth"],
+    tier: "free",
+    isNew: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "coaching-business",
+    title: "6-Figure Coaching Business",
+    description: "Launch and scale your coaching practice to €100k+",
+    category: "Business",
+    type: "course",
+    icon: "Users",
+    estimatedTime: "4 hours",
+    revenuePotential: "€15k-€40k/month",
+    difficulty: "advanced",
+    downloads: 456,
+    rating: 5.0,
+    price: "€197",
+    tags: ["coaching", "business", "consulting", "scaling"],
+    tier: "pro",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "copywriting-guide",
+    title: "Conversion Copywriting Secrets",
+    description: "Write sales copy that converts at 15%+",
+    category: "Marketing",
+    type: "guide",
+    icon: "FileText",
+    estimatedTime: "3 hours",
+    revenuePotential: "€10k-€28k/month",
+    difficulty: "intermediate",
+    downloads: 1123,
+    rating: 4.9,
+    price: "€87",
+    tags: ["copywriting", "conversion", "sales", "marketing"],
+    tier: "plus",
+    isTrending: true
+  },
+  {
+    id: "wellness-workbook",
+    title: "Holistic Wellness Workbook",
+    description: "Mind, body, spirit transformation in 90 days",
+    category: "Health & Wellness",
+    type: "workbook",
+    icon: "Heart",
+    estimatedTime: "3 hours",
+    revenuePotential: "€7k-€18k/month",
+    difficulty: "beginner",
+    downloads: 1567,
+    rating: 4.6,
+    price: "€57",
+    tags: ["wellness", "health", "holistic", "transformation"],
+    tier: "free",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "affiliate-marketing",
+    title: "Affiliate Marketing Blueprint",
+    description: "€10k/month affiliate income without a huge audience",
+    category: "Marketing",
+    type: "course",
+    icon: "DollarSign",
+    estimatedTime: "4 hours",
+    revenuePotential: "€10k-€30k/month",
+    difficulty: "intermediate",
+    downloads: 934,
+    rating: 4.7,
+    price: "€127",
+    tags: ["affiliate-marketing", "passive-income", "marketing"],
+    tier: "plus",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "yoga-instructor",
+    title: "Yoga Instructor Certification Guide",
+    description: "Complete guide to becoming a certified yoga instructor",
+    category: "Health & Fitness",
+    type: "ebook",
+    icon: "Activity",
+    estimatedTime: "3 hours",
+    revenuePotential: "€7k-€20k/month",
+    difficulty: "beginner",
+    downloads: 1234,
+    rating: 4.8,
+    price: "€57",
+    tags: ["yoga", "fitness", "certification", "wellness"],
+    tier: "free",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "seo-mastery",
+    title: "SEO Mastery for Beginners",
+    description: "Rank #1 on Google without paying for ads",
+    category: "Marketing",
+    type: "course",
+    icon: "Search",
+    estimatedTime: "4 hours",
+    revenuePotential: "€12k-€35k/month",
+    difficulty: "intermediate",
+    downloads: 1876,
+    rating: 4.9,
+    price: "€97",
+    tags: ["seo", "google", "ranking", "organic-traffic"],
+    tier: "plus",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "meal-prep-guide",
+    title: "Weekly Meal Prep Made Easy",
+    description: "Save time and money with strategic meal planning",
+    category: "Health & Fitness",
+    type: "guide",
+    icon: "Utensils",
+    estimatedTime: "1 hour",
+    revenuePotential: "€3k-€10k/month",
+    difficulty: "beginner",
+    downloads: 2456,
+    rating: 4.6,
+    price: "€27",
+    tags: ["meal-prep", "nutrition", "health", "cooking"],
+    tier: "free",
+    isTrending: true
+  },
+  {
+    id: "podcast-launch",
+    title: "Podcast Launch Checklist",
+    description: "Launch your podcast in 30 days with this step-by-step guide",
+    category: "Content Creation",
+    type: "checklist",
+    icon: "Mic",
+    estimatedTime: "2 hours",
+    revenuePotential: "€5k-€15k/month",
+    difficulty: "beginner",
+    downloads: 987,
+    rating: 4.7,
+    price: "€37",
+    tags: ["podcast", "audio", "content", "launch"],
+    tier: "free",
+    isNew: true
+  },
+  {
+    id: "crypto-investing",
+    title: "Cryptocurrency Investment Guide",
+    description: "Smart strategies for crypto investing in 2025",
+    category: "Finance",
+    type: "ebook",
+    icon: "Bitcoin",
+    estimatedTime: "3 hours",
+    revenuePotential: "€10k-€30k/month",
+    difficulty: "advanced",
+    downloads: 1543,
+    rating: 4.5,
+    price: "€97",
+    tags: ["crypto", "bitcoin", "investment", "finance"],
+    tier: "pro",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "public-speaking",
+    title: "Confident Public Speaking",
+    description: "Overcome fear and deliver powerful presentations",
+    category: "Personal Development",
+    type: "workbook",
+    icon: "MessageSquare",
+    estimatedTime: "2 hours",
+    revenuePotential: "€6k-€16k/month",
+    difficulty: "intermediate",
+    downloads: 1345,
+    rating: 4.8,
+    price: "€67",
+    tags: ["public-speaking", "confidence", "presentations", "communication"],
+    tier: "plus",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "saas-launch",
+    title: "SaaS Product Launch Blueprint",
+    description: "Launch your SaaS product and get your first 100 customers",
+    category: "Business",
+    type: "course",
+    icon: "Code",
+    estimatedTime: "5 hours",
+    revenuePotential: "€20k-€60k/month",
+    difficulty: "advanced",
+    downloads: 678,
+    rating: 5.0,
+    price: "€247",
+    tags: ["saas", "software", "startup", "product-launch"],
+    tier: "pro",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "photography-business",
+    title: "Photography Business Essentials",
+    description: "Turn your photography hobby into a profitable business",
+    category: "Business",
+    type: "ebook",
+    icon: "Camera",
+    estimatedTime: "2 hours",
+    revenuePotential: "€8k-€22k/month",
+    difficulty: "beginner",
+    downloads: 1765,
+    rating: 4.7,
+    price: "€47",
+    tags: ["photography", "business", "creative", "side-hustle"],
+    tier: "free",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "linkedin-authority",
+    title: "LinkedIn Authority Builder",
+    description: "Build a powerful personal brand on LinkedIn",
+    category: "Social Media",
+    type: "course",
+    icon: "Linkedin",
+    estimatedTime: "3 hours",
+    revenuePotential: "€9k-€25k/month",
+    difficulty: "intermediate",
+    downloads: 1432,
+    rating: 4.8,
+    price: "€87",
+    tags: ["linkedin", "personal-brand", "networking", "b2b"],
+    tier: "plus",
+    isNew: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "time-management",
+    title: "Time Management Mastery Workbook",
+    description: "Get more done in less time with proven systems",
+    category: "Productivity",
+    type: "workbook",
+    icon: "Clock",
+    estimatedTime: "2 hours",
+    revenuePotential: "€5k-€14k/month",
+    difficulty: "beginner",
+    downloads: 2134,
+    rating: 4.6,
+    price: "€37",
+    tags: ["time-management", "productivity", "efficiency", "focus"],
+    tier: "free",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "ecommerce-store",
+    title: "Ecommerce Store Setup Guide",
+    description: "Launch a profitable online store in 14 days",
+    category: "Business",
+    type: "guide",
+    icon: "ShoppingCart",
+    estimatedTime: "4 hours",
+    revenuePotential: "€15k-€40k/month",
+    difficulty: "intermediate",
+    downloads: 1098,
+    rating: 4.9,
+    price: "€127",
+    tags: ["ecommerce", "online-store", "shopify", "business"],
+    tier: "plus",
+    isTrending: true
+  },
+  {
+    id: "meditation-course",
+    title: "Daily Meditation Practice",
+    description: "21-day meditation program for stress relief",
+    category: "Health & Wellness",
+    type: "course",
+    icon: "Brain",
+    estimatedTime: "2 hours",
+    revenuePotential: "€6k-€18k/month",
+    difficulty: "beginner",
+    downloads: 1987,
+    rating: 4.7,
+    price: "€47",
+    tags: ["meditation", "mindfulness", "stress-relief", "wellness"],
+    tier: "free",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+  {
+    id: "webinar-funnel",
+    title: "High-Converting Webinar Funnel",
+    description: "Build automated webinar funnels that sell",
+    category: "Marketing",
+    type: "workbook",
+    icon: "PresentationChart",
+    estimatedTime: "3 hours",
+    revenuePotential: "€12k-€35k/month",
+    difficulty: "advanced",
+    downloads: 876,
+    rating: 4.8,
+    price: "€147",
+    tags: ["webinar", "funnel", "automation", "sales"],
+    tier: "pro",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "workbook-interactive")
+  },
+  {
+    id: "personal-finance",
+    title: "Personal Finance Freedom",
+    description: "Achieve financial independence in 5 years",
+    category: "Finance",
+    type: "ebook",
+    icon: "PiggyBank",
+    estimatedTime: "3 hours",
+    revenuePotential: "€8k-€24k/month",
+    difficulty: "beginner",
+    downloads: 2543,
+    rating: 4.9,
+    price: "€57",
+    tags: ["finance", "saving", "investing", "wealth-building"],
+    tier: "free",
+    isTrending: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "ebook-10-chapter")
+  },
+  {
+    id: "lead-magnet-templates",
+    title: "50 Lead Magnet Templates",
+    description: "Ready-to-use lead magnet templates for any niche",
+    category: "Marketing",
+    type: "template",
+    icon: "FileStack",
+    estimatedTime: "1 hour",
+    revenuePotential: "€4k-€12k/month",
+    difficulty: "beginner",
+    downloads: 3421,
+    rating: 4.6,
+    price: "€27",
+    tags: ["lead-magnet", "templates", "email-list", "marketing"],
+    tier: "free",
+    isNew: true,
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "leadmagnet-simple")
+  },
+  {
+    id: "video-marketing",
+    title: "Video Marketing Mastery",
+    description: "Create viral video content that converts",
+    category: "Marketing",
+    type: "course",
+    icon: "Video",
+    estimatedTime: "4 hours",
+    revenuePotential: "€10k-€28k/month",
+    difficulty: "intermediate",
+    downloads: 1234,
+    rating: 4.7,
+    price: "€117",
+    tags: ["video", "marketing", "youtube", "viral"],
+    tier: "plus",
+    templateStructure: PRODUCT_TEMPLATES.find(t => t.id === "course-6-modules")
+  },
+];
+
+// Category helpers
+export const TEMPLATE_CATEGORIES = [
+  "All",
+  "Health & Fitness",
+  "Personal Development",
+  "Marketing",
+  "Business",
+  "Productivity",
+  "Education",
+  "Career",
+  "Social Media",
+  "Finance",
+  "Content Creation",
+  "Health & Wellness"
+];
+
+// Filter helpers
+export function getTemplatesByCategory(category: string): TemplateMetadata[] {
+  if (category === "All") return TEMPLATE_CATALOG;
+  return TEMPLATE_CATALOG.filter(t => t.category === category);
+}
+
+export function getTemplatesByTier(tier: 'free' | 'plus' | 'pro'): TemplateMetadata[] {
+  return TEMPLATE_CATALOG.filter(t => t.tier === tier);
+}
+
+export function getTrendingTemplates(): TemplateMetadata[] {
+  return TEMPLATE_CATALOG.filter(t => t.isTrending).slice(0, 6);
+}
+
+export function getNewTemplates(): TemplateMetadata[] {
+  return TEMPLATE_CATALOG.filter(t => t.isNew).slice(0, 6);
+}
+
+export function searchTemplates(query: string): TemplateMetadata[] {
+  const lowerQuery = query.toLowerCase();
+  return TEMPLATE_CATALOG.filter(t => 
+    t.title.toLowerCase().includes(lowerQuery) ||
+    t.description.toLowerCase().includes(lowerQuery) ||
+    t.tags.some(tag => tag.includes(lowerQuery))
+  );
+}

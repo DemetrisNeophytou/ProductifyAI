@@ -1,0 +1,108 @@
+All prompts must return structured JSON first (for UI), then a human-readable block for preview.
+
+⸻
+
+6) Data Model (Postgres/Supabase)
+
+Tables (minimum):
+	•	users(id, email, stripe_customer_id, plan, token_quota_month, token_used_month, created_at)
+	•	projects(id, user_id, title, product_type, niche, status, created_at, updated_at)
+	•	artifacts(id, project_id, type, title, content_md, json, created_at)
+	•	community_posts(id, user_id, title, body_md, created_at)
+	•	community_comments(id, post_id, user_id, body_md, created_at)
+	•	likes(id, post_id, user_id, created_at)
+	•	webhooks(id, event_type, payload_json, processed_at)
+	•	usage_logs(id, user_id, tokens, tool, created_at)
+
+Indexes on foreign keys and created_at.
+Monthly reset job: set token_used_month=0.
+
+⸻
+
+7) Backend APIs
+	•	POST /api/ai/outline (auth, plan gating, token check, streaming)
+	•	POST /api/ai/content
+	•	POST /api/ai/funnel
+	•	POST /api/ai/offer
+	•	GET/POST /api/community/* (posts, comments, likes)
+	•	POST /api/stripe/webhook (subscription created/updated/canceled → set plan)
+	•	GET /api/me/usage (tokens, projects)
+
+Security
+	•	Auth middleware + plan/usage check.
+	•	Rate limits per route (higher for Pro).
+	•	Sanitize markdown; block links from new accounts (anti-spam).
+
+⸻
+
+8) Frontend (React/Next/Vite — as in repo)
+	•	Left sidebar: Dashboard, Builders (Idea, Outline, Content, Offer, Funnel), Community, Billing
+	•	Streaming UI for all AI outputs (typewriter effect + copy blocks).
+	•	“Save to Project” button on every output → creates an artifact.
+	•	“Next 3 Actions” widget always visible on dashboard.
+	•	“Upgrade to Pro” CTA on Pro-only actions.
+
+⸻
+
+9) Stripe Integration (finalize)
+	•	Replace price constants in client/src/pages/Pricing.tsx with live IDs:
+	•	PLUS_MONTHLY = 'price_xxx'
+	•	PRO_MONTHLY = 'price_xxx'
+	•	PRO_QUARTERLY = 'price_xxx'
+	•	Enable 3-day trial on the Stripe prices (done in dashboard).
+	•	Add webhook: checkout.session.completed, customer.subscription.updated|deleted.
+	•	Add Stripe Portal link in Settings → “Manage Subscription”.
+
+⸻
+
+10) Acceptance Criteria (what “done” means)
+	•	✅ Signup → trial → app access works E2E with live Stripe.
+	•	✅ Plan gating works (Pro features blocked for Plus).
+	•	✅ Streaming AI replies < 1.2s first token; no silent failures.
+	•	✅ Builders generate usable, specific, copy-ready outputs.
+	•	✅ Community posts/comments/likes with spam limits.
+	•	✅ Quotas enforced; usage visible to user.
+	•	✅ Error handling: friendly messages + one-click retry.
+	•	✅ Lighthouse perf (desktop) ≥ 90 on main pages.
+	•	✅ No console errors; server logs clean under smoke test.
+
+⸻
+
+11) Testing Plan
+	•	Unit tests for plan gating & token accounting.
+	•	Integration tests for Stripe webhook → plan change.
+	•	Synthetic load: 20 concurrent Pro requests → no timeouts, stable memory.
+	•	Content QA: prompt regression snapshots (same inputs → similar quality).
+
+⸻
+
+12) Post-MVP (next sprint)
+	•	Templates gallery (pre-built “winning” outlines & funnels).
+	•	Analytics: connect Stripe MRR, churn, LTV dashboards.
+	•	Team seats (Pro+ add-on).
+	•	Export to Google Docs/Notion.
+
+⸻
+
+13) Tasks for Agents (immediate)
+	1.	Wire live Stripe Price IDs and verify trial flow.
+	2.	Implement streaming across all AI endpoints (server & UI).
+	3.	Add Pro vs Plus gating & token quotas with DB fields + monthly reset job.
+	4.	Build/finish Builders (Idea, Outline, Content, Offer, Funnel) with prompts above.
+	5.	Finalize Community with rate limit & cache invalidation (likes/comments).
+	6.	Add Stripe webhook & Customer Portal.
+	7.	Add Dashboard “Next 3 Actions” logic.
+	8.	Add Usage panel (tokens & projects).
+	9.	Perf pass: timeouts, retries, logging, Lighthouse ≥ 90.
+
+⸻
+
+14) Don’t Over-promise (copy guardrails)
+	•	Avoid claims like “guaranteed income”.
+	•	Use language: “designed to help you reach €100k+/year with proven frameworks and AI execution.”
+
+⸻
+
+Quick Note to the Team
+
+If anything above is unclear, implement the MVP stack first (Plans, Streaming AI, 5 Builders, Community, Stripe trial/webhook) and ensure speed + reliability. Then polish UX and copy.

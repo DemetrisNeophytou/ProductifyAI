@@ -1,0 +1,266 @@
+Hey team 👋
+
+
+
+Let’s move to Phase 2 and integrate the legal-safe content libraries directly inside the AI Editor.
+
+The goal is to make Productify AI feel like a full creative studio — everything the user needs (photos, icons, fonts) accessible in-app, connected to the AI creation workflow.
+
+
+
+
+
+
+
+
+⚙️ 1️⃣ Editor Structure Update
+
+
+
+
+
+Inside the AI Editor, add a right-side panel with three new collapsible tabs:
+
+Tab
+
+Purpose
+
+Source
+
+Photos
+
+Search & drag free stock images
+
+Pexels API (+ Pixabay fallback)
+
+Graphics
+
+Icons + Illustrations
+
+Heroicons, Lucide, unDraw
+
+Fonts / Brand Kit
+
+Heading + Body font selection, brand colors
+
+Google Fonts
+
+Each tab should open as a sliding drawer on desktop and a bottom sheet on mobile.
+
+
+
+
+
+
+
+
+⚙️ 2️⃣ Photos Tab (Pexels + Pixabay)
+
+
+
+
+
+Features
+
+
+
+Search bar + filters (orientation, color).
+Grid view of image thumbnails (150 px).
+Click → insert into selected image block on canvas.
+Fallback to Pixabay API if Pexels fails.
+“Generate with AI” button (optional): uses OpenAI image endpoint. GET /api/photos/search?q={query}&page={n}
+POST /api/photos/insert { projectId, pageId, blockId, src }
+
+Each tab should open as a sliding drawer on desktop and a bottom sheet on mobile.
+
+
+
+
+
+
+
+
+⚙️ 2️⃣ Photos Tab (Pexels + Pixabay)
+
+
+
+
+
+Features
+
+
+
+Search bar + filters (orientation, color).
+Grid view of image thumbnails (150 px).
+Click → insert into selected image block on canvas.
+Fallback to Pixabay API if Pexels fails.
+“Generate with AI” button (optional): uses OpenAI image endpoint.
+
+
+Each tab should open as a sliding drawer on desktop and a bottom sheet on mobile.
+
+
+
+
+
+
+
+
+⚙️ 2️⃣ Photos Tab (Pexels + Pixabay)
+
+
+
+
+
+Features
+
+
+
+Search bar + filters (orientation, color).
+Grid view of image thumbnails (150 px).
+Click → insert into selected image block on canvas.
+Fallback to Pixabay API if Pexels fails.
+“Generate with AI” button (optional): uses OpenAI image endpoint.
+
+API Routes
+
+GET /api/photos/search?q={query}&page={n}
+POST /api/photos/insert { projectId, pageId, blockId, src }
+
+
+
+3️⃣ Graphics Tab (Icons + Illustrations)
+
+
+
+
+
+Sources
+
+
+
+Local SVG sets: Heroicons + Lucide (MIT)
+unDraw illustrations (free commercial)
+
+
+
+
+UI
+
+
+
+Search icons by name or category.
+Preview SVG with hover.
+Click → insert as SVG element on canvas.
+Color picker → auto-tints to brand palette.
+
+
+
+
+Data structure
+
+{ "src": "/assets/icons/arrow-up.svg", "color": "#6D28D9", "source": "heroicons" }
+
+
+4️⃣ Fonts / Brand Kit Tab
+
+
+
+
+
+Integrate Google Fonts API
+
+
+
+Show two dropdowns: Heading Font & Body Font.
+Load selected font dynamically via <link href="https://fonts.googleapis.com/...">.
+Preview text sample for each font.
+Add color pickers for brand palette (Primary, Accent, Background).
+Apply Brand Kit styles globally on canvas.
+
+
+
+
+Data example
+
+{
+  "fonts": { "heading": "Inter", "body": "Open Sans" },
+  "colors": ["#6D28D9","#19161d","#FAF9FA"]
+}
+
+
+5️⃣ AI Integration Flow
+
+
+
+
+
+When the user generates a project:
+
+
+
+AI auto-fills text and layout.
+If the user opens the Photos tab → AI suggests keywords (e.g., “marketing”, “fitness”).
+If the user changes Brand Kit, AI re-styles the entire document (colors + fonts).
+Editor autosaves all asset choices to the project’s JSON.
+
+
+
+
+
+
+
+
+
+⚙️ 6️⃣ Storage & Licensing
+
+
+
+
+
+Store only selected assets in Supabase assets table with:
+{ "src":"https://...", "source":"pexels", "license":"free_commercial" }
+
+
+
+Never mass-download libraries.
+Display small note in Settings > Content Sources:
+“All images and icons are sourced from Pexels, Pixabay, Heroicons, Lucide and unDraw — free for commercial use.”
+
+
+
+
+
+
+
+
+
+⚙️ 7️⃣ QA Checklist
+
+
+
+
+
+Tabs open and close smoothly on mobile + desktop.
+Drag & drop images works to replace blocks.
+Font changes apply live to canvas.
+Brand Kit saves per user profile.
+No external libraries with restricted licenses.
+All assets tagged with license:"free_commercial".
+
+
+
+
+
+
+
+
+
+✅ Goal
+
+
+
+
+
+Deliver a visually rich yet license-safe editor where every image, icon, and font comes from a verified free source and integrates smoothly with the AI creation workflow.
+

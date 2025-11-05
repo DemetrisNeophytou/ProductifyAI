@@ -1,0 +1,88 @@
+Project name: Productify AI — Your Digital Product Factory
+
+Goal: Build an AI-powered web app that creates digital products (eBooks, mini-courses, guides, templates). Everything generated must be fully editable by the user (content + design) before export.
+
+Tech (you choose best defaults):
+React (or Next.js) + Tailwind, Node/Express API, PostgreSQL (or Supabase), File storage, Auth (email/Google), OpenAI API. Use environment secret OPENAI_API_KEY.
+
+Core flows:
+	1.	Auth & Onboarding
+
+	•	Email/Google sign-in.
+	•	Onboarding to set Brand Kit (logo upload, primary/secondary colors, fonts, tone of voice).
+
+	2.	New Product Wizard
+
+	•	Choose product type: eBook / Course outline & slides / Checklist / Notion or Canva template / Lead magnet.
+	•	Choose niche + goal + target audience + tone.
+	•	If eBook, follow this exact framework (editable & re-orderable):
+	•	Introduction
+	•	Real Cause of the Problem
+	•	Solution Mechanism
+	•	The Damaging Admission
+	•	Product
+	•	Transition
+	•	Offer
+	•	CTA + Scarcity
+	•	Bonuses
+	•	Guarantee
+	•	Urgency
+	•	Options
+
+	3.	AI Generation
+
+	•	Call OpenAI to generate structured sections.
+	•	Auto-fill cover title, subtitle, bullets, TOC.
+	•	Also generate marketing assets: sales page outline, CTA blocks, 3 email angles, 10 hooks.
+
+	4.	Full Editing (must-have)
+
+	•	Rich text editor (TipTap/Quill) with: headings, lists, tables, images, callouts, drag-and-drop reorder sections.
+	•	Design panel: change theme colors, fonts, spacing, page size; pick from templates.
+	•	Images:
+	•	Upload your own
+	•	Pick from stock/Unsplash (if available)
+	•	AI image generation prompt box to replace cover or background.
+	•	Background: toggle solid/gradient/image/video; live preview.
+
+	5.	Assets Manager
+
+	•	Library for images/covers/brand kit.
+	•	Replace any image/background with one click; update reflected across the document.
+
+	6.	Exports
+
+	•	Export PDF, DOCX, Markdown, HTML, and ZIP (assets + HTML).
+	•	For courses: export slide deck (PDF) + lesson scripts (DOCX/MD).
+
+	7.	Projects Dashboard
+
+	•	List, rename, duplicate, delete products.
+	•	Status badges (Draft/Final).
+	•	Autosave versions + “Restore previous”.
+
+	8.	Settings
+
+	•	Brand Kit editor (logo/colors/fonts).
+	•	Default tones/styles (e.g., bold/direct, friendly, luxury).
+	•	API key stored as secret OPENAI_API_KEY (no key in client).
+
+	9.	Pricing (placeholder)
+
+	•	Basic: free limited generations
+	•	Pro: unlimited generations + exports
+(Just scaffold Stripe routes; actual billing later.)
+
+UX Notes:
+	•	Everything generated must be editable.
+	•	Keep layout simple: left sidebar (Sections), center editor, right panel (Design).
+	•	Provide live preview for cover & pages.
+
+Environment/Secrets required:
+	•	OPENAI_API_KEY (server only).
+	•	If using Supabase: SUPABASE_URL, SUPABASE_ANON_KEY (optional).
+	•	If using image stock: UNSPLASH_ACCESS_KEY (optional).
+
+Acceptance test:
+	•	Create an eBook → the framework sections appear → user can edit text, reorder sections, change background, replace images, switch theme, then export PDF/DOCX.
+	•	AI marketing assets are created in a side tab and are also editable.

@@ -1,0 +1,53 @@
+The Settings page is blank/not rendering. Please fix and harden it.
+
+What to implement:
+1) Route & Access
+   - Ensure /settings route is registered and accessible for any logged-in user (Plus & Pro).
+   - Do NOT gate the whole page behind a subscription fetch. Show the UI with skeletons.
+
+2) Data Fetching (client)
+   - Load in parallel:
+     GET /api/auth/user        → profile + email + plan + trial info
+     GET /api/subscription     → current plan, renewal date, status
+     GET /api/usage            → AI tokens/limits usage
+   - Add loading states (skeletons) and error boundaries. No blank/white screens.
+   - Guard null/undefined (optional chaining). Never crash on missing fields.
+
+3) API (server)
+   - Add endpoints if missing:
+     GET  /api/subscription
+     GET  /api/usage
+     POST /api/billing-portal  → creates Stripe Customer Portal session
+   - Return normalized JSON (status, plan, current_period_end, trial_end, limits).
+
+4) UI Sections (render even while loading):
+   - Account: email, name (read-only for now).
+   - Subscription:
+       • Plan badge (Plus/Pro), trial days left, next renewal date.
+       • Buttons: “Upgrade to Pro”, “Manage subscription” (opens Stripe Customer Portal),
+         “Cancel/Resume” (via portal).
+   - Usage:
+       • AI tokens used / remaining (based on plan limits).
+   - Billing:
+       • Last 3 invoices (number, date, amount, status) OR link “View in Stripe portal”.
+   - Security:
+       • Show masked API keys present (OpenAI, Unsplash); allow “Re-check keys” ping.
+   - Support:
+       • Link to Help/Community.
+
+5) Stripe Portal
+   - Implement POST /api/billing-portal that calls Stripe billing portal with the current customer id.
+   - Wire the “Manage subscription” button to this endpoint and open returned URL.
+
+6) UX/Performance
+   - Enable streaming responses globally (already discussed) so the app feels instant.
+   - Add retry logic on fetch (exponential backoff) and a toast on failure.
+   - Log errors to server with request id; show friendly message to user.
+
+7) Tests
+   - Test Settings with:
+       a) New user in free trial
+       b) Active Plus
+       c) Active Pro
+       d) Expired/canceled subscription
+   - Confirm no console errors, and no blank states.

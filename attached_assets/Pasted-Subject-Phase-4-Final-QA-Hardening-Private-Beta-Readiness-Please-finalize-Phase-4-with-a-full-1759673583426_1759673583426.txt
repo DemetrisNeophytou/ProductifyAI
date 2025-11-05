@@ -1,0 +1,54 @@
+Subject: Phase 4 – Final QA, Hardening & Private Beta Readiness
+
+Please finalize Phase 4 with a full Hardening + QA pass.
+Scope (must complete all):
+
+A. Regression QA (Desktop + Mobile)
+	•	Test every flow: onboarding, create product (ebooks/templates/landing pages), media search (Pexels/Pixabay), export (PDF/PNG/HTML), Brand Kit, search, dashboard, and Stripe checkout.
+	•	No competitor names or external brand references in any UI copy.
+	•	Fix all console warnings/errors.
+
+B. Payments (Stripe – Test Mode)
+	•	Use ONLY these price IDs:
+	•	Plus (Monthly): price_1SEEtkAggnQzW8UqGtur2sN4
+	•	Plus (3-Months): price_1SEEyOAggnQzW8UqaCkQj1Ci
+	•	Pro (Monthly): price_1SEF9RAggnQzW8UqwU63D90S
+	•	Pro (3-Months): price_1SEF9zAggnQzW8Uq7lcOJB8Q
+	•	Verify checkout, subscription status, webhooks (customer.created, checkout.session.completed, invoice.paid), and gated features per plan.
+
+C. Media Providers
+	•	Use Pexels as primary (my PEXELS_API_KEY) and Pixabay as fallback (PIXABAY_API_KEY).
+	•	Respect license filters; store attribution metadata but don’t require attribution in UI.
+
+D. Performance
+	•	Lighthouse targets (mobile/desktop): Performance ≥ 90, Accessibility ≥ 90, Best Practices ≥ 90, SEO ≥ 90.
+	•	Lazy-load images, compress exports, code-split routes, enable HTTP caching & CDN headers where relevant.
+
+E. Error Monitoring & Analytics
+	•	Add Sentry (frontend + backend) for runtime errors.
+	•	Add lightweight product analytics (e.g., PostHog or Umami) to track: new project created, export, media search, checkout started/completed.
+
+F. Security
+	•	Rate-limiting on API routes, input validation (zod), sanitize HTML, CORS locked, Helmet, secure cookies, dotenv secrets only server-side.
+
+G. Tests
+	•	Unit tests (Vitest/Jest) for core utils.
+	•	E2E tests with Playwright for: create → add pages/blocks → insert images → export PDF → checkout.
+	•	Basic load test (k6): 50 concurrent users on create/export endpoints.
+
+H. PWA & Mobile Polish
+	•	Make it installable (manifest + service worker), offline error page, responsive bottom nav, tap targets ≥ 44px.
+
+I. Accessibility
+	•	WCAG 2.1 A/AA checks: landmarks, labels, color contrast, keyboard navigation.
+
+J. Private Beta Mode
+	•	Staging environment + “Invite-only” access (invite codes).
+	•	In-app “Send feedback” button (stores to DB + emails me).
+
+K. Documentation & Handoff
+	•	README with env vars, scripts, how to run tests, how to deploy.
+	•	List all endpoints and webhooks.
+	•	Short demo video or GIFs of core flows.
+
+Deliverables: fixed app, test results (Lighthouse scores, Playwright report, k6 report), Sentry project link, staging URL with invite code.

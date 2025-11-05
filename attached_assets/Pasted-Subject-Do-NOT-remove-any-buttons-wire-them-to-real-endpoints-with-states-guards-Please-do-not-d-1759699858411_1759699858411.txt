@@ -1,0 +1,35 @@
+Subject: Do NOT remove any buttons — wire them to real endpoints with states/guards
+
+Please do not delete or hide any buttons. I want every visible button to perform its intended action with proper loading/error states and credit checks.
+
+Wire these actions to real endpoints (no placeholders):
+	1.	AI Suggestions (Polish/Shorten/Expand/Translate) → POST /api/ai/content
+	•	body: { projectId, blockId, op:'polish|shorten|expand|translate', tone?, targetLang?, context? }
+	•	response: { blockId, newText } → update editor block
+	2.	AI Re-Style → POST /api/ai/restyle
+	•	body: { projectId, blockId, tone:'professional|casual|inspirational|educational' }
+	•	response: { blockId, newText }
+	3.	AI Image: Search/Regenerate → GET /api/images/search?provider=pexels|pixabay&q=...
+	•	response: { images:[{url,thumb,source,attribution}] } → insert selected into block
+	4.	Upload Image → POST /api/images/upload (multipart)
+	•	response: { url, width, height } → insert into block
+	5.	Brand Kit: Apply → POST /api/brand/apply
+	•	body: { projectId, colors, fonts:{heading,body}, logoUrl? }
+	•	response: { applied:true } → re-style current project
+	6.	Undo/Redo → history stack in editor (Ctrl/Cmd+Z / Shift+Z)
+	7.	Export → POST /api/export/pdf|png|html
+	•	body: { projectId, format, filename }
+	•	response: { downloadUrl }
+	8.	Credits →
+	•	estimate before heavy actions: POST /api/credits/estimate → { estimated }
+	•	deduct on success: POST /api/credits/deduct → { balance }
+
+UI rules (must):
+	•	Όλα τα κουμπιά: show loading, disabled while running, toast on error, retry.
+	•	If no selected block → disable AI tabs + hint “Select a section to use AI”.
+	•	If no credits / no API key → inline callout with CTA (buy/connect).
+	•	Fix the Select value crash (no '' values; provide defaults).
+
+Template Library: choosing ebook/course/checklist loads different default sections & tools; “Use Template” creates project and opens editor with blocks.
+
+QA (required): E2E test: Template → Editor → AI Polish → Image Search+Insert → Brand Apply → Export PDF. No console errors. Provide a short screen recording.
