@@ -30,7 +30,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9
       
       - name: Get pnpm store directory
         shell: bash
@@ -50,22 +50,48 @@ jobs:
       
       - name: Type check
         run: pnpm run check
-        continue-on-error: true
       
       - name: Lint (if script exists)
-        run: pnpm run lint || echo "No lint script found"
+        run: pnpm run lint || echo "⚠️  No lint script found, skipping"
         continue-on-error: true
       
-      - name: Build frontend
+      - name: Build (Frontend + Backend)
         run: pnpm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_API_URL: https://productifyai-api.onrender.com
       
+      - name: Verify build outputs
+        run: |
+          echo "📦 Checking build outputs..."
+          if [ ! -f "dist/server.js" ]; then
+            echo "❌ Backend build failed: dist/server.js not found"
+            exit 1
+          fi
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ Frontend build failed: dist/index.html not found"
+            exit 1
+          fi
+          echo "✅ Backend built: dist/server.js"
+          echo "✅ Frontend built: dist/index.html"
+          ls -lah dist/
+      
       - name: Run tests
-        run: pnpm run test:ci || echo "No tests configured yet"
+        run: pnpm run test:ci || echo "⚠️  No tests configured yet, skipping"
         continue-on-error: true
+      
+      - name: Check for secrets leaks (basic)
+        run: |
+          echo "🔍 Checking for common secrets patterns..."
+          if grep -r "sk-proj-" dist/ 2>/dev/null; then
+            echo "❌ Found OpenAI API key in build output!"
+            exit 1
+          fi
+          if grep -r "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" dist/ | grep -v "VITE_SUPABASE_ANON_KEY" 2>/dev/null; then
+            echo "⚠️  Found JWT-like token in build output"
+          fi
+          echo "✅ No obvious secrets found in build output"
       
       - name: Upload build artifacts
         if: success()
