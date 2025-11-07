@@ -43,6 +43,31 @@ VITE_APP_VERSION=1.0.0
 - **Framework Detection:** Vite
 - **Build Output:** `dist/`
 
+### Post-Merge Steps for Vercel
+
+1. **Import Project** from GitHub: `DemetrisNeophytou/ProductifyAI`
+2. **Set Branch** to `main`
+3. **Configure Build:**
+   - Framework: Vite
+   - Build Command: `pnpm run build`  
+   - Output Directory: `dist`
+   - Install Command: `pnpm install`
+4. **Add Environment Variables** (see above)
+5. **Deploy**
+
+### Testing Vercel Deployment
+
+```bash
+# Frontend loads
+curl https://productifyai.vercel.app
+# Expected: 200 OK with HTML
+
+# Check API URL is set
+# In browser console at productifyai.vercel.app:
+console.log(import.meta.env.VITE_API_URL);
+# Expected: https://productifyai-api.onrender.com
+```
+
 ---
 
 ## 🔧 Render Configuration (Backend)
@@ -54,9 +79,40 @@ VITE_APP_VERSION=1.0.0
 **Region:** Oregon (US West) or closest to you  
 **Branch:** `main`  
 **Runtime:** Node  
-**Build Command:** `pnpm install && pnpm run build`  
-**Start Command:** `node dist/server.js`  
+**Build Command:** `npm ci --include=dev && npm run build`  
+**Start Command:** `npm start`  
 **Node Version:** 22
+
+### Post-Merge Steps for Render
+
+1. **Create New Web Service**
+2. **Connect GitHub Repository:** `DemetrisNeophytou/ProductifyAI`
+3. **Configure Settings:**
+   - Name: `productifyai-api`
+   - Branch: `main`
+   - Build Command: `npm ci --include=dev && npm run build`
+   - Start Command: `npm start`
+4. **Add Environment Variables** (see above)
+5. **Set Health Check Path:** `/healthz`
+6. **Deploy**
+
+### Testing Render Deployment
+
+```bash
+# Test liveness probe
+curl https://productifyai-api.onrender.com/healthz
+# Expected: {"status":"ok"}
+
+# Test detailed health
+curl https://productifyai-api.onrender.com/api/health
+# Expected: JSON with all service statuses
+
+# Test CORS from browser console at productifyai.vercel.app:
+fetch('https://productifyai-api.onrender.com/api/health')
+  .then(r => r.json())
+  .then(d => console.log('✅ CORS works!', d))
+  .catch(e => console.error('❌ CORS failed:', e));
+```
 
 ### Instance Type
 
