@@ -38,13 +38,46 @@ This document explains where each environment variable should be configured acro
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# API Endpoint
+# API Endpoint (Backend URL)
 VITE_API_URL=https://productifyai-api.onrender.com
 
 # App Metadata
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
 ```
+
+### 📖 VITE_API_URL Explained
+
+**What is it?**  
+The base URL for your backend API. Frontend uses this to make API calls.
+
+**Example Values:**
+```bash
+# Local Development
+VITE_API_URL=http://localhost:5050
+
+# Render (Production)
+VITE_API_URL=https://productifyai-api.onrender.com
+
+# Custom Domain
+VITE_API_URL=https://api.productifyai.com
+```
+
+**How it's used in code:**
+```typescript
+// Centralized in client/src/lib/api.ts
+import { API_BASE_URL } from '@/lib/api';
+
+// Or use the helper function
+import { apiUrl } from '@/lib/api';
+const url = apiUrl('/api/users'); // https://productifyai-api.onrender.com/api/users
+```
+
+**Important Notes:**
+- ✅ Must include protocol (`https://` or `http://`)
+- ❌ No trailing slash
+- ✅ Accessible from browser (frontend makes direct requests)
+- ✅ Must allow CORS from Vercel domain
 
 ### Optional Variables
 
