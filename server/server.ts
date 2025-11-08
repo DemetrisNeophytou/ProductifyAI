@@ -49,15 +49,17 @@ const app = express();
 
 // =============================================================================
 // CORS Configuration
+// Whitelist: localhost (dev) + Vercel (prod)
+// To modify: Set CORS_ORIGIN env var with comma-separated origins
 // =============================================================================
 const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [
-  'http://localhost:5173',
-  'http://localhost:3000'
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:3000',  // Alternative dev port
 ];
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow requests with no origin (e.g., Postman, mobile apps, server-to-server)
     if (!origin) {
       return callback(null, true);
     }
@@ -65,12 +67,14 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      Logger.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error(`Not allowed by CORS: ${origin}`), false);
+      // Log and block unauthorized origins
+      Logger.warn(`❌ CORS blocked request from unauthorized origin: ${origin}`);
+      Logger.warn(`   Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(new Error(`Not allowed by CORS`), false);
     }
   },
-  credentials: true,
-  optionsSuccessStatus: 200,
+  credentials: true,                // Allow cookies/auth headers
+  optionsSuccessStatus: 200,       // Legacy browser support
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
@@ -78,7 +82,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Log CORS configuration on startup
-Logger.info(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+Logger.info(`🔒 CORS whitelist enabled for ${allowedOrigins.length} origin(s):`);
+allowedOrigins.forEach(origin => Logger.info(`   ✓ ${origin}`));
 
 // JSON and URL-encoded middleware
 app.use(express.json({ limit: '10mb' }));
