@@ -35,15 +35,31 @@ This document explains where each environment variable should be configured acro
 
 ```bash
 # Supabase (Public - safe to expose)
-VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
-# API Endpoint
+# API Endpoint - Points to your backend
 VITE_API_URL=https://productifyai-api.onrender.com
 
 # App Metadata
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
+```
+
+**How to set in Vercel:**
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Add each variable for Production, Preview, and Development environments
+3. Redeploy after adding variables
+
+**VITE_API_URL Examples:**
+- **Development:** `http://localhost:5050`
+- **Production:** `https://productifyai-api.onrender.com`
+- **Custom Domain:** `https://api.yourdomain.com`
+
+**Important:** All frontend code should import from `client/src/lib/api-config.ts`:
+```typescript
+import { API_BASE_URL } from '@/lib/api-config';
+const response = await fetch(`${API_BASE_URL}/api/users`);
 ```
 
 ### Optional Variables
@@ -75,23 +91,38 @@ NODE_ENV=production
 PORT=10000
 
 # Supabase (Server-side - KEEP SECRET)
-SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 
 # Authentication Secrets (Generate secure random strings)
-JWT_SECRET=<32+ character random string>
-SESSION_SECRET=<32+ character random string>
+JWT_SECRET=<generate-32-char-secret>
+SESSION_SECRET=<generate-32-char-secret>
 
 # Google OAuth
-GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 
 # CORS & Frontend
 CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
 FRONTEND_URL=https://productifyai.vercel.app
 
 # OpenAI (for AI features)
-OPENAI_API_KEY=sk-proj-...
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+**How to set in Render:**
+1. Go to Render Dashboard → Your Service → Environment
+2. Click "Add Environment Variable"
+3. Add each variable
+4. Service auto-redeploys when variables change
+
+**Generate Secrets:**
+```bash
+# On Linux/Mac:
+openssl rand -base64 32
+
+# On Windows (PowerShell):
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 }))
 ```
 
 ### Optional Variables
