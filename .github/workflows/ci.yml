@@ -48,7 +48,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       
-      - name: Type check
+      - name: Type check (fails build on errors)
         run: pnpm run check
       
       - name: Lint (if script exists)
@@ -81,17 +81,70 @@ jobs:
         run: pnpm run test:ci || echo "⚠️  No tests configured yet, skipping"
         continue-on-error: true
       
-      - name: Check for secrets leaks (basic)
+      - name: Robust secrets scan
         run: |
-          echo "🔍 Checking for common secrets patterns..."
-          if grep -r "sk-proj-" dist/ 2>/dev/null; then
-            echo "❌ Found OpenAI API key in build output!"
+          echo "🔍 Scanning build output for leaked secrets..."
+          SCAN_FAILED=0
+          
+          # 1. Check for OpenAI API keys (sk-test-, sk-live-, sk-proj-)
+          echo "Checking for OpenAI API keys..."
+          if grep -rE "sk-(test|live|proj)-[A-Za-z0-9]{20,}" dist/ 2>/dev/null; then
+            echo "❌ CRITICAL: OpenAI API key found in build output!"
+            SCAN_FAILED=1
+          else
+            echo "✅ No OpenAI keys found"
+          fi
+          
+          # 2. Check for Stripe secret keys
+          echo "Checking for Stripe secret keys..."
+          if grep -rE "sk_(test|live)_[A-Za-z0-9]{24,}" dist/ 2>/dev/null; then
+            echo "❌ CRITICAL: Stripe secret key found in build output!"
+            SCAN_FAILED=1
+          else
+            echo "✅ No Stripe secret keys found"
+          fi
+          
+          # 3. Check for generic private keys
+          echo "Checking for private keys..."
+          if grep -r "BEGIN PRIVATE KEY" dist/ 2>/dev/null; then
+            echo "❌ CRITICAL: Private key found in build output!"
+            SCAN_FAILED=1
+          else
+            echo "✅ No private keys found"
+          fi
+          
+          # 4. Check for long base64 tokens (excluding known public Supabase anon key)
+          echo "Checking for suspicious JWT-like tokens..."
+          # Extract the known Supabase anon key from environment
+          KNOWN_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}"
+          
+          # Search for JWT-like patterns
+          if grep -rE "eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}" dist/ 2>/dev/null > /tmp/jwt_matches.txt; then
+            # Filter out the known anon key
+            if [ -n "$KNOWN_ANON_KEY" ]; then
+              grep -v "$KNOWN_ANON_KEY" /tmp/jwt_matches.txt > /tmp/jwt_suspicious.txt || true
+              if [ -s /tmp/jwt_suspicious.txt ]; then
+                echo "⚠️  WARNING: Found JWT-like tokens (not the known anon key):"
+                cat /tmp/jwt_suspicious.txt
+                echo "If these are public keys, this is OK. If private keys, this is CRITICAL."
+              else
+                echo "✅ Only known public Supabase anon key found (OK)"
+              fi
+            fi
+          else
+            echo "✅ No JWT-like tokens found"
+          fi
+          
+          if [ $SCAN_FAILED -eq 1 ]; then
+            echo ""
+            echo "❌❌❌ SECRET LEAK DETECTED ❌❌❌"
+            echo "Build output contains sensitive credentials!"
+            echo "Review the files listed above and remove secrets."
             exit 1
           fi
-          if grep -r "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" dist/ | grep -v "VITE_SUPABASE_ANON_KEY" 2>/dev/null; then
-            echo "⚠️  Found JWT-like token in build output"
-          fi
-          echo "✅ No obvious secrets found in build output"
+          
+          echo ""
+          echo "✅ Secrets scan passed - no critical leaks detected"
       
       - name: Upload build artifacts
         if: success()
