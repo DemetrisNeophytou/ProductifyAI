@@ -255,44 +255,267 @@ VITE_SUPABASE_ANON_KEY=<your-anon-key>
 
 ---
 
-## 🧪 Testing After Deployment
+## 🧪 Post-Deploy Test Checklist
 
-### 1. Health Checks
+### Step 1: Backend Health Checks
 
 ```bash
-# Backend liveness
+# Test 1: Liveness probe (Render health check uses this)
 curl https://productifyai-api.onrender.com/healthz
-# Expected: {"status":"ok"}
 
-# Detailed health
+# Expected Response:
+{"status":"ok"}
+
+# Expected Status Code: 200
+
+# Test 2: Detailed health status
 curl https://productifyai-api.onrender.com/api/health
-# Expected: JSON with all service statuses
+
+# Expected Response (partial):
+{
+  "ok": true,
+  "timestamp": "2025-11-04T...",
+  "environment": "production",
+  "services": {
+    "database": {"status": "connected"},
+    "supabase": {"status": "configured"},
+    "openai": {"status": "configured"}
+  }
+}
+
+# Expected Status Code: 200
 ```
 
-### 2. Frontend
+**✅ Pass Criteria:**
+- Both endpoints return 200 OK
+- `/healthz` returns `{"status":"ok"}`
+- `/api/health` shows `"ok": true`
+- Database status is "connected"
+
+### Step 2: Frontend Deployment
 
 ```bash
-# Frontend loads
+# Test 3: Frontend loads
 curl https://productifyai.vercel.app
-# Expected: 200 OK with HTML
+
+# Expected: 200 OK with HTML content
+# Should contain: <title>ProductifyAI</title>
+
+# Test 4: Static assets load
+curl -I https://productifyai.vercel.app/assets/index-[hash].js
+
+# Expected: 200 OK, content-type: application/javascript
 ```
 
-### 3. CORS
+**✅ Pass Criteria:**
+- Frontend returns 200 OK
+- HTML contains app markup
+- JavaScript bundles load successfully
 
-Open browser console at `https://productifyai.vercel.app`:
+### Step 3: CORS Verification
+
+Open browser Developer Console at `https://productifyai.vercel.app` and run:
+
 ```javascript
+// Test 5: CORS allows frontend to reach backend
+fetch('https://productifyai-api.onrender.com/api/health')
+  .then(response => response.json())
+  .then(data => {
+    console.log('✅ CORS works!');
+    console.log('Backend health:', data);
+  })
+  .catch(error => {
+    console.error('❌ CORS failed:', error);
+  });
+
+// Test 6: Check API URL is configured
+console.log('API URL:', import.meta.env.VITE_API_URL);
+// Expected: https://productifyai-api.onrender.com
+```
+
+**✅ Pass Criteria:**
+- No CORS errors in console
+- Fetch succeeds and returns data
+- API_URL environment variable is set correctly
+
+### Step 4: Authentication Flow
+
+**Test 7: Email/Password Signup**
+1. Navigate to `https://productifyai.vercel.app`
+2. Click "Sign Up"
+3. Enter email + password
+4. Submit form
+5. Verify redirect to dashboard
+
+**Test 8: Email/Password Login**
+1. Log out
+2. Click "Log In"
+3. Enter credentials
+4. Submit
+5. Verify successful login
+
+**Test 9: Google OAuth**
+1. Log out
+2. Click "Sign in with Google"
+3. Select Google account
+4. Verify redirect back to app
+5. Verify logged in state
+
+**✅ Pass Criteria:**
+- Signup creates account
+- Login succeeds with valid credentials
+- Google OAuth completes full flow
+- User session persists
+
+### Step 5: Database Connectivity
+
+```bash
+# Test 10: Database queries work
+# (Backend should log database queries)
+# Check Render logs for:
+grep "Database" <render-logs>
+
+# Expected: "Database connected" or "Database status: connected"
+```
+
+**From browser console:**
+```javascript
+// Test 11: API can read from database
 fetch('https://productifyai-api.onrender.com/api/health')
   .then(r => r.json())
-  .then(d => console.log('✅ CORS works!', d))
-  .catch(e => console.error('❌ CORS failed:', e));
+  .then(d => console.log('DB Status:', d.services.database));
+// Expected: {"status":"connected","type":"supabase"}
 ```
 
-### 4. Login
+**✅ Pass Criteria:**
+- Database connection established
+- Queries execute successfully
+- No connection errors in logs
 
-1. Go to `https://productifyai.vercel.app`
-2. Sign up with email/password
-3. Test login
-4. Test Google OAuth login
+### Step 6: Environment Variables
+
+**Test 12: Verify all required env vars are set**
+
+In Render logs, check for:
+```
+✅ Environment: production
+✅ PORT: 10000
+✅ CORS enabled for origins: ...
+✅ Supabase URL: https://...
+```
+
+**Test 13: Frontend env vars**
+
+In browser console at productifyai.vercel.app:
+```javascript
+console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('API URL:', import.meta.env.VITE_API_URL);
+// Both should be defined, not undefined
+```
+
+**✅ Pass Criteria:**
+- All required env vars are set
+- No "undefined" or "not configured" warnings in logs
+- Frontend can access Vite env vars
+
+### Step 7: Error Tracking (Optional)
+
+**Test 14: If Sentry is configured**
+```javascript
+// Trigger a test error
+throw new Error('Test error for Sentry');
+// Check Sentry dashboard for the error
+```
+
+**✅ Pass Criteria:**
+- Error appears in Sentry dashboard (if configured)
+- Source maps work (if configured)
+
+---
+
+## 📋 Quick Checklist
+
+Copy this checklist and mark items as you verify:
+
+```markdown
+### Backend
+- [ ] /healthz returns 200 {"status":"ok"}
+- [ ] /api/health returns 200 with service statuses
+- [ ] Database status is "connected"
+- [ ] No errors in Render logs
+
+### Frontend
+- [ ] https://productifyai.vercel.app loads (200 OK)
+- [ ] Static assets load successfully
+- [ ] VITE_API_URL is set correctly
+- [ ] VITE_SUPABASE_URL is set correctly
+
+### CORS
+- [ ] Frontend can fetch from backend
+- [ ] No CORS errors in browser console
+- [ ] Credentials/cookies work
+
+### Authentication
+- [ ] Email/password signup works
+- [ ] Email/password login works
+- [ ] Google OAuth works
+- [ ] User session persists
+
+### Database
+- [ ] Backend connects to database
+- [ ] Queries execute successfully
+- [ ] No connection errors
+
+### Environment
+- [ ] All required env vars set in Render
+- [ ] All required env vars set in Vercel
+- [ ] No "undefined" errors in logs
+```
+
+---
+
+## 🚨 Common Issues & Fixes
+
+### Issue: CORS Error
+```
+Access to fetch at 'https://productifyai-api.onrender.com/api/health' 
+from origin 'https://productifyai.vercel.app' has been blocked by CORS policy
+```
+
+**Fix:**
+1. Check `CORS_ORIGIN` in Render includes Vercel URL
+2. Ensure format: `https://productifyai.vercel.app` (no trailing slash)
+3. Restart Render service
+
+### Issue: 503 Service Unavailable
+**Fix:**
+1. Check Render service is running (not building)
+2. Check health check endpoint works
+3. Review Render logs for startup errors
+
+### Issue: Frontend Shows "API Error"
+**Fix:**
+1. Verify `VITE_API_URL` is set in Vercel
+2. Redeploy frontend after setting env vars
+3. Check browser console for actual error
+
+### Issue: Login Fails
+**Fix:**
+1. Verify Google OAuth credentials in Render
+2. Check redirect URIs in Google Cloud Console
+3. Verify Supabase Google provider is enabled
+
+---
+
+## ✅ Success Criteria
+
+All deployments successful when:
+- ✅ All 14 tests pass
+- ✅ No errors in Render logs
+- ✅ No errors in Vercel logs
+- ✅ No errors in browser console
+- ✅ Users can sign up and log in
+- ✅ CORS allows frontend-backend communication
 
 ---
 
