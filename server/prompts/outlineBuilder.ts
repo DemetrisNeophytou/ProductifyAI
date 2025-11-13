@@ -110,3 +110,5 @@ Guidelines:
 - Focus on €100k+ revenue potential
 - Include metrics at every stage`
 };
+
+

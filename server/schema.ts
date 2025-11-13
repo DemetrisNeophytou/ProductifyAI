@@ -345,3 +345,4 @@ export const reviews = pgTable("reviews", {
   // Ensure one review per user per listing
   index("idx_reviews_user_listing").on(table.userId, table.listingId),
 ]);
+

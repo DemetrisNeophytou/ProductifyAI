@@ -101,3 +101,4 @@ app.listen(PORT, () => {
   const dbService = DatabaseService.getInstance();
   dbService.testConnection();
 });
+

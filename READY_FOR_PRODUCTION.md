@@ -1,3 +1,82 @@
+## Render Deployment (Backend)
+
+- **Service Type:** Web Service (Node 18+)
+- **Build Command:** `npm ci && npm run build`
+- **Start Command:** `node dist/server.js`
+- **Health Check Path:** `/healthz`
+- **Region:** Same as Supabase/S3 (recommend `Oregon (US West)` if undecided)
+- **Required Environment Variables:**
+  - `NODE_ENV=production`
+  - `PORT=10000`
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `OPENAI_API_KEY`
+  - `JWT_SECRET` (32+ random chars)
+  - `SESSION_SECRET` (32+ random chars)
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+- `CORS_ORIGIN` (comma-separated, no spaces, e.g. `https://productivity-ai-gamma.vercel.app,https://dashboard.productify.ai`)
+- `FRONTEND_URL=https://productivity-ai-gamma.vercel.app`
+  - Stripe keys if payments enabled (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_*`)
+  - Email/notification keys as needed (`RESEND_API_KEY`, `EMAIL_FROM`, `SLACK_WEBHOOK_URL`)
+- **Optional Toggles:** `MOCK_DB=false`, `MOCK_STRIPE=false`, `DEBUG=false`
+
+## Vercel Deployment (Frontend)
+
+- **Framework Preset:** Vite / React 18
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist/public`
+- **Node Version:** `18.x`
+- **Environment Variables:**
+- `VITE_API_URL=https://productifyai-api.onrender.com`
+  - `VITE_SUPABASE_URL=https://<project>.supabase.co`
+  - `VITE_SUPABASE_ANON_KEY=<public-anon-key>`
+  - `VITE_APP_NAME=ProductifyAI`
+  - `VITE_APP_VERSION=1.0.0`
+  - Optional: `VITE_SHOW_DEV_BANNER=false`, `VITE_EVAL_MODE=false`
+
+## OAuth & External Services
+
+- **Google OAuth Redirect URIs:**
+  - `http://localhost:5173/auth/callback/google`
+- `https://productivity-ai-gamma.vercel.app/auth/callback/google`
+- **Supabase Webhooks / JWT:** Ensure service-role key only on backend (Render).
+- **Stripe Webhooks:** Point to `https://productifyai-api.onrender.com/api/stripe/webhook`.
+
+## CORS Configuration
+
+- `CORS_ORIGIN` must be comma-separated without spaces.
+- Include:
+  - `http://localhost:5173`
+- `https://productivity-ai-gamma.vercel.app`
+  - Any custom domains (e.g. `https://dashboard.productify.ai`)
+
+## Preflight Verification Commands
+
+```bash
+npm ci
+npm run build
+npm run scan:secrets
+./scripts/health-check.sh
+./scripts/cors-test.sh
+./scripts/post-deploy-tests.sh
+```
+
+PowerShell equivalents live in `scripts/*.ps1`.
+
+## Deployment Notes
+
+- After Render deploy, confirm `/healthz` returns `{ "status": "ok" }`.
+- After Vercel deploy, open console and run:
+
+```javascript
+fetch('https://productifyai-api.onrender.com/healthz', { credentials: 'include' })
+  .then(r => r.json())
+  .then(d => console.log('✅ CORS works, health:', d))
+  .catch(e => console.error('❌', e));
+```
+
+- Keep Supabase, Stripe, and OpenAI keys rotated quarterly.
 # ✅ Repository Ready for Production Deployment
 
 **Date:** 2025-11-08  
@@ -76,7 +155,7 @@ PORT=10000
 
 # Supabase (Server-side)
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTQwMTcxMiwiZXhwIjoyMDc0OTc3NzEyfQ.-aGf_2TuAO5H6YHqSkfNypJrRhJodyurpG08G1EkxVw
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 # Google OAuth
 GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
@@ -87,8 +166,8 @@ JWT_SECRET=<PASTE_32_CHAR_RANDOM_STRING_HERE>
 SESSION_SECRET=<PASTE_32_CHAR_RANDOM_STRING_HERE>
 
 # CORS & Frontend
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 
 # OpenAI (if using AI features)
 OPENAI_API_KEY=<your-openai-key-if-needed>
@@ -117,7 +196,7 @@ After adding all env vars, Render will auto-deploy.
 
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MDE3MTIsImV4cCI6MjA3NDk3NzcxMn0.Oamj_iqJwm8nqqMQnJfYT4w9x4nU0BMkU5gF1a_UYlo
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
@@ -145,7 +224,7 @@ After adding all vars, redeploy:
 
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
@@ -153,7 +232,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 
 ```
 http://localhost:5173
-https://productifyai.vercel.app
+https://productivity-ai-gamma.vercel.app
 https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -194,13 +273,13 @@ curl https://productifyai-api.onrender.com/api/health
 ### Test 3: Frontend Loads (Terminal)
 
 ```bash
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 ```
 **Expected:** 200 OK with HTML
 
 ### Test 4: CORS Check (Browser)
 
-Open browser console at `https://productifyai.vercel.app`:
+Open browser console at `https://productivity-ai-gamma.vercel.app`:
 
 ```javascript
 fetch('https://productifyai-api.onrender.com/api/health', {
@@ -214,7 +293,7 @@ fetch('https://productifyai-api.onrender.com/api/health', {
 
 ### Test 5: API URL Configured (Browser)
 
-In browser console at `https://productifyai.vercel.app`:
+In browser console at `https://productivity-ai-gamma.vercel.app`:
 
 ```javascript
 console.log('API URL:', import.meta.env.VITE_API_URL);
@@ -280,7 +359,7 @@ Copy this and fill in results:
 - [ ] No errors in Render logs
 
 ### Frontend
-- [ ] https://productifyai.vercel.app loads (200 OK)
+- [ ] https://productivity-ai-gamma.vercel.app loads (200 OK)
 - [ ] VITE_API_URL is set correctly
 - [ ] VITE_SUPABASE_URL is set correctly
 
@@ -324,7 +403,7 @@ The build produces:
 Backend allows these origins (configured via `CORS_ORIGIN` env var):
 - `http://localhost:5173` (Vite dev)
 - `http://localhost:3000` (Alternative dev)
-- `https://productifyai.vercel.app` (Production)
+- `https://productivity-ai-gamma.vercel.app` (Production)
 
 All other origins are blocked and logged.
 
@@ -359,20 +438,20 @@ Build fails if secrets detected.
 | `NODE_ENV` | `production` | Required |
 | `PORT` | `10000` | Render auto-provides |
 | `SUPABASE_URL` | `https://dfqssnvqsxjjtyhylzen.supabase.co` | Required |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJh...` | Service role key (SECRET!) |
+| `SUPABASE_SERVICE_ROLE_KEY` | `<supabase-service-role-key>` | Service role key (SECRET!) |
 | `GOOGLE_CLIENT_ID` | `85711...` | OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | OAuth secret (SECRET!) |
 | `JWT_SECRET` | Generate 32+ chars | Session encryption (SECRET!) |
 | `SESSION_SECRET` | Generate 32+ chars | Session signing (SECRET!) |
-| `CORS_ORIGIN` | `http://localhost:5173,https://productifyai.vercel.app` | Comma-separated |
-| `FRONTEND_URL` | `https://productifyai.vercel.app` | For redirects |
+| `CORS_ORIGIN` | `http://localhost:5173,https://productivity-ai-gamma.vercel.app` | Comma-separated |
+| `FRONTEND_URL` | `https://productivity-ai-gamma.vercel.app` | For redirects |
 
 ### Vercel (Frontend) - Required
 
 | Variable | Value | Notes |
 |----------|-------|-------|
 | `VITE_SUPABASE_URL` | `https://dfqssnvqsxjjtyhylzen.supabase.co` | Public URL |
-| `VITE_SUPABASE_ANON_KEY` | `eyJh...` | Anon key (safe to expose) |
+| `VITE_SUPABASE_ANON_KEY` | `<supabase-anon-key>` | Anon key (safe to expose) |
 | `VITE_API_URL` | `https://productifyai-api.onrender.com` | Backend URL |
 | `VITE_APP_NAME` | `ProductifyAI` | App name |
 | `VITE_APP_VERSION` | `1.0.0` | Version |
@@ -447,7 +526,7 @@ Deployment is successful when:
 ✅ Steps 1-5 completed
 ✅ Test Results: [paste checklist results]
 ✅ Render URL: https://productifyai-api.onrender.com
-✅ Vercel URL: https://productifyai.vercel.app
+✅ Vercel URL: https://productivity-ai-gamma.vercel.app
 ✅ Issues: [none / describe any]
 ```
 
@@ -458,4 +537,5 @@ Then I can update documentation and mark everything complete!
 **Repository Status:** ✅ Ready for production deployment  
 **Next Action:** Complete manual steps 1-5 above  
 **Last Updated:** 2025-11-08
+
 

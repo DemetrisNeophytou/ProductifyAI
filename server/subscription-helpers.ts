@@ -173,3 +173,5 @@ export async function expireTrialAccess(userId: string): Promise<void> {
     })
     .where(eq(users.id, userId));
 }
+
+

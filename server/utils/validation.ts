@@ -35,3 +35,5 @@ export const aiGenerationSchema = z.object({
   productType: productTypeSchema,
   userId: z.number().int().positive('Invalid user ID')
 });
+
+

@@ -69,7 +69,7 @@ https://github.com/DemetrisNeophytou/ProductifyAI/compare/main...chore/env-confi
 
 **CORS Hardening:**
 - ✅ Robust origin validation with logging
-- ✅ Whitelist: `localhost:5173` + `productifyai.vercel.app`
+- ✅ Whitelist: `localhost:5173` + `productivity-ai-gamma.vercel.app`
 - ✅ Blocks unauthorized origins with warning logs
 - ✅ Allows no-origin requests (Postman, mobile apps)
 - ✅ Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
@@ -151,7 +151,7 @@ https://github.com/DemetrisNeophytou/ProductifyAI/compare/main...chore/env-confi
 **Environment Variables:**
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 ```
@@ -174,13 +174,13 @@ VITE_APP_NAME=ProductifyAI
 NODE_ENV=production
 PORT=10000
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=<supabase-service-role-key>
 GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
 JWT_SECRET=<generate-32-char-secret>
 SESSION_SECRET=<generate-32-char-secret>
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 OPENAI_API_KEY=sk-proj-...
 ```
 
@@ -196,14 +196,14 @@ https://console.cloud.google.com/apis/credentials
 **Authorized Redirect URIs:**
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
 **Authorized JavaScript Origins:**
 ```
 http://localhost:5173
-https://productifyai.vercel.app
+https://productivity-ai-gamma.vercel.app
 https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -223,7 +223,7 @@ https://supabase.com/dashboard/project/dfqssnvqsxjjtyhylzen/auth/providers
 
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
 ```
 
 ---
@@ -246,13 +246,13 @@ curl https://productifyai-api.onrender.com/api/health
 
 ```bash
 # Frontend accessible
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 # Expected: 200 OK with HTML
 ```
 
 ### 3. CORS Test
 
-Open browser console at `https://productifyai.vercel.app`:
+Open browser console at `https://productivity-ai-gamma.vercel.app`:
 ```javascript
 fetch('https://productifyai-api.onrender.com/api/health')
   .then(r => r.json())
@@ -262,7 +262,7 @@ fetch('https://productifyai-api.onrender.com/api/health')
 
 ### 4. Login Test
 
-1. Go to `https://productifyai.vercel.app`
+1. Go to `https://productivity-ai-gamma.vercel.app`
 2. Click "Sign Up" → Create account with email/password
 3. Verify you can log in
 4. Click "Sign in with Google" → Verify OAuth works
@@ -273,7 +273,7 @@ fetch('https://productifyai-api.onrender.com/api/health')
 
 After all PRs merged and deployed:
 
-- ✅ Frontend accessible at `https://productifyai.vercel.app`
+- ✅ Frontend accessible at `https://productivity-ai-gamma.vercel.app`
 - ✅ Backend healthy at `https://productifyai-api.onrender.com/healthz`
 - ✅ CORS allowing frontend requests
 - ✅ Email/password login works
@@ -291,7 +291,7 @@ After all PRs merged and deployed:
 **Problem:** Browser shows CORS errors
 
 **Solution:**
-1. Check `CORS_ORIGIN` in Render includes: `https://productifyai.vercel.app`
+1. Check `CORS_ORIGIN` in Render includes: `https://productivity-ai-gamma.vercel.app`
 2. Ensure no trailing slashes in URL
 3. Check both use HTTPS (not HTTP/HTTPS mix)
 4. Check Render logs for "CORS blocked" warnings
@@ -321,4 +321,5 @@ After all PRs merged and deployed:
 **Created:** 2025-11-04  
 **Maintained By:** DevOps Team  
 **Contact:** devops@productifyai.com
+
 

@@ -69,3 +69,5 @@ AI_MAX_TOKENS=4000
 - `POST /api/ai/content` - Generate content for specific chapter
 - `GET /api/ai/templates` - Get available templates
 - `GET /api/ai/config` - Get AI builder configuration
+
+

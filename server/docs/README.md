@@ -109,3 +109,5 @@ The server connects to Supabase PostgreSQL with the following tables:
 - Payment processing with Stripe
 - User authentication and authorization
 - Rate limiting and security middleware
+
+

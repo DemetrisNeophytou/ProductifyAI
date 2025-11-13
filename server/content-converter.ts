@@ -1,4 +1,15 @@
-export function convertTipTapToPlainText(content: any): string {
+type TipTapNode = {
+  type?: string;
+  text?: string;
+  content?: TipTapNode[];
+  attrs?: Record<string, unknown>;
+  _listIndex?: number;
+  [key: string]: unknown;
+};
+
+type TipTapContent = TipTapNode | TipTapNode[] | string | null | undefined;
+
+export function convertTipTapToPlainText(content: TipTapContent): string {
   if (!content) {
     return '';
   }
@@ -16,58 +27,61 @@ export function convertTipTapToPlainText(content: any): string {
   let inList = false;
   let listType: 'bullet' | 'ordered' | null = null;
 
-  const extractText = (node: any, depth: number = 0): void => {
+  const extractText = (node: TipTapContent, depth: number = 0): void => {
     if (!node) return;
 
     if (Array.isArray(node)) {
-      node.forEach(n => extractText(n, depth));
+      node.forEach((child: TipTapNode) => extractText(child, depth));
       return;
     }
 
-    if (node.type === 'doc') {
-      if (node.content && Array.isArray(node.content)) {
-        node.content.forEach(n => extractText(n, depth));
+    const currentNode: TipTapNode = node;
+
+    if (currentNode.type === 'doc') {
+      if (currentNode.content && Array.isArray(currentNode.content)) {
+        currentNode.content.forEach((child: TipTapNode) => extractText(child, depth));
       }
-    } else if (node.type === 'text') {
-      text += node.text || '';
-    } else if (node.type === 'hardBreak') {
+    } else if (currentNode.type === 'text') {
+      text += currentNode.text || '';
+    } else if (currentNode.type === 'hardBreak') {
       text += '\n';
-    } else if (node.type === 'paragraph') {
-      if (node.content && Array.isArray(node.content)) {
-        node.content.forEach(n => extractText(n, depth));
+    } else if (currentNode.type === 'paragraph') {
+      if (currentNode.content && Array.isArray(currentNode.content)) {
+        currentNode.content.forEach((child: TipTapNode) => extractText(child, depth));
       }
       if (!inList) {
         text += '\n\n';
       }
-    } else if (node.type === 'heading') {
-      if (node.content && Array.isArray(node.content)) {
-        node.content.forEach(n => extractText(n, depth));
+    } else if (currentNode.type === 'heading') {
+      if (currentNode.content && Array.isArray(currentNode.content)) {
+        currentNode.content.forEach((child: TipTapNode) => extractText(child, depth));
       }
       text += '\n\n';
-    } else if (node.type === 'bulletList') {
+    } else if (currentNode.type === 'bulletList') {
       const wasInList = inList;
       const wasListType = listType;
       inList = true;
       listType = 'bullet';
-      if (node.content && Array.isArray(node.content)) {
-        node.content.forEach(n => extractText(n, depth + 1));
+      if (currentNode.content && Array.isArray(currentNode.content)) {
+        currentNode.content.forEach((child: TipTapNode) => extractText(child, depth + 1));
       }
       inList = wasInList;
       listType = wasListType;
       if (!inList) {
         text += '\n';
       }
-    } else if (node.type === 'orderedList') {
+    } else if (currentNode.type === 'orderedList') {
       const wasInList = inList;
       const wasListType = listType;
       inList = true;
       listType = 'ordered';
       listCounter = 0;
-      if (node.content && Array.isArray(node.content)) {
-        node.content.forEach(n => {
+      if (currentNode.content && Array.isArray(currentNode.content)) {
+        currentNode.content.forEach((child: TipTapNode) => {
           listCounter++;
           const currentCounter = listCounter;
-          extractText({ ...n, _listIndex: currentCounter }, depth + 1);
+          const itemNode: TipTapNode = { ...child, _listIndex: currentCounter };
+          extractText(itemNode, depth + 1);
         });
       }
       inList = wasInList;
@@ -75,23 +89,23 @@ export function convertTipTapToPlainText(content: any): string {
       if (!inList) {
         text += '\n';
       }
-    } else if (node.type === 'listItem') {
+    } else if (currentNode.type === 'listItem') {
       const indent = '  '.repeat(Math.max(0, depth - 1));
       const marker = listType === 'ordered' 
-        ? `${node._listIndex || 1}. `
+        ? `${currentNode._listIndex || 1}. `
         : '• ';
       text += indent + marker;
-      if (node.content && Array.isArray(node.content)) {
+      if (currentNode.content && Array.isArray(currentNode.content)) {
         const beforeLength = text.length;
-        node.content.forEach(n => extractText(n, depth));
+        currentNode.content.forEach((child: TipTapNode) => extractText(child, depth));
         const addedText = text.substring(beforeLength).trim();
         if (addedText) {
           text = text.substring(0, beforeLength) + addedText;
         }
       }
       text += '\n';
-    } else if (node.content && Array.isArray(node.content)) {
-      node.content.forEach(n => extractText(n, depth));
+    } else if (currentNode.content && Array.isArray(currentNode.content)) {
+      currentNode.content.forEach((child: TipTapNode) => extractText(child, depth));
     }
   };
 
@@ -99,3 +113,5 @@ export function convertTipTapToPlainText(content: any): string {
   
   return text.trim();
 }
+
+

@@ -58,7 +58,7 @@ Before merging PR #1:
 3. Go to "Environment" tab
 4. Verify `CORS_ORIGIN` is set:
    ```
-   CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
+   CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
    ```
 5. If not set, add it and wait for redeploy
 
@@ -100,12 +100,12 @@ curl https://productifyai-api.onrender.com/api/health
 **Frontend (Vercel):**
 ```bash
 # Test frontend loads
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 # Expected: 200 OK with HTML
 ```
 
 **CORS Test:**
-Open browser console at `https://productifyai.vercel.app`:
+Open browser console at `https://productivity-ai-gamma.vercel.app`:
 ```javascript
 fetch('https://productifyai-api.onrender.com/api/health')
   .then(r => r.json())
@@ -137,4 +137,5 @@ Please tell me:
 4. Have you checked Vercel preview environment?
 
 Then I can help with the specific actions I'm capable of!
+
 

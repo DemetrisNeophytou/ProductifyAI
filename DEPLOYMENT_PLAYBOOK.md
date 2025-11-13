@@ -70,7 +70,7 @@ PORT=10000
 
 # Supabase (Backend uses service role key)
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTQwMTcxMiwiZXhwIjoyMDc0OTc3NzEyfQ.-aGf_2TuAO5H6YHqSkfNypJrRhJodyurpG08G1EkxVw
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 # Google OAuth
 GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
@@ -81,8 +81,8 @@ JWT_SECRET=<GENERATE_32_CHAR_SECRET>
 SESSION_SECRET=<GENERATE_32_CHAR_SECRET>
 
 # CORS & Frontend
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 
 # OpenAI (if using AI features)
 OPENAI_API_KEY=<your_openai_key>
@@ -122,7 +122,7 @@ For **Production**, **Preview**, and **Development** environments:
 
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MDE3MTIsImV4cCI6MjA3NDk3NzcxMn0.Oamj_iqJwm8nqqMQnJfYT4w9x4nU0BMkU5gF1a_UYlo
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
@@ -160,7 +160,7 @@ Add these exact URIs:
 
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
@@ -168,7 +168,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 
 ```
 http://localhost:5173
-https://productifyai.vercel.app
+https://productivity-ai-gamma.vercel.app
 https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -218,7 +218,7 @@ curl https://productifyai-api.onrender.com/api/health
 ### Test 3: Frontend Loads
 
 ```bash
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 ```
 
 **Expected:** 200 OK with HTML containing `<title>`  
@@ -231,7 +231,7 @@ curl https://productifyai.vercel.app
 ### Test 4: Static Assets Load
 
 ```bash
-curl -I https://productifyai.vercel.app/assets/
+curl -I https://productivity-ai-gamma.vercel.app/assets/
 ```
 
 **Expected:** Assets directory accessible  
@@ -243,7 +243,7 @@ curl -I https://productifyai.vercel.app/assets/
 
 ### Test 5: CORS from Browser
 
-Open browser console at `https://productifyai.vercel.app` and paste:
+Open browser console at `https://productivity-ai-gamma.vercel.app` and paste:
 
 ```javascript
 fetch('https://productifyai-api.onrender.com/api/health', {
@@ -261,7 +261,7 @@ fetch('https://productifyai-api.onrender.com/api/health', {
 
 ### Test 6: API URL Configured
 
-In browser console at `https://productifyai.vercel.app`:
+In browser console at `https://productivity-ai-gamma.vercel.app`:
 
 ```javascript
 console.log('API URL:', import.meta.env.VITE_API_URL);
@@ -274,7 +274,7 @@ console.log('API URL:', import.meta.env.VITE_API_URL);
 
 ### Test 7: Email/Password Signup
 
-1. Navigate to `https://productifyai.vercel.app`
+1. Navigate to `https://productivity-ai-gamma.vercel.app`
 2. Click "Sign Up"
 3. Enter email + password
 4. Submit form
@@ -340,7 +340,7 @@ Check Render startup logs for:
 ```
 ✅ Environment: production
 ✅ PORT: 10000
-✅ CORS enabled for origins: http://localhost:5173,https://productifyai.vercel.app
+✅ CORS enabled for origins: http://localhost:5173,https://productivity-ai-gamma.vercel.app
 ✅ Supabase URL: https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -351,7 +351,7 @@ Check Render startup logs for:
 
 ### Test 13: Frontend Env Vars
 
-In browser console at `https://productifyai.vercel.app`:
+In browser console at `https://productivity-ai-gamma.vercel.app`:
 ```javascript
 console.log({
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
@@ -398,7 +398,7 @@ Mark all tasks as complete:
 
 Add deployment links:
 - **Backend:** https://productifyai-api.onrender.com
-- **Frontend:** https://productifyai.vercel.app
+- **Frontend:** https://productivity-ai-gamma.vercel.app
 - **Health Check:** https://productifyai-api.onrender.com/healthz
 
 ---
@@ -473,4 +473,5 @@ Deployment is successful when:
 
 **Last Updated:** 2025-11-08  
 **Status:** Ready for execution
+
 

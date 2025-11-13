@@ -58,7 +58,7 @@ console.log(API_BASE_URL); // https://productifyai-api.onrender.com
 
 **Verification:**
 ```javascript
-// In browser console at productifyai.vercel.app
+// In browser console at productivity-ai-gamma.vercel.app
 fetch('https://productifyai-api.onrender.com/api/health')
   .then(r => r.json())
   .then(d => console.log('✅ CORS works!', d))
@@ -224,7 +224,7 @@ VITE_API_URL=https://productifyai-api.onrender.com
 Add redirect URIs in Google Cloud Console:
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://<your-supabase-url>/auth/v1/callback
 ```
 
@@ -303,4 +303,5 @@ If issues arise:
 **Created:** 2025-11-04  
 **Status:** ✅ Production Ready  
 **PRs:** 6 of 6 Complete
+
 

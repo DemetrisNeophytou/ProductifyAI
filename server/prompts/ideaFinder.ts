@@ -34,3 +34,5 @@ Quality Standards:
 6. Ensure beginners can realistically succeed
 
 Remember: Users need confidence. Show them niches where REAL people are making REAL money.`;
+
+

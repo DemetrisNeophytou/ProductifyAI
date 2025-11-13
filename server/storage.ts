@@ -82,6 +82,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, or, like, gte, lte, ilike } from "drizzle-orm";
+import type { SearchProjectsParams } from "./types/common";
 
 export interface IStorage {
   // User operations - Required for Replit Auth
@@ -211,18 +212,7 @@ export interface IStorage {
   getUserAiUsageToday(userId: string, eventType: string): Promise<number>;
   
   // Phase 3: Smart Search operations
-  searchProjects(params: {
-    userId: string;
-    query?: string;
-    type?: string;
-    tag?: string;
-    from?: string;
-    to?: string;
-    status?: string;
-    starred?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Project[]>;
+  searchProjects(params: SearchProjectsParams): Promise<Project[]>;
   
   // Phase 5: Feature Flag operations
   getFeatureFlag(name: string): Promise<FeatureFlag | undefined>;
@@ -1148,18 +1138,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Phase 3: Smart Search operations
-  async searchProjects(params: {
-    userId: string;
-    query?: string;
-    type?: string;
-    tag?: string;
-    from?: string;
-    to?: string;
-    status?: string;
-    starred?: boolean;
-    limit?: number;
-    offset?: number;
-  }): Promise<Project[]> {
+  async searchProjects(params: SearchProjectsParams): Promise<Project[]> {
     const conditions = [eq(projects.userId, params.userId)];
     
     if (params.type) {
@@ -1475,3 +1454,5 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+

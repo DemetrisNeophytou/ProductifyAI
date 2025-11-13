@@ -77,3 +77,5 @@ export async function generateDOCX(project: ExportProject): Promise<Buffer> {
   const buffer = await Packer.toBuffer(doc);
   return buffer;
 }
+
+
