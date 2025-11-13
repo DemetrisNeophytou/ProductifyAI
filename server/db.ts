@@ -1,20 +1,24 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import dotenv from "dotenv";
+import { AppDB, QueryAPI } from "./db/types";
 
 dotenv.config();
 
 // -----------------------------------------------------------------------------
 // Mock DB mode for non-Docker local development
 // -----------------------------------------------------------------------------
-let dbInstance: any;
+type MockResult = { rows: unknown[]; rowCount?: number };
+type MockDb = QueryAPI & {
+  execute: (query: string, params?: unknown[]) => Promise<MockResult>;
+};
+
+let dbInstance: AppDB;
 
 if (process.env.MOCK_DB === 'true') {
   // Lightweight in-memory mock that emulates a subset of pg/drizzle API
   // Only implements what's needed by current endpoints (e.g., SELECT NOW())
-  type MockResult = { rows: any[]; rowCount?: number };
-
-  const mockExecute = async (query: string, _params?: any[]): Promise<MockResult> => {
+  const mockExecute = async (query: string, _params?: unknown[]): Promise<MockResult> => {
     const normalized = query.trim().toUpperCase();
     if (normalized.includes('SELECT NOW')) {
       return { rows: [{ now: new Date().toISOString() }], rowCount: 1 };
@@ -25,9 +29,21 @@ if (process.env.MOCK_DB === 'true') {
 
   // Drizzle is not used directly in mock mode; we expose a compatible surface
   // to the rest of the codebase via an object that has `execute`.
-  dbInstance = {
-    execute: mockExecute,
+  const notSupported = <T extends keyof QueryAPI>(method: T): QueryAPI[T] => {
+    return ((..._args: Parameters<QueryAPI[T]>) => {
+      throw new Error(`Mock DB does not implement ${method}.`);
+    }) as QueryAPI[T];
   };
+
+  const mockDb: MockDb = {
+    execute: mockExecute,
+    select: notSupported("select"),
+    insert: notSupported("insert"),
+    update: notSupported("update"),
+    delete: notSupported("delete"),
+  };
+
+  dbInstance = mockDb as unknown as AppDB;
 
   console.log("🧪 Using MOCK_DB in-memory database (no Docker required)");
 } else {
@@ -44,15 +60,15 @@ if (process.env.MOCK_DB === 'true') {
   }
 
   // Create database connection using Supabase/local credentials
+  const sslConfig: boolean | { rejectUnauthorized: boolean } | undefined =
+    /supabase\.co/.test(connectionString) ? { rejectUnauthorized: false } : undefined;
+
   const pool = new Pool({
     connectionString,
-    ssl: (
-      // Enable SSL for Supabase URLs
-      /supabase\.co/.test(connectionString) ? { rejectUnauthorized: false } : undefined
-    ) as any,
+    ssl: sslConfig,
   });
 
-  dbInstance = drizzle(pool);
+  dbInstance = drizzle(pool) as unknown as AppDB;
 
   console.log("✅ ProductifyAI Database connected successfully!");
 
@@ -65,4 +81,5 @@ if (process.env.MOCK_DB === 'true') {
     });
 }
 
-export const db = dbInstance as ReturnType<typeof drizzle> | { execute: (q: string, params?: any[]) => Promise<{ rows: any[]; rowCount?: number }> };
+export const db: AppDB = dbInstance;
+

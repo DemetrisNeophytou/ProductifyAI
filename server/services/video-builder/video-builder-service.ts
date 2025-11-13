@@ -233,3 +233,5 @@ export class VideoBuilderService implements IVideoBuilderService {
     console.log(`Starting video rendering for ${videoId} with ${scenes.length} scenes`);
   }
 }
+
+

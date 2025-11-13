@@ -395,3 +395,5 @@ router.get('/jobs', async (req: AuthRequest, res: Response) => {
 export function registerAiAgentRoutes(app: express.Application) {
   app.use('/api/ai-agents', router);
 }
+
+

@@ -75,3 +75,5 @@ export class ContentGenerator {
     return `A comprehensive guide covering ${outline.length} chapters with practical insights and actionable advice.`;
   }
 }
+
+

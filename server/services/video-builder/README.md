@@ -81,3 +81,5 @@ VIDEO_FORMAT=mp4
 - `GET /api/video/templates` - Get available video templates
 - `GET /api/video/config` - Get video builder configuration
 - `GET /api/video/preview/:id` - Get video preview
+
+

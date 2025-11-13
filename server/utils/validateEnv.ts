@@ -13,24 +13,43 @@ export function validateProductionEnv() {
     return true;
   }
 
-  const required = [
+  const requiredCore = [
     'DATABASE_URL',
-    'STRIPE_SECRET_KEY',
-    'STRIPE_WEBHOOK_SECRET',
-    'STRIPE_PRICE_ID_PLUS',
-    'STRIPE_PRICE_ID_PRO',
     'OPENAI_API_KEY',
-    'RESEND_API_KEY',
     'JWT_SECRET',
     'SESSION_SECRET',
   ];
 
-  const missing = required.filter((key) => !process.env[key]);
+  const missing = requiredCore.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
     Logger.error(`❌ Missing required environment variables in production: ${missing.join(', ')}`);
     Logger.error('Set these in your deployment platform or .env file');
     throw new Error(`Production environment validation failed. Missing: ${missing.join(', ')}`);
+  }
+
+  const isMeaningful = (value: string | undefined) => {
+    if (!value) return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    const lower = trimmed.toLowerCase();
+    if (trimmed.startsWith('<') && trimmed.endsWith('>')) return false;
+    if (lower.includes('your-') || lower.includes('placeholder') || lower.includes('dummy')) return false;
+    return true;
+  };
+
+  const stripeKeys = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_ID_PLUS', 'STRIPE_PRICE_ID_PRO'];
+  const stripeConfigured = stripeKeys.every((key) => isMeaningful(process.env[key]));
+
+  if (!stripeConfigured) {
+    Logger.warn('⚠️ Stripe credentials incomplete. Stripe-dependent features will operate in mock mode.');
+    if (!process.env.MOCK_STRIPE) {
+      process.env.MOCK_STRIPE = 'true';
+    }
+  }
+
+  if (!isMeaningful(process.env.RESEND_API_KEY)) {
+    Logger.warn('⚠️ RESEND_API_KEY not configured. Transactional emails will be logged to console.');
   }
 
   // Validate secrets are strong enough
@@ -49,4 +68,6 @@ export function validateProductionEnv() {
 }
 
 export default validateProductionEnv;
+
+
 

@@ -1,4 +1,40 @@
-import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont } from 'pdf-lib';
+
+type PdfRectangleOptions = Parameters<PDFPage["drawRectangle"]>[0];
+export type RoundedRectangleOptions = PdfRectangleOptions & { borderRadius?: number };
+
+const ALLOWED_RECT_KEYS = new Set<keyof RoundedRectangleOptions>([
+  "x",
+  "y",
+  "width",
+  "height",
+  "color",
+  "borderColor",
+  "borderWidth",
+  "opacity",
+  "rotate",
+  "borderLineCap",
+  "borderDashArray",
+  "borderDashPhase",
+  "borderRadius"
+]);
+
+function sanitizeRectangleOptions(options: RoundedRectangleOptions): RoundedRectangleOptions {
+  const sanitized: Partial<RoundedRectangleOptions> = {};
+
+  for (const [key, value] of Object.entries(options) as [keyof RoundedRectangleOptions, RoundedRectangleOptions[keyof RoundedRectangleOptions]][]) {
+    if (!ALLOWED_RECT_KEYS.has(key)) {
+      throw new Error(`drawRectangle received unsupported option "${String(key)}"`);
+    }
+    sanitized[key] = value;
+  }
+
+  if (typeof sanitized.borderRadius !== "undefined" && typeof sanitized.borderRadius !== "number") {
+    throw new Error("borderRadius must be a number when provided.");
+  }
+
+  return sanitized as RoundedRectangleOptions;
+}
 
 export interface Block {
   id: string;
@@ -33,7 +69,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     : { r: 0.545, g: 0.361, b: 0.965 };
 }
 
-function wrapText(text: string, maxWidth: number, font: any, fontSize: number): string[] {
+function wrapText(text: string, maxWidth: number, font: PDFFont, fontSize: number): string[] {
   const words = text.split(' ');
   const lines: string[] = [];
   let currentLine = '';
@@ -108,7 +144,7 @@ export async function generateBlocksPDF(data: ExportData): Promise<Uint8Array> {
     return false;
   };
   
-  const drawText = (text: string, font: any, size: number, color = rgb(0, 0, 0)) => {
+  const drawText = (text: string, font: PDFFont, size: number, color = rgb(0, 0, 0)) => {
     const lines = wrapText(text, contentWidth, font, size);
     
     for (const line of lines) {
@@ -170,13 +206,13 @@ export async function generateBlocksPDF(data: ExportData): Promise<Uint8Array> {
         
         case 'quote':
           checkNewPage(sizes.quote * lineHeight + 20);
-          currentPage.drawRectangle({
+          currentPage.drawRectangle(sanitizeRectangleOptions({
             x: margin - 5,
             y: yPosition - sizes.quote * lineHeight - 5,
             width: 3,
             height: sizes.quote * lineHeight + 10,
             color: rgb(primaryColor.r, primaryColor.g, primaryColor.b),
-          });
+          }));
           drawText(`"${content}"`, timesRomanFont, sizes.quote, rgb(0.3, 0.3, 0.3));
           yPosition -= 10;
           break;
@@ -221,7 +257,7 @@ export async function generateBlocksPDF(data: ExportData): Promise<Uint8Array> {
           const buttonWidth = timesRomanBold.widthOfTextAtSize(buttonText, sizes.cta);
           const buttonX = (pageWidth - buttonWidth - 40) / 2;
           
-          currentPage.drawRectangle({
+          const buttonRectangle: RoundedRectangleOptions = sanitizeRectangleOptions({
             x: buttonX,
             y: yPosition - sizes.cta * lineHeight - 10,
             width: buttonWidth + 40,
@@ -229,6 +265,7 @@ export async function generateBlocksPDF(data: ExportData): Promise<Uint8Array> {
             color: rgb(primaryColor.r, primaryColor.g, primaryColor.b),
             borderRadius: 8,
           });
+          currentPage.drawRectangle(buttonRectangle);
           
           currentPage.drawText(buttonText, {
             x: buttonX + 20,
@@ -275,3 +312,5 @@ export async function generateBlocksPDF(data: ExportData): Promise<Uint8Array> {
   const pdfBytes = await pdfDoc.save();
   return pdfBytes;
 }
+
+

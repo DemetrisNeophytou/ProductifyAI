@@ -314,3 +314,5 @@ export class AIService {
     return `${templateStyles[template as keyof typeof templateStyles]} featuring ${keywords.join(', ')}`;
   }
 }
+
+

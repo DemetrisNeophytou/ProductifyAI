@@ -56,3 +56,5 @@ export async function grantInitialCredits(userId: string) {
     console.error('[Credits] Error granting initial credits:', error);
   }
 }
+
+

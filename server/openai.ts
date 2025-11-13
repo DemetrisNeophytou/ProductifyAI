@@ -1297,3 +1297,5 @@ export async function generateAIImage(params: {
     throw new Error(`AI_IMAGE_ERROR: ${error?.message || "Failed to generate image"}`);
   }
 }
+
+

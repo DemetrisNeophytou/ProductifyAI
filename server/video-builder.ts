@@ -256,3 +256,5 @@ router.delete('/projects/:id', async (req: AuthRequest, res: Response) => {
 export function registerVideoBuilderRoutes(app: express.Application) {
   app.use('/api/video-builder', router);
 }
+
+

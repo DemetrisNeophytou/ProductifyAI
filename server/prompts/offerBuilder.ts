@@ -77,3 +77,5 @@ Guidelines:
 - Use proven psychological triggers
 - Build in natural upsell paths
 - Include launch vs evergreen strategies`;
+
+

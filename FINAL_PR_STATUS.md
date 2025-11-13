@@ -180,7 +180,7 @@ Enable:
 **Environment Variables:**
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 ```
@@ -206,8 +206,8 @@ GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercon
 GOOGLE_CLIENT_SECRET=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
 JWT_SECRET=<generate-32-char-secret>
 SESSION_SECRET=<generate-32-char-secret>
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 OPENAI_API_KEY=<your-openai-key>
 ```
 
@@ -221,14 +221,14 @@ https://console.cloud.google.com/apis/credentials
 **Add Authorized Redirect URIs:**
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
 **Authorized JavaScript Origins:**
 ```
 http://localhost:5173
-https://productifyai.vercel.app
+https://productivity-ai-gamma.vercel.app
 https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -296,13 +296,13 @@ curl https://productifyai-api.onrender.com/api/health
 
 ```bash
 # Test 3: Frontend loads
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 
 # Expected: 200 OK with HTML content
 # Should contain: <title>ProductifyAI</title>
 
 # Test 4: Static assets load
-curl -I https://productifyai.vercel.app/assets/index-[hash].js
+curl -I https://productivity-ai-gamma.vercel.app/assets/index-[hash].js
 
 # Expected: 200 OK, content-type: application/javascript
 ```
@@ -314,7 +314,7 @@ curl -I https://productifyai.vercel.app/assets/index-[hash].js
 
 ### Step 3: CORS Verification
 
-Open browser Developer Console at `https://productifyai.vercel.app` and run:
+Open browser Developer Console at `https://productivity-ai-gamma.vercel.app` and run:
 
 ```javascript
 // Test 5: CORS allows frontend to reach backend
@@ -341,7 +341,7 @@ console.log('API URL:', import.meta.env.VITE_API_URL);
 ### Step 4: Authentication Flow
 
 **Test 7: Email/Password Signup**
-1. Navigate to `https://productifyai.vercel.app`
+1. Navigate to `https://productivity-ai-gamma.vercel.app`
 2. Click "Sign Up"
 3. Enter email + password
 4. Submit form
@@ -406,7 +406,7 @@ In Render logs, check for:
 
 **Test 13: Frontend env vars**
 
-In browser console at productifyai.vercel.app:
+In browser console at productivity-ai-gamma.vercel.app:
 ```javascript
 console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
 console.log('API URL:', import.meta.env.VITE_API_URL);
@@ -445,7 +445,7 @@ Copy this checklist and mark items as you verify:
 - [ ] No errors in Render logs
 
 ### Frontend
-- [ ] https://productifyai.vercel.app loads (200 OK)
+- [ ] https://productivity-ai-gamma.vercel.app loads (200 OK)
 - [ ] Static assets load successfully
 - [ ] VITE_API_URL is set correctly
 - [ ] VITE_SUPABASE_URL is set correctly
@@ -479,12 +479,12 @@ Copy this checklist and mark items as you verify:
 ### Issue: CORS Error
 ```
 Access to fetch at 'https://productifyai-api.onrender.com/api/health' 
-from origin 'https://productifyai.vercel.app' has been blocked by CORS policy
+from origin 'https://productivity-ai-gamma.vercel.app' has been blocked by CORS policy
 ```
 
 **Fix:**
 1. Check `CORS_ORIGIN` in Render includes Vercel URL
-2. Ensure format: `https://productifyai.vercel.app` (no trailing slash)
+2. Ensure format: `https://productivity-ai-gamma.vercel.app` (no trailing slash)
 3. Restart Render service
 
 ### Issue: 503 Service Unavailable
@@ -547,7 +547,7 @@ If you encounter any issues:
 
 After all deployments:
 
-- ✅ Frontend accessible at `https://productifyai.vercel.app`
+- ✅ Frontend accessible at `https://productivity-ai-gamma.vercel.app`
 - ✅ Backend healthy at `https://productifyai-api.onrender.com/healthz`
 - ✅ CORS allowing frontend requests
 - ✅ Email/password login works
@@ -562,4 +562,5 @@ After all deployments:
 
 **Created:** 2025-11-04  
 **Maintained By:** DevOps Team
+
 

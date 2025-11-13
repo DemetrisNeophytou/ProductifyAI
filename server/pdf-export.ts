@@ -145,3 +145,5 @@ function wrapText(text: string, maxWidth: number, font: any, fontSize: number): 
   
   return lines;
 }
+
+

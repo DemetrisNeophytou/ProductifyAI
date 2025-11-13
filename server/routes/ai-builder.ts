@@ -213,3 +213,4 @@ async function generateAIProduct(params: {
 }
 
 export default router;
+

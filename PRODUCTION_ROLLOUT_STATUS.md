@@ -95,13 +95,13 @@ npm start
 NODE_ENV=production
 PORT=10000
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJh...  (service role key)
+SUPABASE_SERVICE_ROLE_KEY=<supabase-service-role-key>  (service role key)
 GOOGLE_CLIENT_ID=85711301559-...
 GOOGLE_CLIENT_SECRET=GOCSPX-...
 JWT_SECRET=<generate-32-char-random>
 SESSION_SECRET=<generate-32-char-random>
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 OPENAI_API_KEY=<your-key-if-using-ai>
 ```
 
@@ -110,7 +110,7 @@ OPENAI_API_KEY=<your-key-if-using-ai>
 ```bash
 # All Environments (Production, Preview, Development)
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGc...  (anon key, safe to expose)
+VITE_SUPABASE_ANON_KEY=<supabase-anon-key>  (anon key, safe to expose)
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
@@ -121,7 +121,7 @@ VITE_APP_VERSION=1.0.0
 Add to Google Cloud Console:
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback  
+https://productivity-ai-gamma.vercel.app/auth/callback  
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
@@ -147,7 +147,7 @@ curl https://productifyai-api.onrender.com/api/health
 
 ```bash
 # Test 3: Frontend loads  
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 # Expected: 200 OK with HTML
 
 # Test 4: Check Render logs for
@@ -161,7 +161,7 @@ curl https://productifyai.vercel.app
 
 ```javascript
 // Test 5: CORS from Vercel domain
-// Open browser console at https://productifyai.vercel.app
+// Open browser console at https://productivity-ai-gamma.vercel.app
 fetch('https://productifyai-api.onrender.com/api/health', {
   credentials: 'include'
 })
@@ -196,7 +196,7 @@ fetch('https://productifyai-api.onrender.com/api/health')
 
 ```javascript
 // Test 11: Frontend env vars
-// In browser console at productifyai.vercel.app:
+// In browser console at productivity-ai-gamma.vercel.app:
 console.log({
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   API_URL: import.meta.env.VITE_API_URL
@@ -224,7 +224,7 @@ const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.
 ];
 
 // In production, set CORS_ORIGIN env var:
-// CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
+// CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
 ```
 
 Features:
@@ -283,4 +283,5 @@ BEGIN PRIVATE KEY
 ---
 
 **Next Action:** Continue updating remaining PR branches (#2, #3, #5) locally.
+
 

@@ -50,35 +50,39 @@ const app = express();
 // =============================================================================
 // CORS Configuration
 // =============================================================================
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [
-  'http://localhost:5173',
-  'http://localhost:3000'
+const defaultAllowedOrigins = [
+  "https://productivity-ai-gamma.vercel.app",
+  "https://productify-ai-gamma.vercel.app",
+  "http://localhost:5173",
 ];
+
+const allowedOrigins = (process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? defaultAllowedOrigins);
+
+const isAllowedOrigin = (origin: string | undefined) => {
+  if (!origin) return true;
+  return allowedOrigins.includes(origin);
+};
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    if (allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
-      Logger.warn(`CORS blocked request from origin: ${origin}`);
+      Logger.warn(`CORS blocked request from origin: ${origin ?? "unknown"}`);
       callback(new Error(`Not allowed by CORS: ${origin}`), false);
     }
   },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Log CORS configuration on startup
-Logger.info(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+Logger.info(`🔒 CORS enabled for origins: ${allowedOrigins.join(", ")}`);
 
 // JSON and URL-encoded middleware
 app.use(express.json({ limit: '10mb' }));
@@ -93,6 +97,14 @@ app.use((req, res, next) => {
 // =============================================================================
 // ROUTES CONFIGURATION
 // =============================================================================
+
+const sendHealthOk = (res: express.Response) => {
+  res.status(200).json({ ok: true, timestamp: new Date().toISOString() });
+};
+
+const sendOptionsOk: express.RequestHandler = (_req, res) => {
+  res.sendStatus(204);
+};
 
 // Root endpoint with ProductifyAI branding
 app.get("/", (_req, res) => {
@@ -112,10 +124,15 @@ app.get("/", (_req, res) => {
   });
 });
 
-// Health check at root level (for monitoring)
-app.get("/healthz", (req, res) => {
-  res.status(200).json({ status: "ok" });
-});
+// Health check endpoints
+app.options("/healthz", sendOptionsOk);
+app.get("/healthz", (_req, res) => sendHealthOk(res));
+
+app.options("/api/health", sendOptionsOk);
+app.get("/api/health", (_req, res) => sendHealthOk(res));
+
+app.options("/api/v2/health", sendOptionsOk);
+app.get("/api/v2/health", (_req, res) => sendHealthOk(res));
 
 // API Routes
 app.use("/products", productsRouter);
@@ -225,3 +242,5 @@ app.listen(PORT, () => {
     .then(() => Logger.info("✅ ProductifyAI Database connection verified"))
     .catch(err => Logger.error("⚠️ Database connection failed", err));
 });
+
+

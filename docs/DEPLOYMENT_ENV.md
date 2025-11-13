@@ -36,7 +36,7 @@ This document explains where each environment variable should be configured acro
 ```bash
 # Supabase (Public - safe to expose)
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
 # API Endpoint (Backend URL)
 VITE_API_URL=https://productifyai-api.onrender.com
@@ -109,7 +109,7 @@ PORT=10000
 
 # Supabase (Server-side - KEEP SECRET)
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 # Authentication Secrets (Generate secure random strings)
 JWT_SECRET=<32+ character random string>
@@ -120,8 +120,8 @@ GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercon
 GOOGLE_CLIENT_SECRET=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
 
 # CORS & Frontend
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 
 # OpenAI (for AI features)
 OPENAI_API_KEY=sk-proj-...
@@ -174,7 +174,7 @@ FEATURE_PAYMENTS=false
 
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
 ### Why These Are Needed
@@ -204,9 +204,9 @@ RENDER_API_KEY=...
 
 # Supabase
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
 # API
 VITE_API_URL=http://localhost:5050
@@ -343,7 +343,7 @@ Before deploying to production:
 
 **Solution:**
 - Verify `CORS_ORIGIN` in Render includes your Vercel URL
-- Ensure no trailing slashes: `https://productifyai.vercel.app` not `https://productifyai.vercel.app/`
+- Ensure no trailing slashes: `https://productivity-ai-gamma.vercel.app` not `https://productivity-ai-gamma.vercel.app/`
 - Check both domains use HTTPS (or both HTTP locally)
 
 ### "Supabase Service Role Key" Exposed
@@ -357,6 +357,44 @@ Before deploying to production:
 
 ---
 
-**Last Updated:** 2025-11-04  
+---
+
+## 📦 Production Snapshots
+
+### Render (Backend) Required Set
+
+| Variable | Example Value | Notes |
+|----------|---------------|-------|
+| `NODE_ENV` | `production` | Required for optimized builds |
+| `PORT` | `10000` | Render default; app listens on this port |
+| `SUPABASE_URL` | `https://your.supabase.co` | From Supabase project settings |
+| `SUPABASE_SERVICE_ROLE_KEY` | `service-role-key` | **Secret**; never expose to frontend |
+| `OPENAI_API_KEY` | `sk-...` | Required for AI features |
+| `JWT_SECRET` | `<32+ char random>` | Use secure generator |
+| `SESSION_SECRET` | `<32+ char random>` | Matches express-session config |
+| `GOOGLE_CLIENT_ID` | `xxx.apps.googleusercontent.com` | OAuth configuration |
+| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | OAuth secret |
+| `CORS_ORIGIN` | `https://productivity-ai-gamma.vercel.app` | Comma-separated, no spaces |
+| `FRONTEND_URL` | `https://productivity-ai-gamma.vercel.app` | Used in emails & redirects |
+| `STRIPE_SECRET_KEY` | `sk_live_...` | Required if payments enabled |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Render uses for webhook verification |
+
+### Vercel (Frontend) Required Set
+
+| Variable | Example Value | Notes |
+|----------|---------------|-------|
+| `VITE_API_URL` | `https://productifyai-api.onrender.com` | Backend origin |
+| `VITE_SUPABASE_URL` | `https://your.supabase.co` | Public project URL |
+| `VITE_SUPABASE_ANON_KEY` | `public-anon-key` | From Supabase settings |
+| `VITE_APP_NAME` | `ProductifyAI` | Optional branding |
+| `VITE_APP_VERSION` | `1.0.0` | Displayed in UI |
+| `VITE_SHOW_DEV_BANNER` | `false` | Feature flag toggle |
+
+For pull request previews, mirror the production values but point `VITE_API_URL` to the Render staging instance.
+
+---
+
+**Last Updated:** 2025-11-12  
 **Maintained By:** DevOps Team
+
 

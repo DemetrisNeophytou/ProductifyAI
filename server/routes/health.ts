@@ -13,19 +13,10 @@ import { Logger } from '../utils/logger';
 const router = Router();
 
 /**
- * Kubernetes-style liveness probe
- * GET /healthz (root level, not /api/health)
- * Minimal response to indicate service is alive
- */
-router.get('/healthz', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-/**
  * Comprehensive health check
- * GET /api/health
+ * GET /api/health/status
  */
-router.get('/', async (req, res) => {
+router.get('/status', async (req, res) => {
   const startTime = Date.now();
   const health: any = {
     ok: true,
@@ -130,4 +121,6 @@ router.get('/ping', (req, res) => {
 });
 
 export default router;
+
+
 

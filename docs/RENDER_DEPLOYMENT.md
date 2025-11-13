@@ -47,7 +47,7 @@ PORT=10000
 
 # Supabase (Backend uses service role key)
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 # Google OAuth
 GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
@@ -58,8 +58,8 @@ JWT_SECRET=<generate-32-char-random-string>
 SESSION_SECRET=<generate-32-char-random-string>
 
 # CORS & Frontend
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 
 # OpenAI (for AI features)
 OPENAI_API_KEY=sk-proj-...
@@ -131,7 +131,7 @@ Look for these startup messages:
 ```
 🚀 Starting ProductifyAI secure server...
 🌐 Server running on port 10000
-🔒 CORS enabled for origins: http://localhost:5173,https://productifyai.vercel.app
+🔒 CORS enabled for origins: http://localhost:5173,https://productivity-ai-gamma.vercel.app
 🔗 Supabase URL: https://dfqssnvqsxjjtyhylzen.supabase.co
 ✅ Database connected
 ```
@@ -169,7 +169,7 @@ curl https://productifyai-api.onrender.com/api/health
 
 ### 4. Test CORS
 
-From your browser console at `https://productifyai.vercel.app`:
+From your browser console at `https://productivity-ai-gamma.vercel.app`:
 
 ```javascript
 fetch('https://productifyai-api.onrender.com/api/health')
@@ -265,7 +265,7 @@ npm run check
 
 **Solution:**
 1. Verify `CORS_ORIGIN` in Render includes your Vercel URL
-2. Check format: `https://productifyai.vercel.app` (no trailing slash)
+2. Check format: `https://productivity-ai-gamma.vercel.app` (no trailing slash)
 3. Check Render logs for "CORS blocked" messages
 4. Restart service if you changed `CORS_ORIGIN`
 
@@ -446,4 +446,5 @@ After first deploy:
 
 **Last Updated:** 2025-11-04  
 **Maintained By:** DevOps Team
+
 

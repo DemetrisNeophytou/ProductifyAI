@@ -53,3 +53,5 @@ export class VisualPrompts {
     return stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.modern;
   }
 }
+
+

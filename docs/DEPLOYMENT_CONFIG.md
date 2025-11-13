@@ -31,7 +31,7 @@ Add these in: **Vercel Dashboard → Project → Settings → Environment Variab
 
 ```bash
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MDE3MTIsImV4cCI6MjA3NDk3NzcxMn0.Oamj_iqJwm8nqqMQnJfYT4w9x4nU0BMkU5gF1a_UYlo
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 VITE_API_URL=https://productifyai-api.onrender.com
 VITE_APP_NAME=ProductifyAI
 VITE_APP_VERSION=1.0.0
@@ -59,11 +59,11 @@ VITE_APP_VERSION=1.0.0
 
 ```bash
 # Frontend loads
-curl https://productifyai.vercel.app
+curl https://productivity-ai-gamma.vercel.app
 # Expected: 200 OK with HTML
 
 # Check API URL is set
-# In browser console at productifyai.vercel.app:
+# In browser console at productivity-ai-gamma.vercel.app:
 console.log(import.meta.env.VITE_API_URL);
 # Expected: https://productifyai-api.onrender.com
 ```
@@ -107,7 +107,7 @@ curl https://productifyai-api.onrender.com/healthz
 curl https://productifyai-api.onrender.com/api/health
 # Expected: JSON with all service statuses
 
-# Test CORS from browser console at productifyai.vercel.app:
+# Test CORS from browser console at productivity-ai-gamma.vercel.app:
 fetch('https://productifyai-api.onrender.com/api/health')
   .then(r => r.json())
   .then(d => console.log('✅ CORS works!', d))
@@ -130,7 +130,7 @@ PORT=10000
 
 # Supabase (Backend uses service role key)
 SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTQwMTcxMiwiZXhwIjoyMDc0OTc3NzEyfQ.-aGf_2TuAO5H6YHqSkfNypJrRhJodyurpG08G1EkxVw
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 
 # Google OAuth
 GOOGLE_CLIENT_ID=85711301559-2oebtf7o2fk6vlcb6kvdqre2lrb647hq.apps.googleusercontent.com
@@ -141,8 +141,8 @@ JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
 SESSION_SECRET=your-super-secret-session-key-minimum-32-characters-long
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:5173,https://productifyai.vercel.app
-FRONTEND_URL=https://productifyai.vercel.app
+CORS_ORIGIN=http://localhost:5173,https://productivity-ai-gamma.vercel.app
+FRONTEND_URL=https://productivity-ai-gamma.vercel.app
 
 # API Configuration
 BACKEND_HEALTH_URL=https://productifyai-api.onrender.com/api/health
@@ -174,7 +174,7 @@ Add these in: **GitHub → Settings → Secrets and variables → Actions**
 ```bash
 # Supabase
 VITE_SUPABASE_URL=https://dfqssnvqsxjjtyhylzen.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmcXNzbnZxc3hqanR5aHlsemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MDE3MTIsImV4cCI6MjA3NDk3NzcxMn0.Oamj_iqJwm8nqqMQnJfYT4w9x4nU0BMkU5gF1a_UYlo
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 ```
 
 ---
@@ -191,7 +191,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 ```
 http://localhost:5173/auth/callback
-https://productifyai.vercel.app/auth/callback
+https://productivity-ai-gamma.vercel.app/auth/callback
 https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 ```
 
@@ -199,7 +199,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co/auth/v1/callback
 
 ```
 http://localhost:5173
-https://productifyai.vercel.app
+https://productivity-ai-gamma.vercel.app
 https://dfqssnvqsxjjtyhylzen.supabase.co
 ```
 
@@ -216,7 +216,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co
 
 **Redirect URLs (Supabase handles these automatically):**
 - Development: `http://localhost:5173/auth/callback`
-- Production: `https://productifyai.vercel.app/auth/callback`
+- Production: `https://productivity-ai-gamma.vercel.app/auth/callback`
 
 ---
 
@@ -224,7 +224,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co
 
 ### Production
 
-- **Frontend:** https://productifyai.vercel.app
+- **Frontend:** https://productivity-ai-gamma.vercel.app
 - **Backend API:** https://productifyai-api.onrender.com
 - **Health Check:** https://productifyai-api.onrender.com/healthz
 - **API Health:** https://productifyai-api.onrender.com/api/health
@@ -256,7 +256,7 @@ https://dfqssnvqsxjjtyhylzen.supabase.co
 
 ### After Deploy
 
-- [ ] Frontend accessible at https://productifyai.vercel.app
+- [ ] Frontend accessible at https://productivity-ai-gamma.vercel.app
 - [ ] Backend health check: `curl https://productifyai-api.onrender.com/healthz`
 - [ ] Test login with email/password
 - [ ] Test login with Google OAuth
@@ -309,4 +309,5 @@ If you see CORS errors in browser console:
 
 **Last Updated:** 2025-11-04  
 **Version:** 1.0.0
+
 
