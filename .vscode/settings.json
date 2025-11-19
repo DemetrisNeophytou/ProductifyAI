@@ -4,6 +4,8 @@
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
   },
-  "editor.codeActionsOnSave": { "source.fixAll": false },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "never"
+  },
   "files.associations": { "*.yml": "yaml", "*.yaml": "yaml" }
 }

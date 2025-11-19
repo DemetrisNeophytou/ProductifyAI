@@ -1,12 +1,20 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is required');
-}
+// Check if Stripe is configured
+const STRIPE_ENABLED = !!process.env.STRIPE_SECRET_KEY && process.env.MOCK_STRIPE !== 'true';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-09-30.clover',
-});
+// Initialize Stripe with fallback for development
+export const stripe = STRIPE_ENABLED
+  ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2025-09-30.clover',
+      typescript: true,
+    })
+  : null;
+
+// Log Stripe status
+if (!STRIPE_ENABLED) {
+  console.log('🧪 Stripe not configured or MOCK_STRIPE=true. Payments will be mocked.');
+}
 
 export const SUBSCRIPTION_PLANS = {
   plus: {

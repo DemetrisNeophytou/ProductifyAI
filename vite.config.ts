@@ -30,6 +30,34 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // Vendor chunks
+          if (id.includes('node_modules')) {
+            // React core
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            // Radix UI components
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            // TipTap editor
+            if (id.includes('@tiptap')) {
+              return 'vendor-editor';
+            }
+            // Other large vendors
+            if (id.includes('framer-motion') || id.includes('lucide-react')) {
+              return 'vendor-animations';
+            }
+            // Everything else
+            return 'vendor';
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     fs: {

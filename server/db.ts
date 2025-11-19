@@ -48,20 +48,26 @@ if (process.env.MOCK_DB === 'true') {
   console.log("🧪 Using MOCK_DB in-memory database (no Docker required)");
 } else {
   // -----------------------------------------------------------------------------
-  // Real Postgres connection (Supabase or local DATABASE_URL)
+  // Real Postgres connection (DATABASE_URL takes priority)
   // -----------------------------------------------------------------------------
-  // Use SUPABASE_URL if available, otherwise fall back to DATABASE_URL
-  let connectionString = process.env.SUPABASE_URL || process.env.DATABASE_URL;
+  // DATABASE_URL is the standard PostgreSQL connection string
+  // It works with Supabase, Render Postgres, or any PostgreSQL provider
+  let connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    // For development, use a local connection string if none provided
-    connectionString = 'postgresql://user:password@localhost:5432/productifyai';
-    console.log("⚠️ Using local database connection for development");
+    console.error("❌ DATABASE_URL is required but not set");
+    throw new Error("DATABASE_URL environment variable is required");
   }
 
-  // Create database connection using Supabase/local credentials
+  // Auto-detect SSL requirements based on connection string
+  // Supabase, Render, and most cloud providers require SSL
+  const requiresSSL = 
+    connectionString.includes('supabase.co') || 
+    connectionString.includes('render.com') ||
+    connectionString.includes('sslmode=require');
+    
   const sslConfig: boolean | { rejectUnauthorized: boolean } | undefined =
-    /supabase\.co/.test(connectionString) ? { rejectUnauthorized: false } : undefined;
+    requiresSSL ? { rejectUnauthorized: false } : undefined;
 
   const pool = new Pool({
     connectionString,

@@ -6,13 +6,13 @@
 import Stripe from 'stripe';
 
 // Check if Stripe is configured
-const STRIPE_ENABLED = !!process.env.STRIPE_SECRET_KEY;
+const STRIPE_ENABLED = !!process.env.STRIPE_SECRET_KEY && process.env.MOCK_STRIPE !== 'true';
 const MOCK_STRIPE = !STRIPE_ENABLED;
 
 // Initialize Stripe with fallback for development
 export const stripe = STRIPE_ENABLED
   ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2025-09-30.clover',
       typescript: true,
     })
   : null;

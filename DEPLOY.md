@@ -14,45 +14,74 @@
 
 ## 📋 Environment Setup
 
-### Required Environment Variables
+### Required Environment Variables (Production)
 
+**Critical - Must be set:**
 ```bash
+# Database
+DATABASE_URL=postgresql://postgres:password@db.supabase.co:5432/postgres?sslmode=require
+
+# OpenAI
+OPENAI_API_KEY=sk-proj-xxxxx
+
+# Security (min 32 characters each)
+JWT_SECRET=your-secret-min-32-chars-random-string
+SESSION_SECRET=your-session-secret-min-32-chars-random-string
+
+# Auth (Replit Auth)
+ISSUER_URL=https://replit.com/oidc  # Optional: defaults to https://replit.com/oidc if not set
+REPLIT_DOMAINS=your-domain.com,another-domain.com  # Required for Replit Auth
+REPL_ID=your-repl-id  # Required for Replit Auth
+```
+
+**Optional - Features work without these (will use mocks/fallbacks):**
+```bash
+# Stripe (optional - payments will be mocked if not set)
+STRIPE_SECRET_KEY=sk_live_xxxxx  # Optional: set MOCK_STRIPE=true to disable payments
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx  # Optional: webhook validation disabled if not set
+STRIPE_PRICE_ID_PLUS=price_xxxxx  # Optional: required only if Stripe is enabled
+STRIPE_PRICE_ID_PRO=price_xxxxx  # Optional: required only if Stripe is enabled
+
+# Email (optional - emails logged to console if not set)
+RESEND_API_KEY=re_xxxxx  # Optional: transactional emails disabled if not set
+EMAIL_FROM=ProductifyAI <noreply@productifyai.com>  # Optional
+
+# Supabase (optional - only if using Supabase features)
+SUPABASE_URL=https://xxxxx.supabase.co  # Optional
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # Optional
+VITE_SUPABASE_URL=https://xxxxx.supabase.co  # Optional (frontend)
+VITE_SUPABASE_ANON_KEY=eyJ...  # Optional (frontend)
+
 # Application
 NODE_ENV=production
 PORT=5050
 FRONTEND_URL=https://productifyai.com
 VITE_API_URL=https://api.productifyai.com
 
-# Database (Supabase)
-DATABASE_URL=postgresql://postgres:password@db.supabase.co:5432/postgres?sslmode=require
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-
-# Stripe
-STRIPE_SECRET_KEY=sk_live_xxxxx
-STRIPE_WEBHOOK_SECRET=whsec_xxxxx
-STRIPE_PRICE_ID_PLUS=price_xxxxx
-STRIPE_PRICE_ID_PRO=price_xxxxx
-
-# OpenAI
-OPENAI_API_KEY=sk-proj-xxxxx
-
-# Email
-RESEND_API_KEY=re_xxxxx
-EMAIL_FROM=ProductifyAI <noreply@productifyai.com>
-
-# Security
-JWT_SECRET=your-secret-min-32-chars
-SESSION_SECRET=your-secret-min-32-chars
-
-# Disable Mocks
-MOCK_DB=false
-MOCK_STRIPE=false
-VITE_SHOW_DEV_BANNER=false
-EVAL_MODE=false
+# Feature Flags
+MOCK_DB=false  # Set to true to use in-memory mock database
+MOCK_STRIPE=false  # Set to true to disable Stripe (auto-enabled if keys missing)
+VITE_SHOW_DEV_BANNER=false  # Set to true to show dev banner in UI
+EVAL_MODE=false  # Set to true to enable eval mode (admin only)
 ```
+
+### Local Development Environment Variables
+
+**Minimum required for local dev:**
+```bash
+# Copy .env.example and set these minimum values:
+DATABASE_URL=postgresql://user:password@localhost:5432/productifyai
+OPENAI_API_KEY=sk-test-xxxxx  # Use test key for development
+JWT_SECRET=dev-secret-min-32-chars-for-local-development-only
+SESSION_SECRET=dev-session-secret-min-32-chars-for-local-only
+
+# Optional for local dev (will use mocks):
+MOCK_DB=true  # Use in-memory database (no Docker required)
+MOCK_STRIPE=true  # Mock Stripe payments
+VITE_SHOW_DEV_BANNER=true  # Show dev banner
+```
+
+**Note:** For local development, you can use `MOCK_DB=true` and `MOCK_STRIPE=true` to run without external services.
 
 ---
 
