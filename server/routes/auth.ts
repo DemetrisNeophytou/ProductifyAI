@@ -2,6 +2,12 @@ import { Router } from "express";
 import { db } from "../db";
 import { users } from "../schema";
 import { eq } from "drizzle-orm";
+import {
+  fallbackNameFromEmail,
+  mapUserToApi,
+  planFieldsFromIsPro,
+  splitName,
+} from "../utils/user-response";
 
 const router = Router();
 
@@ -9,7 +15,7 @@ const router = Router();
 router.post("/register", async (req, res) => {
   try {
     const { email, password, name } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -17,9 +23,8 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Check if user already exists
     const existingUser = await db.select().from(users).where(eq(users.email, email));
-    
+
     if (existingUser.length > 0) {
       return res.status(409).json({
         success: false,
@@ -27,25 +32,28 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // TODO: Hash password in production
-    // For demo purposes, we'll store it as-is (NOT recommended for production)
-    
-    const newUser = await db.insert(users).values({
-      email,
-      name: name || email.split('@')[0],
-      isPro: false,
-    }).returning();
+    const nameParts = splitName(name);
+    const firstName = nameParts.firstName ?? fallbackNameFromEmail(email);
+    const lastName = nameParts.lastName ?? null;
+    const displayName =
+      name?.trim() || [firstName, lastName].filter(Boolean).join(" ") || fallbackNameFromEmail(email);
+
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        name: displayName,
+        firstName,
+        lastName,
+        isPro: false,
+      })
+      .returning();
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       data: {
-        user: {
-          id: newUser[0].id,
-          email: newUser[0].email,
-          name: newUser[0].name,
-          isPro: newUser[0].isPro,
-        },
+        user: mapUserToApi(newUser),
       },
     });
   } catch (error: any) {
@@ -60,7 +68,7 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -68,9 +76,8 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // Find user
     const user = await db.select().from(users).where(eq(users.email, email));
-    
+
     if (user.length === 0) {
       return res.status(401).json({
         success: false,
@@ -78,20 +85,12 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // TODO: Verify password hash in production
-    // For demo purposes, we'll accept any password
-    
     res.json({
       success: true,
       message: "Login successful",
       data: {
-        user: {
-          id: user[0].id,
-          email: user[0].email,
-          name: user[0].name,
-          isPro: user[0].isPro,
-        },
-        token: `demo_token_${user[0].id}`, // TODO: Generate JWT in production
+        user: mapUserToApi(user[0]),
+        token: `demo_token_${user[0].id}`,
       },
     });
   } catch (error: any) {
@@ -106,9 +105,9 @@ router.post("/login", async (req, res) => {
 router.get("/profile/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    const user = await db.select().from(users).where(eq(users.id, parseInt(userId)));
-    
+
+    const user = await db.select().from(users).where(eq(users.id, userId));
+
     if (user.length === 0) {
       return res.status(404).json({
         success: false,
@@ -120,10 +119,7 @@ router.get("/profile/:userId", async (req, res) => {
       success: true,
       data: {
         user: {
-          id: user[0].id,
-          email: user[0].email,
-          name: user[0].name,
-          isPro: user[0].isPro,
+          ...mapUserToApi(user[0]),
           createdAt: user[0].createdAt,
         },
       },
@@ -141,12 +137,33 @@ router.put("/profile/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const { name, isPro } = req.body;
-    
-    const updatedUser = await db.update(users)
-      .set({ name, isPro })
-      .where(eq(users.id, parseInt(userId)))
+
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (typeof name === "string") {
+      const nameParts = splitName(name);
+      if (nameParts.firstName) {
+        updates.firstName = nameParts.firstName;
+      }
+      if (nameParts.lastName !== undefined) {
+        updates.lastName = nameParts.lastName ?? null;
+      }
+      updates.name =
+        name.trim() ||
+        [nameParts.firstName, nameParts.lastName].filter(Boolean).join(" ") ||
+        undefined;
+    }
+
+    if (typeof isPro === "boolean") {
+      Object.assign(updates, planFieldsFromIsPro(isPro));
+    }
+
+    const updatedUser = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, userId))
       .returning();
-    
+
     if (updatedUser.length === 0) {
       return res.status(404).json({
         success: false,
@@ -158,12 +175,7 @@ router.put("/profile/:userId", async (req, res) => {
       success: true,
       message: "Profile updated successfully",
       data: {
-        user: {
-          id: updatedUser[0].id,
-          email: updatedUser[0].email,
-          name: updatedUser[0].name,
-          isPro: updatedUser[0].isPro,
-        },
+        user: mapUserToApi(updatedUser[0]),
       },
     });
   } catch (error: any) {
@@ -177,8 +189,8 @@ router.put("/profile/:userId", async (req, res) => {
 // Verify token (middleware helper)
 export const verifyToken = async (req: any, res: any, next: any) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
+    const token = req.headers.authorization?.replace("Bearer ", "");
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -186,10 +198,8 @@ export const verifyToken = async (req: any, res: any, next: any) => {
       });
     }
 
-    // TODO: Verify JWT token in production
-    // For demo purposes, extract user ID from demo token
-    const userId = token.replace('demo_token_', '');
-    
+    const userId = token.replace("demo_token_", "");
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -197,9 +207,8 @@ export const verifyToken = async (req: any, res: any, next: any) => {
       });
     }
 
-    // Verify user exists
-    const user = await db.select().from(users).where(eq(users.id, parseInt(userId)));
-    
+    const user = await db.select().from(users).where(eq(users.id, userId));
+
     if (user.length === 0) {
       return res.status(401).json({
         success: false,
@@ -207,7 +216,7 @@ export const verifyToken = async (req: any, res: any, next: any) => {
       });
     }
 
-    req.user = user[0];
+    req.user = mapUserToApi(user[0]);
     next();
   } catch (error: any) {
     res.status(401).json({
@@ -218,5 +227,3 @@ export const verifyToken = async (req: any, res: any, next: any) => {
 };
 
 export default router;
-
-

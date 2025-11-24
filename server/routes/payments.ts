@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "../db";
 import { users } from "../schema";
 import { eq } from "drizzle-orm";
+import { mapUserToApi, planFieldsFromIsPro } from "../utils/user-response";
 
 const router = Router();
 
@@ -66,8 +67,11 @@ router.post("/success", async (req, res) => {
     // For demo purposes, upgrade user to Pro
     
     const updatedUser = await db.update(users)
-      .set({ isPro: true })
-      .where(eq(users.id, parseInt(userId)))
+      .set({
+        ...planFieldsFromIsPro(true),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
       .returning();
     
     if (updatedUser.length === 0) {
@@ -81,12 +85,7 @@ router.post("/success", async (req, res) => {
       success: true,
       message: "Payment successful! Welcome to Pro!",
       data: {
-        user: {
-          id: updatedUser[0].id,
-          email: updatedUser[0].email,
-          name: updatedUser[0].name,
-          isPro: updatedUser[0].isPro,
-        },
+        user: mapUserToApi(updatedUser[0]),
         payment: {
           sessionId,
           amount: 29.99,
@@ -189,7 +188,7 @@ router.get("/subscription/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     
-    const user = await db.select().from(users).where(eq(users.id, parseInt(userId)));
+    const user = await db.select().from(users).where(eq(users.id, userId));
     
     if (user.length === 0) {
       return res.status(404).json({
@@ -199,10 +198,11 @@ router.get("/subscription/:userId", async (req, res) => {
     }
 
     // TODO: Fetch actual subscription from Stripe
+    const apiUser = mapUserToApi(user[0]);
     const subscription = {
-      userId: parseInt(userId),
-      status: user[0].isPro ? "active" : "inactive",
-      plan: user[0].isPro ? "pro" : "basic",
+      userId,
+      status: apiUser.isPro ? "active" : "inactive",
+      plan: apiUser.isPro ? "pro" : "basic",
       currentPeriodStart: new Date().toISOString(),
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
       cancelAtPeriodEnd: false,
@@ -212,12 +212,7 @@ router.get("/subscription/:userId", async (req, res) => {
       success: true,
       data: {
         subscription,
-        user: {
-          id: user[0].id,
-          email: user[0].email,
-          name: user[0].name,
-          isPro: user[0].isPro,
-        },
+        user: apiUser,
       },
     });
   } catch (error: any) {

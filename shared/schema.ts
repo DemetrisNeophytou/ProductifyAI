@@ -636,19 +636,7 @@ export const analyticsEvents = pgTable("analytics_events", {
   userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }), // nullable for anonymous events
   sessionId: varchar("session_id"), // browser session tracking
   eventType: varchar("event_type", { length: 50 }).notNull(), // page_view, project_created, ai_used, checkout_started, subscription_completed
-  eventData: jsonb("event_data").$type<{
-    page?: string;
-    projectType?: string;
-    builderType?: string;
-    plan?: string;
-    billingPeriod?: string;
-    revenue?: number;
-    packageType?: string;
-    credits?: number;
-    price?: number;
-    operation?: string;
-    amount?: number;
-  }>(),
+  eventData: jsonb("event_data").$type<Record<string, any> | null>(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_analytics_events_user").on(table.userId),
@@ -662,12 +650,7 @@ export const projectEvents = pgTable("project_events", {
   projectId: varchar("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   type: varchar("type", { length: 50 }).notNull(), // view, export_pdf, export_png, export_html, ai_text, ai_image, ai_restyle
-  meta: jsonb("meta").$type<{
-    exportFormat?: string;
-    aiAction?: string;
-    imagePrompt?: string;
-    themeApplied?: string;
-  }>(),
+  meta: jsonb("meta").$type<Record<string, any> | null>(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_project_events_project").on(table.projectId),
@@ -765,7 +748,7 @@ export const featureFlags = pgTable("feature_flags", {
   name: varchar("name", { length: 100 }).notNull().unique(), // e.g., "FEATURE_AGENTS", "FEATURE_VIDEO_BUILDER"
   enabled: integer("enabled").default(0).notNull(), // 0 = disabled, 1 = enabled
   description: text("description"),
-  metadata: jsonb("metadata"),
+  metadata: jsonb("metadata").$type<Record<string, any> | null>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -786,11 +769,7 @@ export const creditHistory = pgTable("credit_history", {
   amount: integer("amount").notNull(), // Positive for refills, negative for usage
   type: varchar("type", { length: 50 }).notNull(), // 'refill', 'ai_agent', 'video_builder', 'image_gen', etc.
   description: text("description"),
-  metadata: jsonb("metadata").$type<{
-    agentType?: string;
-    taskId?: string;
-    featureName?: string;
-  }>(),
+  metadata: jsonb("metadata").$type<Record<string, any> | null>(),
   balanceAfter: integer("balance_after").notNull(), // Credit balance after this transaction
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
@@ -813,7 +792,7 @@ export const featureUsageLog = pgTable("feature_usage_log", {
   featureName: varchar("feature_name", { length: 100 }).notNull(), // 'ai_agent_builder', 'video_builder', etc.
   tokenCount: integer("token_count").default(0), // AI tokens used
   creditsCost: integer("credits_cost").default(0), // Credits deducted
-  metadata: jsonb("metadata"),
+  metadata: jsonb("metadata").$type<Record<string, any> | null>(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_feature_usage_user").on(table.userId),

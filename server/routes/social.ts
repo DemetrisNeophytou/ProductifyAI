@@ -35,7 +35,7 @@ router.post("/pack", async (req, res) => {
     }
 
     // Get project content for the specified locale
-    const projectBlocks = await db.select()
+    const localizedBlocks = await db.select()
       .from(projectBlocks)
       .where(and(
         eq(projectBlocks.projectId, projectId),
@@ -43,7 +43,7 @@ router.post("/pack", async (req, res) => {
       ))
       .orderBy(projectBlocks.order);
 
-    if (projectBlocks.length === 0) {
+    if (localizedBlocks.length === 0) {
       return res.status(404).json({
         ok: false,
         error: `No content found for locale: ${locale}`
@@ -51,7 +51,7 @@ router.post("/pack", async (req, res) => {
     }
 
     // Generate social pack content
-    const socialContent = await generateSocialPack(project[0], projectBlocks, platforms, tone, length);
+    const socialContent = await generateSocialPack(project[0], localizedBlocks, platforms, tone, length);
 
     // Save to database
     const packId = `pack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
